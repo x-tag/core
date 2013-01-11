@@ -1,0 +1,7 @@
+{
+  "name": "x-tag-core",
+  "version": "0.5.0",
+  "dependencies":[
+    "document.register"
+  ]
+}
