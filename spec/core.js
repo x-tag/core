@@ -1,26 +1,19 @@
 
 describe("x-tag ", function() {
 
-	it('should load x-tag and fire DOMComponentsLoaded', function(){
-		var componentsLoaded = false;
-		document.addEventListener('DOMComponentsLoaded', function(){
-			componentsLoaded = true;
-		});
+	it('should load x-tag', function(){
 
 		runs(function(){
-			var register = document.createElement('script');
-			register.type = 'text/javascript';
-			register.src = '../../components/document.register/document.register.js?d=' + new Date().getTime();
-			document.getElementsByTagName('head')[0].appendChild(register);
 			var script = document.createElement('script');
 			script.type = 'text/javascript';
-			script.src = '../../src/core.js?d=' + new Date().getTime();
+			script.src = '../src/core.js?d=' + new Date().getTime();
 			document.getElementsByTagName('head')[0].appendChild(script);
 		});
 
 		waitsFor(function() {
 			return componentsLoaded || window.xtag;
 		}, "The document should be loaded", 1000);
+
 
 		runs(function() {
 			expect(window.xtag).toBeDefined();

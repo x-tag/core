@@ -16,7 +16,9 @@ module.exports = function(grunt) {
     jasmine : {
       src : '<%= meta.src %>',
       options : {
-        specs : '<%= meta.specs %>'
+        specs : '<%= meta.specs %>',
+        vendor: ['<%= meta.components %>/document.register/document.register.js'],
+        outfile: '_spec_results.html'
       }
     },
     jshint: {
