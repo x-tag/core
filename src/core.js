@@ -26,8 +26,8 @@
 				base: 'OverflowEvent' in window ? 'overflowchanged' : type + 'flow',
 				condition: function(event){
 					return event.type == (type + 'flow') ||
-					((event.orient == 0 && event.horizontalOverflow == flow) || 
-					(event.orient == 1 && event.verticalOverflow == flow) || 
+					((event.orient == 0 && event.horizontalOverflow == flow) ||
+					(event.orient == 1 && event.verticalOverflow == flow) ||
 					(event.orient == 2 && event.horizontalOverflow == flow && event.verticalOverflow == flow));
 				}
 			}
@@ -46,11 +46,12 @@
 				css: '-' + pre + '-',
 				js: pre[0].toUpperCase() + pre.substr(1)
 			};
+
 		})(),
 		matchSelector = Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'];
 	
 /*** Internal Functions ***/
-	
+
 	function mergeOne(source, key, current){
 		var type = xtag.typeOf(current);
 		if (type == 'object') {
@@ -60,6 +61,7 @@
 		else source[key] = current;
 		return source;
 	};
+
 	
 	// Mixins
 	
@@ -87,9 +89,8 @@
 	};
 	
 /*** X-Tag Object Definition ***/
-	
+
 	var xtag = {
-		
 		defaultOptions: {
 			extend: null,
 			mixins: [],
@@ -108,13 +109,16 @@
 		register: function(name, options) {
 			var tag = xtag.merge({}, xtag.defaultOptions, options),
 				extend = tag.extend ? xtag._createElement(tag.extend).__proto__ : null;
+
 			
 			tag = applyMixins(tag);
-			
+// splitting on : will blow up when using css pseudo selectors  :first-child
+
 			for (var z in tag.events) tag.events[z.split(':')[0]] = xtag.parseEvent(z, tag.events[z]);
 			for (var z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z]);
 			for (var z in tag.methods) tag['prototype'][z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z]) };
 			
+
 			for (var prop in tag.accessors) {
 				tag['prototype'][prop] = {};
 				var accessor = tag.accessors[prop];
@@ -127,7 +131,7 @@
 					else tag['prototype'][prop][z] = accessor[z];
 				}
 			}
-			
+
 			var created = tag.lifecycle.created;
 			if (created) tag.lifecycle.created = function(){
 				xtag.addEvents(this, tag.events);
@@ -138,12 +142,11 @@
 				'prototype': Object.create(extend || ((win.HTMLSpanElement || win.HTMLElement).prototype), tag['prototype']),
 				'lifecycle':  tag.lifecycle
 			});
-			
+
 			return proto;
 		},
-		
+
 	/*** Exposed Variables ***/
-	
 		mixins: {},
 		prefix: prefix,
 		captureEvents: ['focus', 'blur'],
@@ -152,17 +155,17 @@
 			underflow: createFlowEvent('under'),
 			animationstart: {
 				base: [
-					'animationstart', 
-					'oAnimationStart', 
-					'MSAnimationStart', 
+					'animationstart',
+					'oAnimationStart',
+					'MSAnimationStart',
 					'webkitAnimationStart'
 				]
 			},
 			transitionend: {
 				base: [
-					'transitionend', 
-					'oTransitionEnd', 
-					'MSTransitionEnd', 
+					'transitionend',
+					'oTransitionEnd',
+					'MSTransitionEnd',
 					'webkitTransitionEnd'
 				]
 			},
@@ -190,20 +193,20 @@
 				base: ['mousemove', 'touchmove'],
 				listener: touchFilter
 			}
-		},	
+		},
 		pseudos: {
 			keypass: keypseudo,
 			keyfail: keypseudo,
 			delegate: {
 				listener: function(pseudo, fn, args){
 					var target = xtag.query(this, pseudo.value).filter(function(node){
-					return node == args[0].target || 
+					return node == args[0].target ||
 						node.contains ? node.contains(args[0].target) : false;
 					})[0];
 					return target ? fn.apply(target, args) : false;
 				}
 			},
-			preventable: { 
+			preventable: {
 				listener: function(pseudo, fn, args){
 					if (!args[0].defaultPrevented) fn.apply(this, args);
 				}
@@ -220,15 +223,15 @@
 				}
 			}
 		},
-		
+
 	/*** Utilities ***/
-		
+
 		// JS Types
-		
+
 		typeOf: function(obj) {
 			return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
 		},
-		
+
 		wrap: function(original, fn){
 			return function(){
 				var args = xtag.toArray(arguments),
@@ -245,9 +248,8 @@
 			}
 			return source;
 		},
-		
+
 		// DOM
-		
 		matchSelector: function(element, selector){
 			return matchSelector.call(element, selector);
 		},
@@ -259,11 +261,11 @@
 			}
 			else xtag._inserted(element);
 		},
-		
+
 		hasClass: function(element, klass){
 			return !!~element.className.split(' ').indexOf(klass.trim());
 		},
-		
+
 		addClass: function(element, klass){
 			var list = element.className.trim().split(' ');
 			klass.trim().split(' ').forEach(function(name){
@@ -272,7 +274,7 @@
 			element.className = list.join(' ').trim();
 			return element;
 		},
-		
+
 		removeClass: function(element, klass){
 			var classes = klass.trim().split(' ');
 			element.className = element.className.trim().split(' ').filter(function(name){
@@ -280,11 +282,10 @@
 			}).join(' ');
 			return element;
 		},
-		
 		toggleClass: function(element, klass){
 			return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
+
 		},
-		
 		query: function(element, selector){
 			return xtag.toArray(element.querySelectorAll(selector));
 		},
@@ -293,7 +294,7 @@
 			var id = element.id,
 				guid = element.id = id || 'x_' + new Date().getTime(),
 				attr = '#' + guid + ' > ',
-				selector = attr + (selector + '').replace(',', ',' + attr, 'g');        
+				selector = attr + (selector + '').replace(',', ',' + attr, 'g');
 			var result = element.parentNode.querySelectorAll(selector);
 			if (!id) element.id = null;
 			return xtag.toArray(result);
@@ -310,9 +311,9 @@
 			}
 			return frag;
 		},
-	
+
 	/*** Pseudos ***/
-		
+
 		applyPseudos: function(key, fn){
 			var action = fn, onAdd = {};
 			if (key.match(':')){
@@ -322,13 +323,13 @@
 						var lastPseudo = action,
 							pseudo = xtag.pseudos[name],
 							split = {
-								key: key, 
+								key: key,
 								name: name,
 								value: value
 							};
 						if (!pseudo) throw "pseudo not found: " + name;
 						if (pseudo.onAdd) onAdd[name] = split;
-						action = function(e){             
+						action = function(e){
 							return pseudo.listener.apply(this, [
 								split,
 								lastPseudo,
@@ -343,9 +344,9 @@
 			}
 			return action;
 		},
-		
+
 	/*** Events ***/
-		
+
 		parseEvent: function(type, fn){
 			var pseudos = type.split(':'),
 				key = pseudos.shift(),
@@ -356,7 +357,6 @@
 					onRemove: function(){},
 					condition: function(){},
 				}, xtag.customEvents[key] || {});
-			console.log(event.pseudos);
 			event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
 			if (fn) {
 				var chained = xtag.applyPseudos(event.type, fn);
@@ -390,11 +390,10 @@
 				element.removeEventListener(name, fn);
 			});
 		}
-	
 	};
-	
+
 	xtag.merge(xtag, doc.register.__polyfill__);
-	
+
 	if (typeof define == 'function' && define.amd) define(xtag);
 	else win.xtag = xtag;
 

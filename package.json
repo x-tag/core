@@ -1,0 +1,20 @@
+{
+  "name": "x-tag-core",
+  "description": "X-Tags core library",
+  "version": "0.1.0",
+  "homepage": "https://www.x-tags.org",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/x-tag/core.git"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.0rc5",
+    "grunt-contrib-jasmine": "0.3.0rc5",
+    "grunt-contrib-jshint": "0.1.1rc5",
+    "grunt-contrib-watch": "0.2.0rc5"
+  },
+  "dependencies": {}
+}

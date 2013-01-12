@@ -16,11 +16,18 @@ Developers
 
 To get started hacking on X-Tag, first check out the code here:
 
-    git clone https://github.com/mozilla/x-tag
+    git clone https://github.com/x-tag/core
 
-If you're interested in exploring the tags we've already created, check out our x-tag-elements repository.
+    npm install   // for devDependencies
 
-	git clone --recursive https://github.com/mozilla/x-tag-elements
+Install yeoman or bower to install dependencies
+
+	yeoman install
+
+Tests
+
+	npm install grunt-contrib-jasmine --save-dev
+
 
 
 #### Create your own X-Tags

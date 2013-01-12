@@ -13,12 +13,12 @@ require(['../../x-tag.js'], function(xtag){
 		var testBox;
 
 		beforeEach(function(){
-			testBox = document.getElementById('testbox');			
+			testBox = document.getElementById('testbox');
 		});
 
 		afterEach(function(){
 			testBox.innerHTML = "";
-		});	
+		});
 
 		it('testbox should exist', function(){
 			expect(testBox).toBeDefined();
@@ -50,14 +50,14 @@ require(['../../x-tag.js'], function(xtag){
 				},
 				onInsert: function(){
 					onInsertFired = true;
-				}, 
+				},
 				methods: {
 					bar: function(){
 						return true;
 					}
-				}, 
+				},
 				setters:{
-					pizza: function(value){						
+					pizza: function(value){
 						this.dataset.pizza = value;
 					}
 				}
@@ -69,14 +69,14 @@ require(['../../x-tag.js'], function(xtag){
 				return onInsertFired;
 			}, "new tag onInsertFired should fire", 1000);
 
-			runs(function(){				
-				var fooElement = document.getElementById('foo');				
+			runs(function(){
+				var fooElement = document.getElementById('foo');
 				expect(onInsertFired).toEqual(true);
 				expect(fooElement.bar()).toEqual(true);
 				fooElement.pizza = 'cheese';
 				expect('cheese').toEqual(fooElement.dataset.pizza);
 			});
 		});
-	});	
+	});
 
 });
