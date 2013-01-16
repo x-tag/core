@@ -46,7 +46,8 @@
 				css: '-' + pre + '-',
 				js: pre[0].toUpperCase() + pre.substr(1)
 			};
-		})();
+		})(),
+		matchSelector = Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'];
 	
 /*** Internal Functions ***/
 	
@@ -58,6 +59,31 @@
 		}
 		else source[key] = current;
 		return source;
+	};
+	
+	// Mixins
+	
+	function mergeMixin(type, mixin, option){
+		var original = {};
+		for (var o in option) original[o.split(':')[0]] = true;
+		for (var x in mixin) if (!original[x.split(':')[0]]) option[x] = mixin[x];
+	};
+	
+	function applyMixins(tag){
+		tag.mixins.forEach(function(name){
+			var mixin = xtag.mixins[name];
+			for (var type in mixin) {
+				switch (type){
+					case 'lifecycle': case 'methods':
+						mergeMixin(type, mixin[type], tag[type]);
+						break;
+					case 'accessors': case 'prototype':
+						for (var z in mixin[type]) mergeMixin(z, mixin[type], tag.accessors);
+						break;
+				}
+			}
+		});
+		return tag;
 	};
 	
 /*** X-Tag Object Definition ***/
@@ -83,7 +109,7 @@
 			var tag = xtag.merge({}, xtag.defaultOptions, options),
 				extend = tag.extend ? xtag._createElement(tag.extend).__proto__ : null;
 			
-			tag = xtag.applyMixins(tag);
+			tag = applyMixins(tag);
 			
 			for (var z in tag.events) tag.events[z.split(':')[0]] = xtag.parseEvent(z, tag.events[z]);
 			for (var z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z]);
@@ -222,9 +248,8 @@
 		
 		// DOM
 		
-		_matchSelector: Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'],
 		matchSelector: function(element, selector){
-			return xtag._matchSelector.call(element, selector);
+			return matchSelector.call(element, selector);
 		},
 		
 		innerHTML: function(element, html){
@@ -331,6 +356,7 @@
 					onRemove: function(){},
 					condition: function(){},
 				}, xtag.customEvents[key] || {});
+			console.log(event.pseudos);
 			event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
 			if (fn) {
 				var chained = xtag.applyPseudos(event.type, fn);
@@ -363,63 +389,9 @@
 			xtag.toArray(event.base).forEach(function(name){
 				element.removeEventListener(name, fn);
 			});
-		},
-		
-	/*** Mixins ***/
-		
-		applyMixins: function(tag){
-			tag.mixins.forEach(function(name){
-				var mixin = xtag.mixins[name];
-				for (var type in mixin) {
-					switch (type){
-						case 'lifecycle': case 'methods':
-							mergeMixin(type, mixin[type], tag[type]);
-							break;
-						case 'accessors': case 'prototype':
-							for (var z in mixin[type]) mergeMixin(z, mixin[type], tag.accessors);
-							break;
-					}
-				}
-			});
-			return tag;
 		}
 	
 	};
-	
-	function mergeMixin(type, mixin, option){
-		var original = {};
-		for (var o in option) original[o.split(':')[0]] = true;
-		for (var x in mixin) if (!original[x.split(':')[0]]) option[x] = mixin[x];
-	};
-	
-/* 	function mergeMixin(type, mixin, option){
-		var original = {};
-		for (var o in option) {
-			if (typeof option[o] == 'function') {
-				original[o.split(':')[0]] = [o, option[o]];
-			}
-		}
-		for (var z in mixin) {
-			if (typeof mixin[z] == 'function') {
-				var key = z.split(':'),
-					name = key[0],
-					fn = xtag.applyPseudos(z, mixin[z]);
-				if (original[name]) {
-					var id = type + '.' + name,
-						chain = options['prototype'].xtag.mixins;
-					if (!chain[id]) option[original[name][0]] = function(){
-						this.mixin = chain[id].bind(this);
-						var returned = original[name][1].apply(this, xtag.toArray(arguments));
-						delete this.mixin;
-						return returned;
-					};
-					chain[id] = chain[id] ? xtag.wrap(chain[id], fn) : fn;
-				}
-				else option[z] = mixin[z];
-			}
-			else option[z] = (z in option) ? option[z] : mixin[z];
-		}
-	}; */
 	
 	xtag.merge(xtag, doc.register.__polyfill__);
 	
