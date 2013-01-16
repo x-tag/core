@@ -194,8 +194,8 @@ describe("x-tag ", function() {
 		it('xtag.innerHTML should instantiate x-tags in innerHTML', function(){
 			xtag.register('x-foo', {
 				accessors: {
-					set: {
-						name: function(value){ 
+					name: {
+						set: function(value){ 
 							this.setAttribute('name', value);
 						}
 					}
@@ -419,8 +419,10 @@ describe("x-tag ", function() {
 			var clickThis = null;
 
 			xtag.register('x-foo', {
-				onCreate: function(){
-					this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
+				lifecycle: {
+					created: function(){
+						this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
+					}
 				},				
 				events: {
 					'click:delegate(div):delegate(bazz)': function(e, elem){
@@ -444,8 +446,10 @@ describe("x-tag ", function() {
 			var clickThis = null;
 
 			xtag.register('x-foo', {
-				onCreate: function(){
-					this.innerHTML = '<div><foo><bazz><button></button></bazz></foo></div>';
+				lifecycle: {
+					created: function(){
+						this.innerHTML = '<div><foo><bazz><button></button></bazz></foo></div>';
+					}
 				},				
 				events: {
 					'click:delegate(div):delegate(bazz:first-child)': function(e, elem){
@@ -479,8 +483,10 @@ describe("x-tag ", function() {
 			}
 
 			xtag.register('x-foo', {
-				onCreate: function(){
-					this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
+				lifecycle: {
+					created: function(){
+						this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
+					}
 				},				
 				events: {
 					'click:delegate(div):blah:delegate(bazz)': function(e, elem){
@@ -535,9 +541,9 @@ describe("x-tag ", function() {
 				xtag.addClass(body,'biz red');
 				expect('foo bar biz red').toEqual(body.getAttribute('class'));				
 				
-				//does not prevent dups
+				// prevent dups
 				xtag.addClass(body,'foo red');
-				expect('foo bar biz red foo red').toEqual(body.getAttribute('class'));				
+				expect('foo bar biz red').toEqual(body.getAttribute('class'));				
 			});
 
 			it('removeClass', function(){				
@@ -566,7 +572,6 @@ describe("x-tag ", function() {
 			});
 
 			it('toggleClass', function(){
-				
 				xtag.toggleClass(body, 'foo');
 				expect('foo').toEqual(body.getAttribute('class'));
 				

@@ -52,7 +52,7 @@
 	
 	function mergeOne(source, key, current){
 		var type = xtag.typeOf(current);
-		if (type == 'object' || type == 'array') {
+		if (type == 'object') {
 			if (xtag.typeOf(source[key]) == 'object') xtag.merge(source[key], current);
 			else source[key] = xtag.merge({}, current);
 		}
@@ -63,16 +63,19 @@
 /*** X-Tag Object Definition ***/
 	
 	var xtag = {
-	
+		
 		defaultOptions: {
 			extend: null,
+			mixins: [],
 			events: {},
 			methods: {},
 			accessors: {},
 			lifecycle: {},
 			'prototype': {
 				xtag: {
-					value: {}
+					value: {
+						mixins: {}
+					}
 				}
 			}
 		},
@@ -80,9 +83,11 @@
 			var tag = xtag.merge({}, xtag.defaultOptions, options),
 				extend = tag.extend ? xtag._createElement(tag.extend).__proto__ : null;
 			
-			for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
-			for (var z in tag.lifecycle) tag.lifecycle[z] = xtag.applyPseudos(z, tag.lifecycle[z]);
-			for (var z in tag.methods) tag['prototype'][z] = { value: xtag.applyPseudos(z, tag.methods[z]) };
+			tag = xtag.applyMixins(tag);
+			
+			for (var z in tag.events) tag.events[z.split(':')[0]] = xtag.parseEvent(z, tag.events[z]);
+			for (var z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z]);
+			for (var z in tag.methods) tag['prototype'][z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z]) };
 			
 			for (var prop in tag.accessors) {
 				tag['prototype'][prop] = {};
@@ -102,6 +107,7 @@
 				xtag.addEvents(this, tag.events);
 				return created.apply(this, xtag.toArray(arguments));
 			};
+			
 			var proto = doc.register(name, {
 				'prototype': Object.create(extend || ((win.HTMLSpanElement || win.HTMLElement).prototype), tag['prototype']),
 				'lifecycle':  tag.lifecycle
@@ -112,6 +118,7 @@
 		
 	/*** Exposed Variables ***/
 	
+		mixins: {},
 		prefix: prefix,
 		captureEvents: ['focus', 'blur'],
 		customEvents: {
@@ -198,9 +205,9 @@
 		
 		wrap: function(original, fn){
 			return function(){
-				var args = xtag.toArray(arguments);
-				original.apply(this, args);
-				fn.apply(this, args);
+				var args = xtag.toArray(arguments),
+					returned = original.apply(this, args);
+				return returned === false ? false : fn.apply(this, typeof returned != 'undefined' ? xtag.toArray(returned) : args);
 			}
 		},
 
@@ -220,28 +227,37 @@
 			return xtag._matchSelector.call(element, selector);
 		},
 		
+		innerHTML: function(element, html){
+			element.innerHTML = html;
+			if (xtag.observerElement._observer){
+				xtag.parseMutations(xtag.observerElement, xtag.observerElement._observer.takeRecords());
+			}
+			else xtag._inserted(element);
+		},
+		
 		hasClass: function(element, klass){
-			return !!~element.className.split(' ').indexOf(klass.replace(/\s/g, ''));
+			return !!~element.className.split(' ').indexOf(klass.trim());
 		},
 		
 		addClass: function(element, klass){
-			if (!xtag.hasClass(element, klass)){
-				var first = element.className[0];
-				element.className = klass.replace(/\s/g, '') + (first == ' ' || !first ? '' : ' ') + element.className; 
-			} 
+			var list = element.className.trim().split(' ');
+			klass.trim().split(' ').forEach(function(name){
+				if (!~list.indexOf(name)) list.push(name);
+			});
+			element.className = list.join(' ').trim();
 			return element;
 		},
 		
 		removeClass: function(element, klass){
-			var klass = klass.replace(/\s/g, '');
-			element.className = element.className.split(' ').filter(function(name){
-					return name && name != klass;
-				}).join(' ');
+			var classes = klass.trim().split(' ');
+			element.className = element.className.trim().split(' ').filter(function(name){
+				return name && !~classes.indexOf(name);
+			}).join(' ');
 			return element;
 		},
 		
-		toggleClass: function(element, className){
-			return xtag[xtag.hasClass(element, className) ? 'removeClass' : 'addClass'].call(null, element, className);
+		toggleClass: function(element, klass){
+			return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
 		},
 		
 		query: function(element, selector){
@@ -350,27 +366,60 @@
 		},
 		
 	/*** Mixins ***/
-	
-		applyMixins: function(options){
-			if (options.mixins) options.mixins.forEach(function(name){
+		
+		applyMixins: function(tag){
+			tag.mixins.forEach(function(name){
 				var mixin = xtag.mixins[name];
-				for (var z in mixin) {
-					switch (xtag.typeOf(mixin[z])){
-						case 'function': 
-							options[z] = options[z] ? 
-							xtag.wrap(options[z], mixin[z]) : mixin[z];
-						break;
-						case 'object': 
-							options[z] = xtag.merge({}, mixin[z], options[z]);
-						break;
-						default: options[z] = mixin[z];
+				for (var type in mixin) {
+					switch (type){
+						case 'lifecycle': case 'methods':
+							mergeMixin(type, mixin[type], tag[type]);
+							break;
+						case 'accessors': case 'prototype':
+							for (var z in mixin[type]) mergeMixin(z, mixin[type], tag.accessors);
+							break;
 					}
 				}
 			});
-			return options;
+			return tag;
 		}
 	
 	};
+	
+	function mergeMixin(type, mixin, option){
+		var original = {};
+		for (var o in option) original[o.split(':')[0]] = true;
+		for (var x in mixin) if (!original[x.split(':')[0]]) option[x] = mixin[x];
+	};
+	
+/* 	function mergeMixin(type, mixin, option){
+		var original = {};
+		for (var o in option) {
+			if (typeof option[o] == 'function') {
+				original[o.split(':')[0]] = [o, option[o]];
+			}
+		}
+		for (var z in mixin) {
+			if (typeof mixin[z] == 'function') {
+				var key = z.split(':'),
+					name = key[0],
+					fn = xtag.applyPseudos(z, mixin[z]);
+				if (original[name]) {
+					var id = type + '.' + name,
+						chain = options['prototype'].xtag.mixins;
+					if (!chain[id]) option[original[name][0]] = function(){
+						this.mixin = chain[id].bind(this);
+						var returned = original[name][1].apply(this, xtag.toArray(arguments));
+						delete this.mixin;
+						return returned;
+					};
+					chain[id] = chain[id] ? xtag.wrap(chain[id], fn) : fn;
+				}
+				else option[z] = mixin[z];
+			}
+			else option[z] = (z in option) ? option[z] : mixin[z];
+		}
+	}; */
 	
 	xtag.merge(xtag, doc.register.__polyfill__);
 	
