@@ -1,9 +1,17 @@
 
 describe("x-tag ", function() {
 
-	it('should load x-tag', function(){
+	it('should load x-tag and fire DOMComponentsLoaded', function(){
+		var componentsLoaded = false;
+		document.addEventListener('DOMComponentsLoaded', function(){
+			componentsLoaded = true;
+		});
 
 		runs(function(){
+			var register = document.createElement('script');
+			register.type = 'text/javascript';
+			register.src = '../components/document.register/document.register.js?d=' + new Date().getTime();
+			document.getElementsByTagName('head')[0].appendChild(register);
 			var script = document.createElement('script');
 			script.type = 'text/javascript';
 			script.src = '../src/core.js?d=' + new Date().getTime();
@@ -14,16 +22,11 @@ describe("x-tag ", function() {
 			return componentsLoaded || window.xtag;
 		}, "The document should be loaded", 1000);
 
-
 		runs(function() {
 			expect(window.xtag).toBeDefined();
 		});
 	});
 
-	it('should register a new tag', function(){
-		xtag.register('x-foo');
-		expect(xtag.getTag({ nodeName: 'x-foo' })).toBeDefined();
-	});
 
 	it('should fire lifecycle event CREATED when a new tag is created', function(){
 		var createdFired = false;
@@ -299,7 +302,7 @@ describe("x-tag ", function() {
 						}
 					}
 				}
-			}
+			};
 
 			xtag.register('x-foo', {
 				mixins: ['test']
@@ -474,7 +477,7 @@ describe("x-tag ", function() {
 					args[0].foo = this;
 					fn.apply(this, args);
 				}
-			}
+			};
 
 			xtag.register('x-foo', {
 				lifecycle: {
