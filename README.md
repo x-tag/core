@@ -5,7 +5,7 @@ Based on the current W3 Web Components [draft][1], X-Tag enables the custom elem
 Custom elements let you register new tags/elements with the parser so they are recognized and inflated with
 special abilities you define.
 
-Find out more about what X-Tag does, where it works, and how to use it, on the project page here: http://mozilla.github.com/x-tag/
+Find out more about what X-Tag does, where it works, and how to use it, on the project page here: http://x-tags.org
 
 X-Tag (excluding third-party icons or images) is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
@@ -14,19 +14,23 @@ X-Tag (excluding third-party icons or images) is subject to the terms of the Moz
 Developers
 ==========
 
-To get started hacking on X-Tag, first check out the code here:
+To get started hacking on X-Tag:
 
-    git clone https://github.com/x-tag/core
+    $ git clone https://github.com/x-tag/core
 
-    npm install   // for devDependencies
+    $ npm install   // for devDependencies
 
-Install yeoman or bower to install dependencies
+    $ npm install bower -g   //for X-Tag components dependencies
 
-	yeoman install
+    $ bower install  // installs component dependencies
+
+
+
 
 Tests
 
-	npm install grunt-contrib-jasmine --save-dev
+	Jasmine tests via grunt are not working yet, please open
+	test/index.html to see if everything passes.
 
 
 
