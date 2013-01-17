@@ -1,4 +1,4 @@
-module.exports = function(grunt) {
+module.exports = function (grunt) {
   'use strict';
 
   // Project configuration.
@@ -9,7 +9,7 @@ module.exports = function(grunt) {
     },
     watch: {
       test : {
-        files: ['<%= meta.src %>','<%= meta.specs %>'],
+        files: ['<%= meta.src %>', '<%= meta.specs %>'],
         tasks: 'test'
       }
     },

@@ -1,18 +1,18 @@
-(function(){
+(function () {
 
 /*** Internal Variables ***/
 
   var win = window,
     doc = document,
     keypseudo = {
-      listener: function(pseudo, fn, args){
-        if (~pseudo.value.match(/(\d+)/g).indexOf(String(args[0].keyCode)) == (pseudo.name == 'keypass')){
+      listener: function (pseudo, fn, args) {
+        if (~pseudo.value.match(/(\d+)/g).indexOf(String(args[0].keyCode)) == (pseudo.name == 'keypass')) {
           args.splice(args.length, 0, this);
           fn.apply(this, args);
         }
       }
     },
-    touchFilter = function(pseudo, fn, args){
+    touchFilter = function (pseudo, fn, args) {
       if (fn.touched) fn.touched = false;
       else {
       if (args[0].type.match('touch')) fn.touched = true;
@@ -20,11 +20,11 @@
       fn.apply(this, args);
       }
     },
-    createFlowEvent = function(type){
+    createFlowEvent = function (type) {
       var flow = type == 'over';
       return {
         base: 'OverflowEvent' in window ? 'overflowchanged' : type + 'flow',
-        condition: function(event){
+        condition: function (event) {
           return event.type == (type + 'flow') ||
           ((event.orient === 0 && event.horizontalOverflow == flow) ||
           (event.orient == 1 && event.verticalOverflow == flow) ||
@@ -32,12 +32,12 @@
         }
       };
     },
-    prefix = (function() {
+    prefix = (function () {
       var styles = win.getComputedStyle(doc.documentElement, ''),
         pre = (Array.prototype.slice
           .call(styles)
-          .join('')
-          .match(/-(moz|webkit|ms)-/) || (styles.OLink==='' && ['','o'])
+          .join('') 
+          .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
         )[1],
         dom = ('WebKit|Moz|MS|O').match(new RegExp('(' + pre + ')', 'i'))[1];
       return {
@@ -52,7 +52,7 @@
   
 /*** Internal Functions ***/
 
-  function mergeOne(source, key, current){
+  function mergeOne(source, key, current) {
     var type = xtag.typeOf(current);
     if (type == 'object') {
       if (xtag.typeOf(source[key]) == 'object') xtag.merge(source[key], current);
@@ -62,20 +62,20 @@
     return source;
   }
 
-  
+
   // Mixins
-  
-  function mergeMixin(type, mixin, option){
+
+  function mergeMixin(type, mixin, option) {
     var original = {};
     for (var o in option) original[o.split(':')[0]] = true;
     for (var x in mixin) if (!original[x.split(':')[0]]) option[x] = mixin[x];
   }
-  
-  function applyMixins(tag){
-    tag.mixins.forEach(function(name){
+
+  function applyMixins(tag) {
+    tag.mixins.forEach(function (name) {
       var mixin = xtag.mixins[name];
       for (var type in mixin) {
-        switch (type){
+        switch (type) {
           case 'lifecycle': case 'methods':
             mergeMixin(type, mixin[type], tag[type]);
             break;
@@ -106,7 +106,7 @@
         }
       }
     },
-    register: function(name, options) {
+    register: function (name, options) {
       var tag = xtag.merge({}, xtag.defaultOptions, options),
         extend = tag.extend ? xtag._createElement(tag.extend).__proto__ : null;
 
@@ -133,7 +133,7 @@
       }
 
       var created = tag.lifecycle.created;
-      if (created) tag.lifecycle.created = function(){
+      if (created) tag.lifecycle.created = function () {
         xtag.addEvents(this, tag.events);
         return created.apply(this, xtag.toArray(arguments));
       };
@@ -198,8 +198,8 @@
       keypass: keypseudo,
       keyfail: keypseudo,
       delegate: {
-        listener: function(pseudo, fn, args){
-          var target = xtag.query(this, pseudo.value).filter(function(node){
+        listener: function (pseudo, fn, args) {
+          var target = xtag.query(this, pseudo.value).filter(function (node) {
           return node == args[0].target ||
             node.contains ? node.contains(args[0].target) : false;
           })[0];
@@ -207,17 +207,17 @@
         }
       },
       preventable: {
-        listener: function(pseudo, fn, args){
+        listener: function (pseudo, fn, args) {
           if (!args[0].defaultPrevented) fn.apply(this, args);
         }
       },
       attribute: {
-        onAdd: function(pseudo){
+        onAdd: function (pseudo) {
           this.xtag.attributeSetters = this.xtag.attributeSetters || {};
           pseudo.value = pseudo.value || pseudo.key.split(':')[0];
           this.xtag.attributeSetters[pseudo.value] = pseudo.key.split(':')[0];
         },
-        listener: function(pseudo, fn, args){
+        listener: function (pseudo, fn, args) {
           fn.call(this, args[0]);
           this.setAttribute(pseudo.value, args[0], true);
         }
@@ -228,21 +228,21 @@
 
     // JS Types
 
-    typeOf: function(obj) {
+    typeOf: function (obj) {
       return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
     },
 
-    wrap: function(original, fn){
-      return function(){
+    wrap: function (original, fn) {
+      return function () {
         var args = xtag.toArray(arguments),
           returned = original.apply(this, args);
         return returned === false ? false : fn.apply(this, typeof returned != 'undefined' ? xtag.toArray(returned) : args);
       };
     },
 
-    merge: function(source, k, v){
+    merge: function (source, k, v) {
       if (xtag.typeOf(k) == 'string') return mergeOne(source, k, v);
-      for (var i = 1, l = arguments.length; i < l; i++){
+      for (var i = 1, l = arguments.length; i < l; i++) {
         var object = arguments[i];
         for (var key in object) mergeOne(source, key, object[key]);
       }
@@ -250,50 +250,49 @@
     },
 
     // DOM
-    matchSelector: function(element, selector){
+    matchSelector: function (element, selector) {
       return matchSelector.call(element, selector);
     },
     
-    innerHTML: function(element, html){
+    innerHTML: function (element, html) {
       element.innerHTML = html;
-      console.log(xtag._polyfilled);
-      if (xtag._polyfilled){
-        if (xtag.observerElement._observer){
+      if (xtag._polyfilled) {
+        if (xtag.observerElement._observer) {
           xtag.parseMutations(xtag.observerElement, xtag.observerElement._observer.takeRecords());
         }
         else xtag._inserted(element);
       }
     },
 
-    hasClass: function(element, klass){
+    hasClass: function (element, klass) {
       return element.className.split(' ').indexOf(klass.trim())>-1;
     },
 
-    addClass: function(element, klass){
+    addClass: function (element, klass) {
       var list = element.className.trim().split(' ');
-      klass.trim().split(' ').forEach(function(name){
+      klass.trim().split(' ').forEach(function (name) {
         if (!~list.indexOf(name)) list.push(name);
       });
       element.className = list.join(' ').trim();
       return element;
     },
 
-    removeClass: function(element, klass){
+    removeClass: function (element, klass) {
       var classes = klass.trim().split(' ');
-      element.className = element.className.trim().split(' ').filter(function(name){
+      element.className = element.className.trim().split(' ').filter(function (name) {
         return name && !~classes.indexOf(name);
       }).join(' ');
       return element;
     },
-    toggleClass: function(element, klass){
+    toggleClass: function (element, klass) {
       return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
 
     },
-    query: function(element, selector){
+    query: function (element, selector) {
       return xtag.toArray(element.querySelectorAll(selector));
     },
 
-    queryChildren: function(element, selector){
+    queryChildren: function (element, selector) {
       var id = element.id,
         guid = element.id = id || 'x_' + new Date().getTime(),
         attr = '#' + guid + ' > ';
@@ -303,7 +302,7 @@
       return xtag.toArray(result);
     },
 
-    createFragment: function(content){
+    createFragment: function (content) {
       var frag = doc.createDocumentFragment();
       if (content) {
         var div = frag.appendChild(doc.createElement('div')),
@@ -317,12 +316,12 @@
 
   /*** Pseudos ***/
 
-    applyPseudos: function(key, fn){
+    applyPseudos: function (key, fn) {
       var action = fn, onAdd = {};
-      if (key.match(':')){
+      if (key.match(':')) {
         var split = key.match(/(\w+(?:\([^\)]+\))?)/g);
         for (var i = split.length - 1; i > 0; i--) {
-          split[i].replace(/(\w*)(?:\(([^\)]*)\))?/, function(match, name, value){
+          split[i].replace(/(\w*)(?:\(([^\)]*)\))?/, function (match, name, value) {
             var lastPseudo = action,
               pseudo = xtag.pseudos[name],
               split = {
@@ -332,7 +331,7 @@
               };
             if (!pseudo) throw "pseudo not found: " + name;
             if (pseudo.onAdd) onAdd[name] = split;
-            action = function(e){
+            action = function (e) {
               return pseudo.listener.apply(this, [
                 split,
                 lastPseudo,
@@ -341,7 +340,7 @@
             };
           });
         }
-        for (var z in onAdd){
+        for (var z in onAdd) {
           xtag.pseudos[z].onAdd.call(this, onAdd[z], action);
         }
       }
@@ -350,20 +349,20 @@
 
   /*** Events ***/
 
-    parseEvent: function(type, fn){
+    parseEvent: function (type, fn) {
       var pseudos = type.split(':'),
         key = pseudos.shift(),
         event = xtag.merge({
           base: key,
           pseudos: '',
-          onAdd: function(){},
-          onRemove: function(){},
-          condition: function(){}
+          onAdd: function () {},
+          onRemove: function () {},
+          condition: function () {}
         }, xtag.customEvents[key] || {});
       event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
         var chained = xtag.applyPseudos(event.type, fn);
-        event.compiled = function(){
+        event.compiled = function () {
           var args = xtag.toArray(arguments);
           if (event.condition.apply(this, args) === false) return false;
           return chained.apply(this, args);
@@ -372,24 +371,24 @@
       return event;
     },
 
-    addEvent: function(element, type, fn){
+    addEvent: function (element, type, fn) {
       var event = typeof fn == 'function' ? xtag.parseEvent(type, fn) : fn;
       event.onAdd.call(element, event, event.compiled);
-      xtag.toArray(event.base).forEach(function(name){
+      xtag.toArray(event.base).forEach(function (name) {
         element.addEventListener(name, event.compiled, xtag.captureEvents.indexOf(name) > -1);
       });
       return event.compiled;
     },
 
-    addEvents: function(element, events){
+    addEvents: function (element, events) {
       for (var z in events) xtag.addEvent(element, z, events[z]);
     },
 
-    removeEvent: function(element, type, fn){
+    removeEvent: function (element, type, fn) {
       var event = xtag.parseEvent(type);
       event.onRemove.call(element, event, fn);
       xtag.removePseudos(element, event.type, fn);
-      xtag.toArray(event.base).forEach(function(name){
+      xtag.toArray(event.base).forEach(function (name) {
         element.removeEventListener(name, fn);
       });
     }
