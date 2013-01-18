@@ -461,6 +461,27 @@ describe("x-tag ", function () {
 
     });
 
+    it('attribute pseudo should set attribute', function (){
+
+      xtag.register('x-foo', {
+        accessors:{
+          foo:{
+            'set:attribute(foo)': function(value){
+
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      foo.foo = 'bar';
+      
+      expect(foo.getAttribute('foo')).toEqual('bar');
+
+    });
+
     it('x-tag pseudos should allow css pseudos', function (){
 
       var clickThis = null;
