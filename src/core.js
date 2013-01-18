@@ -109,16 +109,13 @@
     register: function (name, options) {
       var tag = xtag.merge({}, xtag.defaultOptions, options),
         extend = tag.extend ? xtag._createElement(tag.extend).__proto__ : null;
-
       
       tag = applyMixins(tag);
-// splitting on : will blow up when using css pseudo selectors  :first-child
 
       for (var z in tag.events) tag.events[z.split(':')[0]] = xtag.parseEvent(z, tag.events[z]);
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z]);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z]) };
       
-
       for (var prop in tag.accessors) {
         tag.prototype[prop] = {};
         var accessor = tag.accessors[prop];
@@ -212,14 +209,9 @@
         }
       },
       attribute: {
-        onAdd: function (pseudo) {
-          this.xtag.attributeSetters = this.xtag.attributeSetters || {};
-          pseudo.value = pseudo.value || pseudo.key.split(':')[0];
-          this.xtag.attributeSetters[pseudo.value] = pseudo.key.split(':')[0];
-        },
         listener: function (pseudo, fn, args) {
           fn.call(this, args[0]);
-          this.setAttribute(pseudo.value, args[0], true);
+          this.setAttribute(pseudo.value || pseudo.key.split(':')[0], args[0], true);
         }
       }
     },
@@ -326,7 +318,7 @@
   /*** Pseudos ***/
 
     applyPseudos: function (key, fn) {
-      var action = fn, onAdd = {};
+      var action = fn;
       if (key.match(':')) {
         var split = key.match(/(\w+(?:\([^\)]+\))?)/g);
         for (var i = split.length - 1; i > 0; i--) {
@@ -339,7 +331,6 @@
                 value: value
               };
             if (!pseudo) throw "pseudo not found: " + name;
-            if (pseudo.onAdd) onAdd[name] = split;
             action = function (e) {
               return pseudo.listener.apply(this, [
                 split,
@@ -348,9 +339,6 @@
               ]);
             };
           });
-        }
-        for (var z in onAdd) {
-          xtag.pseudos[z].onAdd.call(this, onAdd[z], action);
         }
       }
       return action;

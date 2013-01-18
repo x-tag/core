@@ -467,7 +467,6 @@ describe("x-tag ", function () {
         accessors:{
           foo:{
             'set:attribute(foo)': function(value){
-
             }
           }
         }
@@ -479,6 +478,26 @@ describe("x-tag ", function () {
       foo.foo = 'bar';
       
       expect(foo.getAttribute('foo')).toEqual('bar');
+
+    });
+
+    it('attribute(bar) pseudo should set bar attribute', function (){
+
+      xtag.register('x-foo', {
+        accessors:{
+          foo:{
+            'set:attribute(bar)': function(value){
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      foo.foo = 'bar';
+      
+      expect(foo.getAttribute('bar')).toEqual('bar');
 
     });
 
