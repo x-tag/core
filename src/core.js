@@ -84,6 +84,7 @@
             break;
         }
       }
+      tag.prototype.xtag.value.mixins[name] = mixin;
     });
     return tag;
   }

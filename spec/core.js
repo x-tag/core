@@ -269,7 +269,7 @@ describe("x-tag ", function () {
       expect(true).toEqual(onCreateFired);
     });
 
-    it("should create a mixin, fire onInsert", function (){
+    it("should create a mixin, fire inserted", function (){
       var onInsertFired = false;
       xtag.mixins.test = {
         lifecycle: {
@@ -288,13 +288,47 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return onInsertFired;
-      }, "new tag mixin onInsert should fire", 1000);
+      }, "new tag mixin inserted should fire", 1000);
 
       runs(function (){
         expect(true).toEqual(onInsertFired);
       });
+    });
 
+    it("should fire created on mixin and element", function (){
+      var createdFired1 = false,
+        createdFired2 = false;
 
+      xtag.mixins.test = {
+        lifecycle: {
+          'created': function (){
+            createdFired1 = true;
+          }
+        }
+      };
+
+      xtag.register('x-foo', {
+        mixins: ['test'],
+        lifecycle: {
+          created: function (){
+            // should this call be explicit
+            this.xtag.mixins.test.lifecycle.created.call(this);
+            createdFired2 = true;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      waitsFor(function (){
+        return createdFired1 && createdFired2;
+      }, "new tag mixin created should fire", 1000);
+
+      runs(function (){
+        expect(true).toEqual(createdFired1);
+        expect(true).toEqual(createdFired2);
+      });
     });
 
     it("should allow mixins to create getters", function (){
