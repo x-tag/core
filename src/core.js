@@ -249,6 +249,15 @@
       return source;
     },
 
+    skipTransition: function(element, fn, bind){
+      var duration = prefix.js + 'TransitionDuration';
+      element.style[duration] = '0.001s';
+      fn.call(bind);
+      xtag.addEvent(element, 'transitionend', function(){
+        element.style[duration] = '';
+      });
+    },
+
     // DOM
     matchSelector: function (element, selector) {
       return matchSelector.call(element, selector);
