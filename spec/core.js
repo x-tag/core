@@ -115,6 +115,29 @@ describe("x-tag ", function () {
       });
     });
 
+    it('should fire elementupgrade', function (){
+      var upgraded = false;
+      xtag.register('x-foo', {
+        events:{
+          'elementupgrade': function(e){
+            if(e.target == this){
+              upgraded = true;
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+      waitsFor(function (){
+        return upgraded;
+      }, "elementupgrade should fire", 1000);
+
+      runs(function (){
+        expect(upgraded).toEqual(true);
+      });
+    });
+
     it('should parse new tag as soon as it is registered', function (){
       var upgraded, foo = document.createElement('x-foo2');
       foo.addEventListener('elementreplace', function (event){

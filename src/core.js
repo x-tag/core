@@ -133,9 +133,9 @@
       }
 
       var created = tag.lifecycle.created;
-      if (created) tag.lifecycle.created = function () {
+      tag.lifecycle.created = function () {
         xtag.addEvents(this, tag.events);
-        return created.apply(this, xtag.toArray(arguments));
+        return created ? created.apply(this, xtag.toArray(arguments)) : null;
       };
       
       var proto = doc.register(name, {
