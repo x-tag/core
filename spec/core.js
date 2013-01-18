@@ -10,7 +10,7 @@ describe("x-tag ", function () {
     runs(function (){
       var register = document.createElement('script');
       register.type = 'text/javascript';
-      register.src = '../components/document.register/document.register.js?d=' + new Date().getTime();
+      register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
       document.getElementsByTagName('head')[0].appendChild(register);
       var script = document.createElement('script');
       script.type = 'text/javascript';
