@@ -82,6 +82,8 @@
           case 'accessors': case 'prototype':
             for (var z in mixin[type]) mergeMixin(z, mixin[type], tag.accessors);
             break;
+          case 'events':
+            break;
         }
       }
       tag.prototype.xtag.value.mixins[name] = mixin;
@@ -133,6 +135,9 @@
       var created = tag.lifecycle.created;
       tag.lifecycle.created = function () {
         xtag.addEvents(this, tag.events);
+        tag.mixins.forEach(function(mixin){
+          if (xtag.mixins[mixin].events) xtag.addEvents(this, xtag.mixins[mixin].events);
+        },this);
         return created ? created.apply(this, xtag.toArray(arguments)) : null;
       };
       

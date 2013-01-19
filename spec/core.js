@@ -94,6 +94,35 @@ describe("x-tag ", function () {
       });
     });
 
+
+    it('should fire CREATED when custom element is added within a parent to innerHTML', function (){
+      var created = false;
+      xtag.register('x-foo', {
+        lifecycle: {
+          created: function (){
+            created = true;
+          }
+        },
+        methods: {
+          bar: function (){
+            return true;
+          }
+        }
+      });
+
+      testBox.innerHTML = '<div><x-foo id="foo"></x-foo></div>';
+
+      waitsFor(function (){
+        return created;
+      }, "new tag lifecycle event {created} should fire", 1000);
+
+      runs(function (){
+        var fooElement = document.getElementById('foo');
+        expect(created).toEqual(true);
+        expect(fooElement.bar()).toEqual(true);
+      });
+    });
+
     it('should fire INSERTED when injected into the DOM', function (){
       var inserted = false;
       xtag.register('x-foo', {
@@ -369,6 +398,63 @@ describe("x-tag ", function () {
       foo.foo = 'barr';
 
       expect('barr').toEqual(foo.getAttribute('foo'));
+    });
+
+    it("should allow mixins to handle events", function (){
+      var mixinEvent = false;
+      xtag.mixins.test = {
+        events: {
+          'elementupgrade': function(e){
+            mixinEvent = true;
+          }
+        }
+      };
+
+      xtag.register('x-foo', {
+        mixins: ['test']
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      waitsFor(function (){
+        return mixinEvent;
+      }, "mixin event should fire", 1000);
+
+      runs(function (){
+        expect(true).toEqual(mixinEvent);        
+      });
+    });
+
+    it("should allow mixins to handle events", function (){
+      var mixinEvent = false, elementEvent = false;
+      xtag.mixins.test = {
+        events: {
+          'elementupgrade': function(e){
+            mixinEvent = true;
+          }
+        }
+      };
+
+      xtag.register('x-foo', {
+        mixins: ['test'],
+        events:{
+          'elementupgrade': function(e){
+            mixinEvent = true;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      waitsFor(function (){
+        return mixinEvent;
+      }, "mixin event should fire", 1000);
+
+      runs(function (){
+        expect(true).toEqual(mixinEvent);        
+      });
     });
 
     it('delegate event pseudo should pass the custom element as second param', function (){
