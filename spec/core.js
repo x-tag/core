@@ -26,7 +26,28 @@ describe("x-tag ", function () {
       expect(window.xtag).toBeDefined();
     });
   });
+  
+  it('all new element proto objects should be unique', function (){
+    var createdFired = false;
+    xtag.register('x-unique', {
+      lifecycle: {
+        created: function (){
+          createdFired = true;
+        }
+      }
+    });
 
+    var foo1 = document.createElement('x-unique');
+    var foo2 = document.createElement('x-unique');
+    
+    waitsFor(function (){
+      return createdFired;
+    }, "new tag lifecycle event CREATED should fire", 1000);
+    
+    runs(function (){
+      expect(foo1.xtag == foo2.xtag).toEqual(false);
+    });
+  });
 
   it('should fire lifecycle event CREATED when a new tag is created', function (){
     var createdFired = false;
@@ -48,8 +69,6 @@ describe("x-tag ", function () {
       expect(createdFired).toEqual(true);
     });
   });
-
-
 
   describe('using testbox', function (){
     var testBox;

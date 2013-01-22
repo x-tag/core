@@ -52,19 +52,15 @@
   
 /*** Internal Functions ***/
 
-  function mergeOne(source, key, current) {
+  // Mixins
+  
+  function mergeOne(source, key, current){
     var type = xtag.typeOf(current);
-    if (type == 'object') {
-      if (xtag.typeOf(source[key]) == 'object') xtag.merge(source[key], current);
-      else source[key] = xtag.merge({}, current);
-    }
-    else source[key] = current;
+    if (type == 'object' && xtag.typeOf(source[key]) == 'object') xtag.merge(source[key], current);
+    else source[key] = xtag.clone(current, type);
     return source;
   }
-
-
-  // Mixins
-
+  
   function mergeMixin(type, mixin, option) {
     var original = {};
     for (var o in option) original[o.split(':')[0]] = true;
@@ -95,7 +91,7 @@
 
   var xtag = {
     defaultOptions: {
-      extend: null,
+      'extends': null,
       mixins: [],
       events: {},
       methods: {},
@@ -110,11 +106,8 @@
       }
     },
     register: function (name, options) {
-      var tag = xtag.merge({}, xtag.defaultOptions, options),
-        extend = tag.extend ? xtag._createElement(tag.extend).__proto__ : null;
-      
+      var tag = xtag.merge({}, xtag.defaultOptions, options);
       tag = applyMixins(tag);
-
       for (var z in tag.events) tag.events[z.split(':')[0]] = xtag.parseEvent(z, tag.events[z]);
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z]);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z]) };
@@ -142,7 +135,8 @@
       };
       
       var proto = doc.register(name, {
-        'prototype': Object.create(extend || ((win.HTMLSpanElement || win.HTMLElement).prototype), tag.prototype),
+        'extends': tag['extends'],
+        'prototype': tag.prototype,
         'lifecycle':  tag.lifecycle
       });
 
@@ -225,11 +219,7 @@
   /*** Utilities ***/
 
     // JS Types
-
-    typeOf: function (obj) {
-      return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
-    },
-
+    
     wrap: function (original, fn) {
       return function () {
         var args = xtag.toArray(arguments),
@@ -237,10 +227,10 @@
         return returned === false ? false : fn.apply(this, typeof returned != 'undefined' ? xtag.toArray(returned) : args);
       };
     },
-
-    merge: function (source, k, v) {
+    
+    merge: function(source, k, v){
       if (xtag.typeOf(k) == 'string') return mergeOne(source, k, v);
-      for (var i = 1, l = arguments.length; i < l; i++) {
+      for (var i = 1, l = arguments.length; i < l; i++){
         var object = arguments[i];
         for (var key in object) mergeOne(source, key, object[key]);
       }
@@ -396,7 +386,9 @@
       });
     }
   };
-
+  
+  xtag.typeOf = doc.register.__polyfill__.typeOf;
+  xtag.clone = doc.register.__polyfill__.clone;
   xtag.merge(xtag, doc.register.__polyfill__);
 
   if (typeof define == 'function' && define.amd) define(xtag);
