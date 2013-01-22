@@ -360,7 +360,7 @@ describe("x-tag ", function () {
         lifecycle: {
           created: function (){
             // should this call be explicit
-            this.xtag.mixins.test.lifecycle.created.call(this);
+            xtag.mixins.test.lifecycle.created.call(this);
             createdFired2 = true;
           }
         }

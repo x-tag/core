@@ -82,7 +82,6 @@
             break;
         }
       }
-      tag.prototype.xtag.value.mixins[name] = mixin;
     });
     return tag;
   }
@@ -91,7 +90,6 @@
 
   var xtag = {
     defaultOptions: {
-      'extends': null,
       mixins: [],
       events: {},
       methods: {},
@@ -99,8 +97,11 @@
       lifecycle: {},
       'prototype': {
         xtag: {
-          value: {
-            mixins: {}
+          get: function(){
+            return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {} });
+          },
+          set: function(){
+            
           }
         }
       }
@@ -135,8 +136,7 @@
       };
       
       var proto = doc.register(name, {
-        'extends': tag['extends'],
-        'prototype': tag.prototype,
+        'prototype': 'nodeName' in tag.prototype ? tag.prototype : Object.create((win.HTMLSpanElement || win.HTMLElement).prototype, tag.prototype),
         'lifecycle':  tag.lifecycle
       });
 
