@@ -1,0 +1,29 @@
+
+x-growbox {
+	display: block;
+	height: auto;
+	width: auto;
+	overflow: hidden;
+	-webkit-transition: height ease 0.4s;
+	-moz-transition: height ease 0.4s;
+	-ms-transition: height ease 0.4s;
+	-o-transition: height ease 0.4s;
+	transition: height ease 0.4s;
+}
+
+.x-grow-wrap {
+	position: relative;
+	display: block;
+	overflow: hidden;
+}
+
+	.x-grow-overflow, .x-grow-underflow {
+		position: absolute;
+		top: 0;
+		left: -1px;
+		width: 1px;
+		height: 100%;
+		overflow: hidden;
+		visibility: hidden;
+		z-index: -1;
+	}

@@ -5,26 +5,21 @@
   var win = window,
     doc = document,
     keypseudo = {
-      listener: function (pseudo, fn, args) {
-        if (~pseudo.value.match(/(\d+)/g).indexOf(String(args[0].keyCode)) == (pseudo.name == 'keypass')) {
-          args.splice(args.length, 0, this);
-          fn.apply(this, args);
-        }
+      action: function (pseudo, event) {
+        return ~pseudo.value.match(/(\d+)/g).indexOf(String(event.keyCode)) == (pseudo.name == 'keypass');
       }
     },
-    touchFilter = function (pseudo, fn, args) {
-      if (fn.touched) fn.touched = false;
+    touchFilter = function (custom, event) {
+      if (custom.listener.touched) return custom.listener.touched = false;
       else {
-      if (args[0].type.match('touch')) fn.touched = true;
-      args.splice(args.length, 0, this);
-      fn.apply(this, args);
+        if (event.type.match('touch')) custom.listener.touched = true;
       }
     },
     createFlowEvent = function (type) {
       var flow = type == 'over';
       return {
         base: 'OverflowEvent' in window ? 'overflowchanged' : type + 'flow',
-        condition: function (event) {
+        condition: function (custom, event) {
           return event.type == (type + 'flow') ||
           ((event.orient === 0 && event.horizontalOverflow == flow) ||
           (event.orient == 1 && event.verticalOverflow == flow) ||
@@ -168,50 +163,50 @@
       },
       tap: {
         base: ['click', 'touchend'],
-        listener: touchFilter
+        condition: touchFilter
       },
       tapstart: {
         base: ['mousedown', 'touchstart'],
-        listener: touchFilter
+        condition: touchFilter
       },
       tapend: {
         base: ['mouseup', 'touchend'],
-        listener: touchFilter
+        condition: touchFilter
       },
       tapenter: {
         base: ['mouseover', 'touchenter'],
-        listener: touchFilter
+        condition: touchFilter
       },
       tapleave: {
         base: ['mouseout', 'touchleave'],
-        listener: touchFilter
+        condition: touchFilter
       },
       tapmove: {
         base: ['mousemove', 'touchmove'],
-        listener: touchFilter
+        condition: touchFilter
       }
     },
     pseudos: {
       keypass: keypseudo,
       keyfail: keypseudo,
       delegate: {
-        listener: function (pseudo, fn, args) {
+        action: function (pseudo, event) {
+          console.log(arguments);
           var target = xtag.query(this, pseudo.value).filter(function (node) {
-          return node == args[0].target ||
-            node.contains ? node.contains(args[0].target) : false;
+          return node == event.target ||
+            node.contains ? node.contains(event.target) : false;
           })[0];
-          return target ? fn.apply(target, args) : false;
+          return target ? pseudo.listener = pseudo.listener.bind(target) : false;
         }
       },
       preventable: {
-        listener: function (pseudo, fn, args) {
-          if (!args[0].defaultPrevented) fn.apply(this, args);
+        action: function (pseudo, event) {
+          return !event.defaultPrevented;
         }
       },
       attribute: {
-        listener: function (pseudo, fn, args) {
-          fn.call(this, args[0]);
-          this.setAttribute(pseudo.value || pseudo.key.split(':')[0], args[0], true);
+        action: function (pseudo, value) {
+          this.setAttribute(pseudo.value || pseudo.key.split(':')[0], value, true);
         }
       }
     },
@@ -314,30 +309,30 @@
   /*** Pseudos ***/
 
     applyPseudos: function (key, fn) {
-      var action = fn;
+      var listener = fn;
       if (key.match(':')) {
-        var split = key.match(/(\w+(?:\([^\)]+\))?)/g);
-        for (var i = split.length - 1; i > 0; i--) {
+        var split = key.match(/(\w+(?:\([^\)]+\))?)/g),
+            i = split.length;
+        while (--i) {
           split[i].replace(/(\w*)(?:\(([^\)]*)\))?/, function (match, name, value) {
-            var lastPseudo = action,
-              pseudo = xtag.pseudos[name],
-              split = {
-                key: key,
-                name: name,
-                value: value
-              };
+            var pseudo = xtag.pseudos[name];
             if (!pseudo) throw "pseudo not found: " + name;
-            action = function (e) {
-              return pseudo.listener.apply(this, [
-                split,
-                lastPseudo,
-                xtag.toArray(arguments)
-              ]);
+            var last = listener;
+            listener = function(){
+              var args = xtag.toArray(arguments),
+                  obj = {
+                    key: key,
+                    name: name,
+                    value: value,
+                    listener: last
+                  };
+              if (pseudo.action.apply(this, [obj].concat(args)) === false) return false;
+              return obj.listener.apply(this, args);
             };
           });
         }
       }
-      return action;
+      return listener;
     },
 
   /*** Events ***/
@@ -348,16 +343,16 @@
         event = xtag.merge({
           base: key,
           pseudos: '',
-          onAdd: function () {},
-          onRemove: function () {},
-          condition: function () {}
+          onAdd: function(){},
+          onRemove: function(){},
+          condition: function(){}
         }, xtag.customEvents[key] || {});
       event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
         var chained = xtag.applyPseudos(event.type, fn);
-        event.compiled = function () {
+        event.listener = function(){
           var args = xtag.toArray(arguments);
-          if (event.condition.apply(this, args) === false) return false;
+          if (event.condition.apply(this, [event].concat(args)) === false) return false;
           return chained.apply(this, args);
         };
       }
@@ -366,11 +361,11 @@
 
     addEvent: function (element, type, fn) {
       var event = typeof fn == 'function' ? xtag.parseEvent(type, fn) : fn;
-      event.onAdd.call(element, event, event.compiled);
+      event.onAdd.call(element, event, event.listener);
       xtag.toArray(event.base).forEach(function (name) {
-        element.addEventListener(name, event.compiled, xtag.captureEvents.indexOf(name) > -1);
+        element.addEventListener(name, event.listener, xtag.captureEvents.indexOf(name) > -1);
       });
-      return event.compiled;
+      return event.listener;
     },
 
     addEvents: function (element, events) {

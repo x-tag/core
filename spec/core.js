@@ -674,10 +674,9 @@ describe("x-tag ", function () {
         clickThis = null;
 
       xtag.pseudos.blah = {
-        listener: function (pseudo, fn, args){
+        action: function (pseudo, event){
           pseudoFired = true;
-          args[0].foo = this;
-          fn.apply(this, args);
+          event.foo = this;
         }
       };
 
