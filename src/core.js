@@ -191,7 +191,6 @@
       keyfail: keypseudo,
       delegate: {
         action: function (pseudo, event) {
-          console.log(arguments);
           var target = xtag.query(this, pseudo.value).filter(function (node) {
           return node == event.target ||
             node.contains ? node.contains(event.target) : false;
