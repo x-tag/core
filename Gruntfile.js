@@ -30,9 +30,27 @@ module.exports = function (grunt) {
       options: {
         jshintrc: '.jshintrc'
       }
+    },
+    concat: {
+      all:{
+        src:[
+          'components/document.register/src/document.register.js',
+          'src/core.js'
+        ],
+        dest: 'dist/x-tag-core.js'
+      }
+    },
+    uglify: {
+      all: {
+        files :{
+          'dist/x-tag-core.min.js': ['dist/x-tag-core.js']
+        }
+      }
     }
   });
 
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
@@ -42,5 +60,6 @@ module.exports = function (grunt) {
 
   // Default task.
   grunt.registerTask('default', ['test']);
+  grunt.registerTask('build', ['test','concat','uglify']);
 
 };

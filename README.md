@@ -25,12 +25,17 @@ To get started hacking on X-Tag:
     $ bower install  // installs component dependencies
 
 
-
-
 Tests
 
 	Jasmine tests via grunt are not working yet, please open
-	test/index.html to see if everything passes.
+	test/index.html in your browser to see if everything passes.
+
+
+Build
+	
+	$ grunt build
+
+	// See ./dist/ directory for the build library that can be used in your project
 
 
 
