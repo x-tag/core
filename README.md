@@ -19,7 +19,7 @@ To get started hacking on X-Tag:
     $ git clone https://github.com/x-tag/core x-tag-core
 
     $ cd x-tag-core
-    
+
     $ npm install   // for devDependencies
 
     $ npm install bower -g   //for X-Tag components dependencies
@@ -27,17 +27,17 @@ To get started hacking on X-Tag:
     $ bower install  // installs component dependencies
 
 
-Tests
+#### Tests
 
 	Jasmine tests via grunt are not working yet, please open
 	test/index.html in your browser to see if everything passes.
 
 
-Build
+#### Distributable Build
 	
 	$ grunt build
 
-	// See ./dist/ directory for the build library that can be used in your project
+	// See ./dist/ directory for the js files that can be used in your project
 
 
 
