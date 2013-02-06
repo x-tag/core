@@ -16,8 +16,10 @@ Developers
 
 To get started hacking on X-Tag:
 
-    $ git clone https://github.com/x-tag/core
+    $ git clone https://github.com/x-tag/core x-tag-core
 
+    $ cd x-tag-core
+    
     $ npm install   // for devDependencies
 
     $ npm install bower -g   //for X-Tag components dependencies
