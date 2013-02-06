@@ -17,7 +17,7 @@ module.exports = function (grunt) {
       src : '<%= meta.src %>',
       options : {
         specs : '<%= meta.specs %>',
-        vendor: ['<%= meta.components %>/document.register/document.register.js'],
+        vendor: ['components/document.register/src/document.register.js'],
         outfile: '_spec_results.html'
       }
     },
