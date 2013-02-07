@@ -6,7 +6,7 @@
     doc = document,
     keypseudo = {
       action: function (pseudo, event) {
-        return ~pseudo.value.match(/(\d+)/g).indexOf(String(event.keyCode)) == (pseudo.name == 'keypass');
+        return pseudo.value.match(/(\d+)/g).indexOf(String(event.keyCode))>-1 == (pseudo.name == 'keypass');
       }
     },
     touchFilter = function (custom, event) {
