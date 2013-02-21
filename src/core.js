@@ -6,7 +6,7 @@
     doc = document,
     keypseudo = {
       action: function (pseudo, event) {
-        return ~pseudo.value.match(/(\d+)/g).indexOf(String(event.keyCode)) == (pseudo.name == 'keypass');
+        return pseudo.value.match(/(\d+)/g).indexOf(String(event.keyCode)) > -1 == (pseudo.name == 'keypass');
       }
     },
     touchFilter = function (custom, event) {
@@ -84,7 +84,9 @@
 /*** X-Tag Object Definition ***/
 
   var xtag = {
+    tags: {},
     defaultOptions: {
+      pseudos: [],
       mixins: [],
       events: {},
       methods: {},
@@ -94,53 +96,64 @@
         xtag: {
           get: function(){
             return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {} });
-          },
-          set: function(){
-            
           }
         }
       }
     },
     register: function (name, options) {
-      var tag = xtag.merge({}, xtag.defaultOptions, options);
-      tag = applyMixins(tag);
-      for (var z in tag.events) tag.events[z.split(':')[0]] = xtag.parseEvent(z, tag.events[z]);
-      for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z]);
-      for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z]) };
+      var _name = name.toLowerCase();
+      var tag = xtag.tags[_name] = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
+      xtag.attributeSetters[_name] = {};
+      
+      for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
+      for (var z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos);
+      for (var z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos) };
       
       for (var prop in tag.accessors) {
         tag.prototype[prop] = {};
         var accessor = tag.accessors[prop];
-        for (z in accessor) {
+        for (var z in accessor) {
           var key = z.split(':'), type = key[0];
           if (type == 'get' || type == 'set') {
             key[0] = prop;
-            tag.prototype[prop][type] = xtag.applyPseudos(key.join(':'), accessor[z]);
+            tag.prototype[prop][type] = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
           }
           else tag.prototype[prop][z] = accessor[z];
         }
       }
+  
+      var attributeChanged = tag.lifecycle.attributeChanged;
+      tag.lifecycle.attributeChanged = function (attr, value, last, skip) {
+        var setter = xtag.attributeSetters[_name][attr.toLowerCase()];
+        if (!skip && setter) this[setter] = value;
+        return attributeChanged ? attributeChanged.apply(this, xtag.toArray(arguments)) : null;
+      };
 
       var created = tag.lifecycle.created;
       tag.lifecycle.created = function () {
+        var element = this;
+        tag.pseudos.forEach(function(obj){
+          obj.onAdd.call(element, obj);
+        });
         xtag.addEvents(this, tag.events);
         tag.mixins.forEach(function(mixin){
-          if (xtag.mixins[mixin].events) xtag.addEvents(this, xtag.mixins[mixin].events);
-        },this);
+          if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
+        });
         return created ? created.apply(this, xtag.toArray(arguments)) : null;
       };
       
-      var proto = doc.register(name, {
+      var proto = doc.register(_name, {
         'prototype': 'nodeName' in tag.prototype ? tag.prototype : Object.create((win.HTMLSpanElement || win.HTMLElement).prototype, tag.prototype),
         'lifecycle':  tag.lifecycle
       });
-
+      
       return proto;
     },
 
   /*** Exposed Variables ***/
     mixins: {},
     prefix: prefix,
+    attributeSetters: {},
     captureEvents: ['focus', 'blur'],
     customEvents: {
       overflow: createFlowEvent('over'),
@@ -192,8 +205,7 @@
       delegate: {
         action: function (pseudo, event) {
           var target = xtag.query(this, pseudo.value).filter(function (node) {
-          return node == event.target ||
-            node.contains ? node.contains(event.target) : false;
+            return node == event.target || node.contains ? node.contains(event.target) : false;
           })[0];
           return target ? pseudo.listener = pseudo.listener.bind(target) : false;
         }
@@ -204,6 +216,9 @@
         }
       },
       attribute: {
+        onAdd: function(pseudo){
+          xtag.attributeSetters[this.nodeName.toLowerCase()][pseudo.key.split(':')[0]] = pseudo.value;
+        },
         action: function (pseudo, value) {
           this.setAttribute(pseudo.value || pseudo.key.split(':')[0], value, true);
         }
@@ -240,7 +255,6 @@
       });
     },
 
-    // DOM
     matchSelector: function (element, selector) {
       return matchSelector.call(element, selector);
     },
@@ -307,8 +321,8 @@
 
   /*** Pseudos ***/
 
-    applyPseudos: function (key, fn) {
-      var listener = fn;
+    applyPseudos: function(key, fn, element) {
+      var last = { action: fn };
       if (key.match(':')) {
         var split = key.match(/(\w+(?:\([^\)]+\))?)/g),
             i = split.length;
@@ -316,39 +330,44 @@
           split[i].replace(/(\w*)(?:\(([^\)]*)\))?/, function (match, name, value) {
             var pseudo = xtag.pseudos[name];
             if (!pseudo) throw "pseudo not found: " + name;
-            var last = listener;
-            listener = function(){
-              var args = xtag.toArray(arguments),
-                  obj = {
-                    key: key,
-                    name: name,
-                    value: value,
-                    listener: last
-                  };
-              if (pseudo.action.apply(this, [obj].concat(args)) === false) return false;
-              return obj.listener.apply(this, args);
-            };
+            var obj = {
+                  key: key,
+                  name: name,
+                  value: value,
+                  onAdd: pseudo.onAdd,
+                  listener: last.action,
+                  action: function(){
+                    var args = xtag.toArray(arguments);
+                    var returned = pseudo.action.apply(this, [obj].concat(args));
+                    return (returned === false) ? false : obj.listener.apply(this, args);
+                  }
+                };
+            last.action = obj.action;
+            if (element && pseudo.onAdd) {
+              element.getAttribute ? pseudo.onAdd.call(element, obj) : element.push(obj);
+            }
           });
         }
       }
-      return listener;
+      return last.action;
     },
 
   /*** Events ***/
 
-    parseEvent: function (type, fn) {
+    parseEvent: function(type, fn) {
       var pseudos = type.split(':'),
-        key = pseudos.shift(),
-        event = xtag.merge({
-          base: key,
-          pseudos: '',
-          onAdd: function(){},
-          onRemove: function(){},
-          condition: function(){}
-        }, xtag.customEvents[key] || {});
+          key = pseudos.shift(),
+          event = xtag.merge({
+            base: key,
+            pseudos: '',
+            _pseudos: [],
+            onAdd: function(){},
+            onRemove: function(){},
+            condition: function(){}
+          }, xtag.customEvents[key] || {});
       event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
-        var chained = xtag.applyPseudos(event.type, fn);
+        var chained = xtag.applyPseudos(event.type, fn, event._pseudos);
         event.listener = function(){
           var args = xtag.toArray(arguments);
           if (event.condition.apply(this, [event].concat(args)) === false) return false;
@@ -359,7 +378,10 @@
     },
 
     addEvent: function (element, type, fn) {
-      var event = typeof fn == 'function' ? xtag.parseEvent(type, fn) : fn;
+      var event = (typeof fn == 'function') ? xtag.parseEvent(type, fn) : fn;
+      event._pseudos.forEach(function(obj){
+        obj.onAdd.call(element, obj);
+      });
       event.onAdd.call(element, event, event.listener);
       xtag.toArray(event.base).forEach(function (name) {
         element.addEventListener(name, event.listener, xtag.captureEvents.indexOf(name) > -1);
