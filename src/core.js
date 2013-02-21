@@ -18,7 +18,7 @@
     createFlowEvent = function (type) {
       var flow = type == 'over';
       return {
-        base: 'OverflowEvent' in window ? 'overflowchanged' : type + 'flow',
+        base: 'OverflowEvent' in win ? 'overflowchanged' : type + 'flow',
         condition: function (custom, event) {
           return event.type == (type + 'flow') ||
           ((event.orient === 0 && event.horizontalOverflow == flow) ||
@@ -356,15 +356,15 @@
 
     parseEvent: function(type, fn) {
       var pseudos = type.split(':'),
-          key = pseudos.shift(),
-          event = xtag.merge({
-            base: key,
-            pseudos: '',
-            _pseudos: [],
-            onAdd: function(){},
-            onRemove: function(){},
-            condition: function(){}
-          }, xtag.customEvents[key] || {});
+        noop = function(){},
+        key = pseudos.shift(),
+        event = xtag.merge({
+          base: key,
+          pseudos: '',
+          onAdd: noop,
+          onRemove: noop,
+          condition: noop
+        }, xtag.customEvents[key] || {});
       event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
         var chained = xtag.applyPseudos(event.type, fn, event._pseudos);
