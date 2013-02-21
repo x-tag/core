@@ -361,6 +361,7 @@
         event = xtag.merge({
           base: key,
           pseudos: '',
+          _pseudos: [],
           onAdd: noop,
           onRemove: noop,
           condition: noop
