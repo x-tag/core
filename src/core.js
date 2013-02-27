@@ -20,6 +20,7 @@
       return {
         base: 'OverflowEvent' in win ? 'overflowchanged' : type + 'flow',
         condition: function (custom, event) {
+          event.flow = type;
           return event.type == (type + 'flow') ||
           ((event.orient === 0 && event.horizontalOverflow == flow) ||
           (event.orient == 1 && event.verticalOverflow == flow) ||
@@ -303,7 +304,7 @@
         attr = '#' + guid + ' > ';
       selector = attr + (selector + '').replace(',', ',' + attr, 'g');
       var result = element.parentNode.querySelectorAll(selector);
-      if (!id) element.id = null;
+      if (!id) element.removeAttribute('id');
       return xtag.toArray(result);
     },
 
@@ -322,7 +323,7 @@
   /*** Pseudos ***/
 
     applyPseudos: function(key, fn, element) {
-      var last = { action: fn };
+      var listener = fn;
       if (key.match(':')) {
         var split = key.match(/(\w+(?:\([^\)]+\))?)/g),
             i = split.length;
@@ -330,26 +331,25 @@
           split[i].replace(/(\w*)(?:\(([^\)]*)\))?/, function (match, name, value) {
             var pseudo = xtag.pseudos[name];
             if (!pseudo) throw "pseudo not found: " + name;
-            var obj = {
-                  key: key,
-                  name: name,
-                  value: value,
-                  onAdd: pseudo.onAdd,
-                  listener: last.action,
-                  action: function(){
-                    var args = xtag.toArray(arguments);
-                    var returned = pseudo.action.apply(this, [obj].concat(args));
-                    return (returned === false) ? false : obj.listener.apply(this, args);
-                  }
-                };
-            last.action = obj.action;
+            var last = listener;
+            listener = function(){
+              var args = xtag.toArray(arguments),
+                  obj = {
+                    key: key,
+                    name: name,
+                    value: value,
+                    listener: last
+                  };
+              if (pseudo.action.apply(this, [obj].concat(args)) === false) return false;
+              return obj.listener.apply(this, args);
+            };
             if (element && pseudo.onAdd) {
-              element.getAttribute ? pseudo.onAdd.call(element, obj) : element.push(obj);
+              element.getAttribute ? pseudo.onAdd.call(element, pseudo) : element.push(pseudo);
             }
           });
         }
       }
-      return last.action;
+      return listener;
     },
 
   /*** Events ***/

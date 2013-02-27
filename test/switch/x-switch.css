@@ -1,11 +1,12 @@
 
 x-switch {
-	display: table;
+	display: inline-block;
 	position: relative;
-	cursor: default;
-	overflow: hidden;
 	border: 1px solid;
+	text-align: center;
 	font-family: monospace;
+	overflow: hidden;
+	cursor: pointer;
 }
 
 x-switch input {
@@ -22,39 +23,35 @@ x-switch input {
 	cursor: pointer;
 }
 
-x-switch > div,
-x-switch > div > div > div  {
+x-switch > div {
 	display: table;
-	position: relative;
-	width: 100%;
-	margin: 0;
-	border: 0;
-	padding: 0;
-	text-align: center;
-	border-collapse: collapse;
-}
-
-.x-switch-on,
-.x-switch-off,
-x-switch label {
-	display: table-cell;
-	vertical-align: middle;
-}
-
-.x-switch-on,
-.x-switch-off {
-	position: relative;
-	width: 50%;
 	overflow: hidden;
 }
 
-x-switch label {
-	width: 100%;
+x-switch > div > div {
+	display: table-cell;
+	width: 0;
+	vertical-align: middle;
+}
+
+.x-switch-text {
+	padding: 2px 4px; 
 	white-space: nowrap;
 }
 
-.x-switch-on-text:last-child,
-.x-switch-off-text:last-child {
+.x-switch-text:before,
+x-switch > div > .x-switch-knob:last-child .x-switch-text:last-child:after {
+	display: block;
+	content: attr(ontext);
+}
+
+.x-switch-text:after,
+x-switch > div > .x-switch-knob:last-child .x-switch-text:last-child:before {
+	display: block;
+	content: attr(offtext);
+}
+
+.x-switch-text:after {
 	height: 0 !important;
 	margin-top: 0 !important;
 	margin-bottom: 0 !important;
@@ -67,145 +64,54 @@ x-switch label {
 }
 
 .x-switch-knob {
-	overflow: hidden;
-	-webkit-transition: -webkit-transform 0.3s ease, background-color 0.3s ease;
-	-moz-transition: -moz-transform 0.3s ease, background-color 0.3s ease;
-	-ms-transition: -ms-transform 0.3s ease, background-color 0.3s ease;
-	-o-transition: -o-transform 0.3s ease, background-color 0.3s ease;
-	transition: transform 0.3s ease, background-color 0.3s ease;
+	display: table;
+	width: 20px;
+	height: 100%;
+	background: black;
 }
 
-x-switch > div > .x-switch-knob {
+x-switch > div > .x-switch-knob:last-child {
 	position: absolute;
 	top: 0;
 	left: 0;
-	bottom: 0;
-	width: 50%;
-	padding: 0;
-	background: #bbb;
+	-webkit-transition: -webkit-transform 0.3s ease, left 0.3s ease;
+	-moz-transition: -moz-transform 0.3s ease, left 0.3s ease;
+	-ms-transition: -ms-transform 0.3s ease, left 0.3s ease;
+	-o-transition: -o-transform 0.3s ease, left 0.3s ease;
+	transition: transform 0.3s ease, left 0.3s ease;
 }
 
-/*** Type: COVER  ***/
+x-switch > div > .x-switch-knob:last-child > div {
+	display: table;
+	position: absolute;
+	height: 100%;
+	left: 50%;
+	-webkit-transform: translate(-50%);
+	-moz-transform: translate(-50%);
+	-ms-transform: translate(-50%);
+	-o-transform: translate(-50%);
+	transform: translate(-50%);
+}
 
-	.x-switch-cover .x-switch-on {
-		-webkit-transform: translate(100%);
-		-moz-transform: translate(100%);
-		-ms-transform: translate(100%);
-		-o-transform: translate(100%);
-		transform: translate(100%);
-	}
+x-switch > div > .x-switch-knob:last-child > div > div {
+	display: table-cell;
+	height: 100%;
+	vertical-align: middle;
+}
 
-	.x-switch-cover .x-switch-off {
-		-webkit-transform: translate(-100%);
-		-moz-transform: translate(-100%);
-		-ms-transform: translate(-100%);
-		-o-transform: translate(-100%);
-		transform: translate(-100%);
-	}
+x-switch input:checked + div > .x-switch-knob:last-child {
+	left: 100%;
+	-webkit-transform: translate(-100%);
+	-moz-transform: translate(-100%);
+	-ms-transform: translate(-100%);
+	-o-transform: translate(-100%);
+	transform: translate(-100%);
+}
 
-	x-switch[state="off"] .x-switch-cover .x-switch-knob {
-		-webkit-transform: translate(0%);
-		-moz-transform: translate(0%);
-		-ms-transform: translate(0%);
-		-o-transform: translate(0%);
-		transform: translate(0%);
-	}
-
-	x-switch[state="on"] .x-switch-cover .x-switch-knob {
-		-webkit-transform: translate(100%);
-		-moz-transform: translate(100%);
-		-ms-transform: translate(100%);
-		-o-transform: translate(100%);
-		transform: translate(100%);
-	}
-
-	x-switch[state="on"] .x-switch-cover .x-switch-knob {
-		background: limegreen;
-	}
-
-	x-switch[state="off"] .x-switch-cover .x-switch-knob {
-		background: tomato;
-	}
-	
-
-/*** Type: SLIDER ***/
-
-	.x-switch-slider {
-		position: relative;
-		width: 200%;
-		left: -100%;
-		z-index: -1;
-		-webkit-transition: -webkit-transform 0.3s ease, left 0.3s ease;
-		-moz-transition: -moz-transform 0.3s ease, left 0.3s ease;
-		-ms-transition: -ms-transform 0.3s ease, left 0.3s ease;
-		-o-transition: -o-transform 0.3s ease, left 0.3s ease;
-		transition: transform 0.3s ease, left 0.3s ease;
-	}
-
-	.x-switch-slider > div .x-switch-knob {
-		-webkit-transition: width 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
-		-moz-transition: width 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
-		-ms-transition: width 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
-		-o-transition: width 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
-		transition: width 0.3s ease, margin 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
-	}
-	
-	.x-switch-slider > .x-switch-knob {
-		position: absolute;
-		left: 50%;
-		height: 100%;
-		z-index: 1;
-		-webkit-transform: translate(0%);
-		-moz-transform: translate(0%);
-		-ms-transform: translate(0%);
-		-o-transform: translate(0%);
-		transform: translate(0%);
-		-webkit-transition: -webkit-transform 0.3s ease, left 0.3s ease;
-		-moz-transition: -moz-transform 0.3s ease, left 0.3s ease;
-		-ms-transition: -ms-transform 0.3s ease, left 0.3s ease;
-		-o-transition: -o-transform 0.3s ease, left 0.3s ease;
-		transition: transform 0.3s ease, left 0.3s ease;
-	}
-	
-	x-switch[state="on"] .x-switch-slider {
-		left: 0%;
-	}
-	
-	x-switch[state="on"] .x-switch-slider > .x-switch-knob {
-		-webkit-transform: translate(-100%);
-		-moz-transform: translate(-100%);
-		-ms-transform: translate(-100%);
-		-o-transform: translate(-100%);
-		transform: translate(-100%);
-	}
-	
-	x-switch[state="on"] .x-switch-off .x-switch-knob,
-	x-switch[state="off"] .x-switch-on .x-switch-knob	{
-		width: 0;
-		margin-left: 0;
-		margin-right: 0;
-		padding-left: 0;
-		padding-right: 0;
-		border-left-width: 0;
-		border-right-width: 0;
-	}	
-	
-	x-switch[type="slider"]:not([rounded]),
-	x-switch[type="slider"][rounded="true"],
-	x-switch[type="slider"]:not([rounded]) .x-switch-rounded,
-	x-switch[type="slider"][rounded="true"]  .x-switch-rounded {
-		-webkit-border-radius: 1000px;
-		-moz-border-radius: 1000px;
-		-ms-border-radius: 1000px;
-		-o-border-radius: 1000px;
-		border-radius: 1000px;
-	}
-	
-	x-switch[type="slider"] .x-switch-on-background {
-		background: limegreen;
-	}
-	
-	x-switch[type="slider"] .x-switch-off-background {
-		background: tomato;
-	}
-	
+.x-switch-background {
+	background: -webkit-linear-gradient(left, limegreen 50%, tomato 50%);
+	background: -moz-linear-gradient(left, limegreen 50%, tomato 50%);
+	background: -ms-linear-gradient(left, limegreen 50%, tomato 50%);
+	background: -o-linear-gradient(left, limegreen 50%, tomato 50%);
+	background: linear-gradient(left, limegreen 50%, tomato 50%);
+}

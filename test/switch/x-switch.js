@@ -1,28 +1,17 @@
-
 (function(){
   
-  var types = ['cover', 'slider'],
-      template = '<div class="x-switch-cover x-switch-off-background">' +
-        '<div class="x-switch-knob x-switch-rounded"></div>' +
-        '<div class="x-switch-on x-switch-on-background x-switch-rounded">' +
-          '<div>' +
-            '<label>' +
-              '<div class="x-switch-on-text">On</div>' +
-              '<div class="x-switch-off-text">Off</div>' +
-            '</label>' +
-            '<div><div class="x-switch-knob x-switch-rounded"></div></div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="x-switch-off x-switch-off-background x-switch-rounded">' +
-          '<div>' +
-            '<div><div class="x-switch-knob x-switch-rounded"></div></div>' +
-            '<label>' +
-              '<div class="x-switch-off-text">Off</div>' +
-              '<div class="x-switch-on-text">On</div>' +
-            '</label>' +
-          '</div>' +
-        '</div>' +
-      '</div><input type="checkbox" />';
+  var template =  '<input type="checkbox" />' +
+  '<div>' +
+    '<div class="x-switch-text" ontext="ON" offtext="OFF"></div>' +
+    '<div><div class="x-switch-knob"><br/></div></div>' +
+    '<div class="x-switch-knob">' +
+      '<div class="x-switch-background">' +
+        '<div class="x-switch-text x-switch-on" ontext="ON" offtext="OFF"></div>' +
+        '<div><div class="x-switch-knob"><br/></div></div>' +
+        '<div class="x-switch-text x-switch-off" ontext="ON" offtext="OFF"></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
 
   function textSetter(state){
     var obj = {
@@ -31,8 +20,8 @@
       }
     };
     obj['set:attribute(' + state + 'text)'] = function(text){
-      xtag.query(this, '.x-switch-' + state + '-text').forEach(function(el){
-        el.textContent = text;
+      xtag.query(this, '[' + state + 'text]').forEach(function(el){
+        el.setAttribute(state + 'text', text);
       });
     }
     return obj;
@@ -42,44 +31,32 @@
     lifecycle: {
       created: function(){
         this.innerHTML = template;
-        this.type = this.type;
         this.onText = this.onText;
         this.offText = this.offText;
-        this.toggle(this.state || 'off');
+        this.checked = this.checked;
       }
     },
     methods: {
       toggle: function(state){
-        this.state = state || this.state == 'on' ? 'off' : 'on';
+        this.checked = typeof state == 'undefined' ? (this.checked ? false : true) : state;
       }
     },
     events:{
       'change': function(e){
         e.target.focus();
-        this.toggle();
+        this.checked = this.checked;
       }
     },
     accessors: {
       onText: textSetter('on'),
       offText: textSetter('off'),
-      type: {
+      checked: {
         get: function(){
-          return this.getAttribute('type') || 'cover';
-        },
-        set: function(type){
-          var _type = types.indexOf(type) > -1 ? type : 'cover';
-          this.setAttribute('type', _type);
-          this.firstElementChild.className = ('x-switch-' + _type);
-        } 
-      },
-      state: {
-        get: function(){
-          return this.getAttribute('state') || 'off';
+          return this.firstElementChild.checked;
         },
         'set:attribute': function(state){
-          state = state == 'on' ? 'on' : 'off';
-          this.setAttribute('state', state, true);
-          this.firstElementChild.className = 'x-switch-' + this.type + ' x-switch-' + (state == 'on' ? 'off' : 'on') + '-background';
+          this.firstElementChild.checked = state;
+          this.setAttribute('checked', this.firstElementChild.checked, true);
         } 
       },
     }
