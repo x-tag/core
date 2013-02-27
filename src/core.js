@@ -218,7 +218,8 @@
       },
       attribute: {
         onAdd: function(pseudo){
-          xtag.attributeSetters[this.nodeName.toLowerCase()][pseudo.key.split(':')[0]] = pseudo.value;
+          var key = (pseudo.value || pseudo.key.split(':')[0]).toLowerCase();
+          xtag.attributeSetters[this.nodeName.toLowerCase()][key] = pseudo.key.split(':')[0];
         },
         action: function (pseudo, value) {
           this.setAttribute(pseudo.value || pseudo.key.split(':')[0], value, true);
