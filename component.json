@@ -9,7 +9,7 @@
     "core",
     "x-tag"
   ],
-  "scripts": [
+  "main": [
     "src/core.js"
   ],
   "dependencies":{
