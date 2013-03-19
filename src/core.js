@@ -4,9 +4,12 @@
 
   var win = window,
     doc = document,
+    regexPseudoSplit = /(\w+(?:\([^\)]+\))?)/g,
+    regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
+    regexDigits = /(\d+)/g,
     keypseudo = {
       action: function (pseudo, event) {
-        return pseudo.value.match(/(\d+)/g).indexOf(String(event.keyCode)) > -1 == (pseudo.name == 'keypass');
+        return pseudo.value.match(regexDigits).indexOf(String(event.keyCode)) > -1 == (pseudo.name == 'keypass');
       }
     },
     touchFilter = function (custom, event) {
@@ -327,10 +330,10 @@
       var listener = fn,
           pseudos = {};
       if (key.match(':')) {
-        var split = key.match(/(\w+(?:\([^\)]+\))?)/g),
+        var split = key.match(regexPseudoSplit),
             i = split.length;
         while (--i) {
-          split[i].replace(/(\w*)(?:\(([^\)]*)\))?/, function (match, name, value) {
+          split[i].replace(regexPseudoReplace, function (match, name, value) {
             var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
                 pseudo.key = key;
                 pseudo.name = name;
@@ -355,7 +358,7 @@
         }
       }
       for (var z in pseudos) {
-        if (pseudos[z].onWrap) listener = pseudos[z].onWrap(listener, pseudos[z]);
+        if (pseudos[z].onCompiled) listener = pseudos[z].onCompiled(listener, pseudos[z]);
       }
       return listener;
     },
