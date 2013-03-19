@@ -324,13 +324,14 @@
   /*** Pseudos ***/
 
     applyPseudos: function(key, fn, element) {
-      var listener = fn;
+      var listener = fn,
+          pseudos = {};
       if (key.match(':')) {
         var split = key.match(/(\w+(?:\([^\)]+\))?)/g),
             i = split.length;
         while (--i) {
           split[i].replace(/(\w*)(?:\(([^\)]*)\))?/, function (match, name, value) {
-            var pseudo = xtag.pseudos[name];
+            var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
@@ -344,7 +345,7 @@
                     value: value,
                     listener: last
                   };
-              if (pseudo.action.apply(this, [obj].concat(args)) === false) return false;
+              if (pseudo.action && pseudo.action.apply(this, [obj].concat(args)) === false) return false;
               return obj.listener.apply(this, args);
             };
             if (element && pseudo.onAdd) {
@@ -352,6 +353,9 @@
             }
           });
         }
+      }
+      for (var z in pseudos) {
+        if (pseudos[z].onWrap) listener = pseudos[z].onWrap(listener, pseudos[z]);
       }
       return listener;
     },
@@ -395,7 +399,11 @@
     },
 
     addEvents: function (element, events) {
-      for (var z in events) xtag.addEvent(element, z, events[z]);
+      var listeners = {};
+      for (var z in events) {
+        listeners[z] = xtag.addEvent(element, z, events[z]);
+      }
+      return listeners;
     },
 
     removeEvent: function (element, type, fn) {
@@ -405,7 +413,12 @@
       xtag.toArray(event.base).forEach(function (name) {
         element.removeEventListener(name, fn);
       });
+    },
+    
+    removeEvents: function(element, listeners){
+      for (var z in listeners) xtag.removeEvent(element, z, listeners[z]);
     }
+    
   };
   
   xtag.typeOf = doc.register.__polyfill__.typeOf;
