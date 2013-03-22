@@ -259,6 +259,15 @@
         element.style[duration] = '';
       });
     },
+    
+    requestFrame: (function(){
+      var raf = win.requestAnimationFrame ||
+        win[prefix.lowercase + 'RequestAnimationFrame'] ||
+        function(fn){ return win.setTimeout(fn, 20) };
+      return function(fn){ 
+        return raf.call(win, fn);
+      }
+    })(),
 
     matchSelector: function (element, selector) {
       return matchSelector.call(element, selector);
