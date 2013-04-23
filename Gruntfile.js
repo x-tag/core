@@ -59,7 +59,7 @@ var googleCustomElements = [
           beautify: true
         },
         files:{
-          'dist/google.custom.elements.js': googleCustomElements
+          'lib/google.custom.elements.js': googleCustomElements
         }
       }
     }

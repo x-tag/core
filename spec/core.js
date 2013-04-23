@@ -11,7 +11,7 @@ describe("x-tag ", function () {
       var register = document.createElement('script');
       register.type = 'text/javascript';
       //register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
-      register.src = '../dist/google.custom.elements.js?d=' + new Date().getTime();
+      register.src = '../lib/google.custom.elements.js?d=' + new Date().getTime();
       document.getElementsByTagName('head')[0].appendChild(register);
       var script = document.createElement('script');
       script.type = 'text/javascript';
