@@ -47,12 +47,17 @@ var googleCustomElements = [
       }
     },
     uglify: {
-      all: {
+      core: {
         files :{
           'dist/x-tag-core.min.js': ['dist/x-tag-core.js']
         }
       },
       googleCustomElements: {
+        options: {
+          compress: false,
+          mangle: false,
+          beautify: true
+        },
         files:{
           'dist/google.custom.elements.js': googleCustomElements
         }
@@ -71,6 +76,7 @@ var googleCustomElements = [
 
   // Default task.
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('build', ['test','concat','uglify:googleCustomElements','uglify']);
+  grunt.registerTask('build', ['test','concat','uglify:core']);
+  grunt.registerTask('buildce', ['uglify:googleCustomElements']);
 
 };
