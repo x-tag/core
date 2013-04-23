@@ -1,6 +1,12 @@
 module.exports = function (grunt) {
   'use strict';
 
+var googleCustomElements = [
+    'lib/GoogleCustomElements/src/sidetable.js',
+    'lib/GoogleCustomElements/MutationObservers/MutationObserver.js',
+    'lib/GoogleCustomElements/src/CustomElements.js',
+    'lib/GoogleCustomElements/src/HTMLElementElement.js'
+  ];
   // Project configuration.
   grunt.initConfig({
     meta : {
@@ -45,6 +51,11 @@ module.exports = function (grunt) {
         files :{
           'dist/x-tag-core.min.js': ['dist/x-tag-core.js']
         }
+      },
+      googleCustomElements: {
+        files:{
+          'dist/google.custom.elements.js': googleCustomElements
+        }
       }
     }
   });
@@ -60,6 +71,6 @@ module.exports = function (grunt) {
 
   // Default task.
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('build', ['test','concat','uglify']);
+  grunt.registerTask('build', ['test','concat','uglify:googleCustomElements','uglify']);
 
 };

@@ -10,7 +10,8 @@ describe("x-tag ", function () {
     runs(function (){
       var register = document.createElement('script');
       register.type = 'text/javascript';
-      register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
+      //register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
+      register.src = '../dist/google.custom.elements.js?d=' + new Date().getTime();
       document.getElementsByTagName('head')[0].appendChild(register);
       var script = document.createElement('script');
       script.type = 'text/javascript';
@@ -26,7 +27,7 @@ describe("x-tag ", function () {
       expect(window.xtag).toBeDefined();
     });
   });
-  
+
   it('all new element proto objects should be unique', function (){
     var createdFired = false;
     xtag.register('x-unique', {
@@ -39,11 +40,11 @@ describe("x-tag ", function () {
 
     var foo1 = document.createElement('x-unique');
     var foo2 = document.createElement('x-unique');
-    
+
     waitsFor(function (){
       return createdFired;
     }, "new tag lifecycle event CREATED should fire", 1000);
-    
+
     runs(function (){
       expect(foo1.xtag == foo2.xtag).toEqual(false);
     });
@@ -262,7 +263,7 @@ describe("x-tag ", function () {
       xtag.register('x-foo', {
         accessors: {
           name: {
-            set: function (value){ 
+            set: function (value){
               this.setAttribute('name', value);
             }
           }
@@ -441,7 +442,7 @@ describe("x-tag ", function () {
       }, "mixin event should fire", 1000);
 
       runs(function (){
-        expect(true).toEqual(mixinEvent);        
+        expect(true).toEqual(mixinEvent);
       });
     });
 
@@ -472,7 +473,7 @@ describe("x-tag ", function () {
       }, "mixin event should fire", 1000);
 
       runs(function (){
-        expect(true).toEqual(mixinEvent);        
+        expect(true).toEqual(mixinEvent);
       });
     });
 
@@ -581,7 +582,7 @@ describe("x-tag ", function () {
           created: function (){
             this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
           }
-        },      
+        },
 
         events: {
           'click:delegate(div):delegate(bazz)': function (e, elem){
@@ -615,7 +616,7 @@ describe("x-tag ", function () {
       testbox.appendChild(foo);
 
       foo.foo = 'bar';
-      
+
       expect(foo.getAttribute('foo')).toEqual('bar');
 
     });
@@ -635,8 +636,69 @@ describe("x-tag ", function () {
       testbox.appendChild(foo);
 
       foo.foo = 'bar';
-      
+
       expect(foo.getAttribute('bar')).toEqual('bar');
+
+    });
+
+    it('attribute pseudo should set default attribute', function (){
+
+      xtag.register('x-foo', {
+        accessors:{
+          foo:{
+            'set:attribute': function(value){
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      foo.foo = 'bar';
+
+      expect(foo.getAttribute('foo')).toEqual('bar');
+
+    });
+
+    it('attribute() pseudo should set default attribute', function (){
+
+      xtag.register('x-foo', {
+        accessors:{
+          foo:{
+            'set:attribute()': function(value){
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      foo.foo = 'bar';
+
+      expect(foo.getAttribute('foo')).toEqual('bar');
+
+    });
+
+    it('attribute pseudo should set attribute when attribute already exists(chrome26 bug)', function (){
+
+      xtag.register('x-foo', {
+        accessors:{
+          foo:{
+            'set:attribute': function(value){
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      foo.setAttribute('foo', 'hello');
+      testbox.appendChild(foo);
+
+      foo.foo = 'bar';
+
+      expect(foo.getAttribute('foo')).toEqual('bar');
 
     });
 
@@ -738,11 +800,11 @@ describe("x-tag ", function () {
 
         xtag.addClass(body,'biz red');
 
-        expect('foo bar biz red').toEqual(body.getAttribute('class'));        
-        
+        expect('foo bar biz red').toEqual(body.getAttribute('class'));
+
         // prevent dups
         xtag.addClass(body,'foo red');
-        expect('foo bar biz red').toEqual(body.getAttribute('class'));        
+        expect('foo bar biz red').toEqual(body.getAttribute('class'));
 
       });
 
