@@ -33,14 +33,13 @@
     },
     prefix = (function () {
       var styles = win.getComputedStyle(doc.documentElement, ''),
-        pre = (Array.prototype.slice
-          .call(styles)
-          .join('') 
-          .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
-        )[1],
-        dom = ('WebKit|Moz|MS|O').match(new RegExp('(' + pre + ')', 'i'))[1];
+          pre = (Array.prototype.slice
+            .call(styles)
+            .join('') 
+            .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
+          )[1];
       return {
-        dom: dom,
+        dom: pre == 'ms' ? pre.toUpperCase() : pre,
         lowercase: pre,
         css: '-' + pre + '-',
         js: pre[0].toUpperCase() + pre.substr(1)
@@ -127,31 +126,38 @@
       }
   
       var attributeChanged = tag.lifecycle.attributeChanged;
-      tag.lifecycle.attributeChanged = function (attr, value, last, skip) {
-        var setter = xtag.attributeSetters[_name][attr.toLowerCase()];
-        if (!skip && setter) this[setter] = value;
-        return attributeChanged ? attributeChanged.apply(this, xtag.toArray(arguments)) : null;
-      };
+      tag.prototype.attributeChangedCallback = {
+        value: function(attr, value, last, skip){
+          var setter = xtag.attributeSetters[_name][attr.toLowerCase()];
+          if (!skip && setter) this[setter] = value;
+          return attributeChanged ? attributeChanged.apply(this, xtag.toArray(arguments)) : null;
+        }
+       };
 
-      var created = tag.lifecycle.created;
-      tag.lifecycle.created = function () {
-        var element = this;
-        tag.pseudos.forEach(function(obj){
-          obj.onAdd.call(element, obj);
-        });
-        xtag.addEvents(this, tag.events);
-        tag.mixins.forEach(function(mixin){
-          if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
-        });
-        return created ? created.apply(this, xtag.toArray(arguments)) : null;
+      var ready = tag.lifecycle.created || tag.lifecycle.ready;
+      tag.prototype.readyCallback = {
+        value: function(){
+          var element = this;
+          tag.pseudos.forEach(function(obj){
+            obj.onAdd.call(element, obj);
+          });
+          xtag.addEvents(this, tag.events);
+          tag.mixins.forEach(function(mixin){
+            if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
+          });
+          return ready ? ready.apply(this, xtag.toArray(arguments)) : null;
+        }
       };
       
-      var proto = doc.register(_name, {
-        'prototype': 'nodeName' in tag.prototype ? tag.prototype : Object.create((win.HTMLSpanElement || win.HTMLElement).prototype, tag.prototype),
-        'lifecycle':  tag.lifecycle
+      if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted };
+      if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed };
+      
+      var constructor = doc.register(_name, {
+        'extends': options.extends,
+        'prototype': Object.create((options.extends ? document.createElement(options.extends).constructor : win.HTMLElement).prototype, tag.prototype)
       });
       
-      return proto;
+      return constructor;
     },
 
   /*** Exposed Variables ***/

@@ -163,44 +163,19 @@ describe("x-tag ", function () {
       });
     });
 
-    it('should fire elementupgrade', function (){
-      var upgraded = false;
-      xtag.register('x-foo', {
-        events:{
-          'elementupgrade': function(e){
-            if(e.target == this){
-              upgraded = true;
-            }
-          }
+    it('should parse new tag as soon as it is registered', function (){
+      var foo = document.createElement('x-foo2');
+     
+      testbox.appendChild(foo);
+      
+      xtag.register('x-foo2', {
+        methods: {
+          bar: function(){ return 'baz' }
         }
       });
-
-      var foo = document.createElement('x-foo');
-      testbox.appendChild(foo);
-      waitsFor(function (){
-        return upgraded;
-      }, "elementupgrade should fire", 1000);
-
+      
       runs(function (){
-        expect(upgraded).toEqual(true);
-      });
-    });
-
-    it('should parse new tag as soon as it is registered', function (){
-      var upgraded, foo = document.createElement('x-foo2');
-      foo.addEventListener('elementreplace', function (event){
-        upgraded = event.upgrade;
-      }, false);
-      testbox.appendChild(foo);
-
-      xtag.register('x-foo2');
-
-      waitsFor(function (){
-        return upgraded;
-      }, "tag should be upgraded and replaced", 1000);
-
-      runs(function (){
-        expect(upgraded).toBeDefined();
+        expect(foo.bar()).toEqual('baz');
       });
     });
 
@@ -421,9 +396,10 @@ describe("x-tag ", function () {
 
     it("should allow mixins to handle events", function (){
       var mixinEvent = false;
+      
       xtag.mixins.test = {
         events: {
-          'elementupgrade': function(e){
+          'click': function(e){
             mixinEvent = true;
           }
         }
@@ -435,44 +411,11 @@ describe("x-tag ", function () {
 
       var foo = document.createElement('x-foo');
       testbox.appendChild(foo);
-
-      waitsFor(function (){
-        return mixinEvent;
-      }, "mixin event should fire", 1000);
-
+      
+      xtag.fireEvent(foo, 'click');
+      
       runs(function (){
-        expect(true).toEqual(mixinEvent);        
-      });
-    });
-
-    it("should allow mixins to handle events", function (){
-      var mixinEvent = false, elementEvent = false;
-      xtag.mixins.test = {
-        events: {
-          'elementupgrade': function(e){
-            mixinEvent = true;
-          }
-        }
-      };
-
-      xtag.register('x-foo', {
-        mixins: ['test'],
-        events:{
-          'elementupgrade': function(e){
-            mixinEvent = true;
-          }
-        }
-      });
-
-      var foo = document.createElement('x-foo');
-      testbox.appendChild(foo);
-
-      waitsFor(function (){
-        return mixinEvent;
-      }, "mixin event should fire", 1000);
-
-      runs(function (){
-        expect(true).toEqual(mixinEvent);        
+        expect(mixinEvent).toEqual(true);        
       });
     });
 
