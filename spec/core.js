@@ -562,7 +562,6 @@ describe("x-tag ", function () {
 
       var foo = document.createElement('x-foo');
       testbox.appendChild(foo);
-
       foo.foo = 'bar';
       
       expect(foo.getAttribute('foo')).toEqual('bar');
