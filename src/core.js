@@ -84,6 +84,45 @@
     return tag;
   }
   
+  function setAttributeNode(element, attr){
+    if (!attr.node || !attr.node.parentNode) attr.node = attr.property ? element.xtag[attr.property] : attr.selector ? element.querySelector(attr.selector) : element;
+  }
+  
+  function parseAccessor(tag, prop){
+    tag.prototype[prop] = {};
+    var accessor = tag.accessors[prop],
+        attr = accessor.attribute,
+        name = attr && attr.name ? attr.name.toLowerCase() : prop;
+    if (attr) tag.attributes[name] = prop;
+    for (var z in accessor) {
+      var key = z.split(':'), type = key[0];
+      if (type == 'get') {
+        key[0] = prop;
+        tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
+      }
+      else if (type == 'set') {
+        key[0] = prop;
+        tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
+          this.setAttribute(name, value, true);
+          if (attr.node && attr.node != this) attr.node.setAttribute(name, value);
+          accessor[z].call(this, value);
+        } : accessor[z], tag.pseudos);
+      }
+      else tag.prototype[prop][z] = accessor[z];
+    }
+    if (attr) {
+      if (!accessor.get) tag.prototype[prop].get = function(){
+        setAttributeNode(this, attr);
+        return attr.node.getAttribute(name);
+      }
+      if (!accessor.set) tag.prototype[prop].set = function(value){
+        setAttributeNode(this, attr);
+        this.setAttribute(name, value, true);
+        if (attr.node && attr.node != this) attr.node.setAttribute(name, value);
+      }
+    }
+  }
+  
 /*** X-Tag Object Definition ***/
 
   var xtag = {
@@ -95,6 +134,7 @@
       methods: {},
       accessors: {},
       lifecycle: {},
+      attributes: {},
       'prototype': {
         xtag: {
           get: function(){
@@ -106,46 +146,37 @@
     register: function (name, options) {
       var _name = name.toLowerCase();
       var tag = xtag.tags[_name] = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
-      xtag.attributeSetters[_name] = {};
       
       for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
       for (var z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos);
       for (var z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos) };
+      for (var prop in tag.accessors) parseAccessor(tag, prop);
       
-      for (var prop in tag.accessors) {
-        tag.prototype[prop] = {};
-        var accessor = tag.accessors[prop];
-        for (var z in accessor) {
-          var key = z.split(':'), type = key[0];
-          if (type == 'get' || type == 'set') {
-            key[0] = prop;
-            tag.prototype[prop][type] = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
-          }
-          else tag.prototype[prop][z] = accessor[z];
-        }
-      }
-  
       var attributeChanged = tag.lifecycle.attributeChanged;
       tag.prototype.attributeChangedCallback = {
         value: function(attr, value, last, skip){
-          var setter = xtag.attributeSetters[_name][attr.toLowerCase()];
+          var setter = tag.attributes[attr.toLowerCase()];
           if (!skip && setter) this[setter] = value;
           return attributeChanged ? attributeChanged.apply(this, xtag.toArray(arguments)) : null;
         }
-       };
+      };
 
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.readyCallback = {
         value: function(){
-          var element = this;
-          tag.pseudos.forEach(function(obj){
-            obj.onAdd.call(element, obj);
-          });
+          var element = this; 
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
           });
-          return ready ? ready.apply(this, xtag.toArray(arguments)) : null;
+          var output = ready ? ready.apply(this, xtag.toArray(arguments)) : null;
+          for (var attr in tag.attributes) {
+            if (this.hasAttribute(attr)) this[tag.attributes[attr]] = this.getAttribute(attr);
+          }
+          tag.pseudos.forEach(function(obj){
+            obj.onAdd.call(element, obj);
+          });
+          return output;
         }
       };
       
@@ -163,7 +194,6 @@
   /*** Exposed Variables ***/
     mixins: {},
     prefix: prefix,
-    attributeSetters: {},
     captureEvents: ['focus', 'blur'],
     customEvents: {
       overflow: createFlowEvent('over'),
@@ -224,15 +254,6 @@
         action: function (pseudo, event) {
           return !event.defaultPrevented;
         }
-      },
-      attribute: {
-        onAdd: function(pseudo){
-          var key = (pseudo.value || pseudo.key.split(':')[0]).toLowerCase();
-          xtag.attributeSetters[this.nodeName.toLowerCase()][key] = pseudo.key.split(':')[0];
-        },
-        action: function (pseudo, value) {
-          this.setAttribute(pseudo.value || pseudo.key.split(':')[0], value, true);
-        }
       }
     },
 
@@ -279,14 +300,18 @@
       return matchSelector.call(element, selector);
     },
     
-    innerHTML: function (element, html) {
-      element.innerHTML = html;
+    set: function (element, method, value) {
+      element[method] = value;
       if (xtag._polyfilled) {
         if (xtag.observerElement._observer) {
-          xtag.parseMutations(xtag.observerElement, xtag.observerElement._observer.takeRecords());
+          xtag._parseMutations(xtag.observerElement, xtag.observerElement._observer.takeRecords());
         }
-        else xtag._inserted(element);
+        else xtag._insertChildren(element);
       }
+    },
+    
+    innerHTML: function(el, html){
+      xtag.set(el, 'innerHTML', html);
     },
 
     hasClass: function (element, klass) {
@@ -309,10 +334,12 @@
       }).join(' ');
       return element;
     },
+    
     toggleClass: function (element, klass) {
       return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
 
     },
+    
     query: function (element, selector) {
       return xtag.toArray(element.querySelectorAll(selector));
     },

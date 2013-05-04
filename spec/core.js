@@ -1,29 +1,34 @@
 
 describe("x-tag ", function () {
 
-  it('should load x-tag and fire DOMComponentsLoaded', function (){
-    var componentsLoaded = false;
+  it('should load x-tag.js and fire DOMComponentsLoaded', function (){
+    
+    var DOMComponentsLoaded = false;
     document.addEventListener('DOMComponentsLoaded', function (){
-      componentsLoaded = true;
+      DOMComponentsLoaded = true;
     });
-
-    runs(function (){
-      var register = document.createElement('script');
-      register.type = 'text/javascript';
-      register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
-      document.getElementsByTagName('head')[0].appendChild(register);
+    
+    var xtagLoaded = false;
+    var register = document.createElement('script');
+    register.type = 'text/javascript';
+    register.onload = function(){
       var script = document.createElement('script');
       script.type = 'text/javascript';
-      script.src = '../src/core.js?d=' + new Date().getTime();
+      script.onload = function(){
+        xtagLoaded = true;
+      }
       document.getElementsByTagName('head')[0].appendChild(script);
-    });
-
-    waitsFor(function () {
-      return componentsLoaded || window.xtag;
-    }, "The document should be loaded", 1000);
+      script.src = '../src/core.js?d=' + new Date().getTime();
+    }
+    document.getElementsByTagName('head')[0].appendChild(register);
+    register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime(); 
+    
+    waitsFor(function(){
+      return xtagLoaded && DOMComponentsLoaded && xtag;
+    }, "document.register should be polyfilled", 1000);  
 
     runs(function () {
-      expect(window.xtag).toBeDefined();
+      expect(xtag).toBeDefined();
     });
   });
   
@@ -71,18 +76,18 @@ describe("x-tag ", function () {
   });
 
   describe('using testbox', function (){
-    var testBox;
+    var testbox;
 
     beforeEach(function (){
-      testBox = document.getElementById('testbox');
+      testbox = document.getElementById('testbox');
     });
 
     afterEach(function (){
-      testBox.innerHTML = "";
+      testbox.innerHTML = "";
     });
 
     it('testbox should exist', function (){
-      expect(testBox).toBeDefined();
+      expect(testbox).toBeDefined();
     });
 
     it('should fire CREATED when tag is added to innerHTML', function (){
@@ -100,7 +105,7 @@ describe("x-tag ", function () {
         }
       });
 
-      testBox.innerHTML = '<x-foo id="foo"></x-foo>';
+      xtag.set(testbox, 'innerHTML', '<x-foo id="foo"></x-foo>');
 
       waitsFor(function (){
         return created;
@@ -116,20 +121,24 @@ describe("x-tag ", function () {
 
     it('should fire CREATED when custom element is added within a parent to innerHTML', function (){
       var created = false;
+      
       xtag.register('x-foo', {
         lifecycle: {
-          created: function (){
+          created: function(){
             created = true;
           }
         },
         methods: {
           bar: function (){
             return true;
+          },
+          zoo: function(){
+            return true;
           }
         }
       });
 
-      testBox.innerHTML = '<div><x-foo id="foo"></x-foo></div>';
+      xtag.set(testbox, 'innerHTML', '<div><x-foo id="foo" class="zoo"></x-foo></div>');
 
       waitsFor(function (){
         return created;
@@ -543,14 +552,11 @@ describe("x-tag ", function () {
 
     });
 
-    it('attribute pseudo should set attribute', function (){
+    it('setter foo should setAttribute foo on target', function (){
 
       xtag.register('x-foo', {
         accessors:{
-          foo:{
-            'set:attribute(foo)': function(value){
-            }
-          }
+          foo: { attribute: {} }
         }
       });
 
@@ -563,14 +569,11 @@ describe("x-tag ", function () {
 
     });
 
-    it('attribute(bar) pseudo should set bar attribute', function (){
+    it('setter foo should setAttribute bar on target', function (){
 
       xtag.register('x-foo', {
         accessors:{
-          foo:{
-            'set:attribute(bar)': function(value){
-            }
-          }
+          foo: { attribute: { name: 'bar' } }
         }
       });
 
