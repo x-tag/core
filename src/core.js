@@ -94,17 +94,19 @@
       tag.attributes[name] = attr;
       tag.attributes[name].setter = prop;
       var setter = function(value){
-        if (!attr.node || !attr.node.parentNode) {
-          attr.node = attr.property ? this.xtag[attr.property] : attr.selector ? this.querySelector(attr.selector) : this;
+        var node = this.xtag.node;
+        if (!node || !node.parentNode) {
+          node = this.xtag.node = attr.property ? this.xtag[attr.property] : attr.selector ? this.querySelector(attr.selector) : this;
         }
-        var method = 'setAttribute';
+        var method = 'setAttribute',
+            value = value == null ? '' : value;
         if (attr.boolean) {
           if (!value) method = 'removeAttribute';
           value = '';
         }
         this[method](name, value, true);
-        if (attr.node != this) attr.node[method](name, value, true);
-      }
+        if (node && node != this) node[method](name, value, true);
+      };
     }
     
     for (var z in accessor) {
