@@ -94,9 +94,9 @@
       tag.attributes[name] = attr;
       tag.attributes[name].setter = prop;
       var setter = function(value){
-        var node = this.xtag.node;
+        var node = this.xtag.attributeNodes[name];
         if (!node || !node.parentNode) {
-          node = this.xtag.node = attr.property ? this.xtag[attr.property] : attr.selector ? this.querySelector(attr.selector) : this;
+          node = this.xtag.attributeNodes[name] = attr.property ? this.xtag[attr.property] : attr.selector ? this.querySelector(attr.selector) : this;
         }
         var method = 'setAttribute',
             value = value == null ? '' : value;
@@ -152,7 +152,7 @@
       'prototype': {
         xtag: {
           get: function(){
-            return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {} });
+            return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {}, attributeNodes: {} });
           }
         }
       }
