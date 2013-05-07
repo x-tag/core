@@ -84,6 +84,22 @@
     return tag;
   }
   
+  function attachProperties(tag, prop, z, accessor, attr, setter){
+    var key = z.split(':'), type = key[0];
+    if (type == 'get') {
+      key[0] = prop;
+      tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
+    }
+    else if (type == 'set') {
+      key[0] = prop;
+      tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
+        setter.call(this, value);
+        accessor[z].call(this, value);
+      } : accessor[z], tag.pseudos);
+    }
+    else tag.prototype[prop][z] = accessor[z];
+  }
+  
   function parseAccessor(tag, prop){
     tag.prototype[prop] = {};
     var accessor = tag.accessors[prop],
@@ -98,32 +114,16 @@
         if (!node || !node.parentNode) {
           node = this.xtag.attributeNodes[name] = attr.property ? this.xtag[attr.property] : attr.selector ? this.querySelector(attr.selector) : this;
         }
-        var method = 'setAttribute',
-            value = value == null ? '' : value;
-        if (attr.boolean) {
-          if (!value) method = 'removeAttribute';
-          value = '';
+        var method = (attr.boolean && (value === false || value == null)) ? 'removeAttribute' : 'setAttribute';
+        if (method == 'removeAttribute' || value != this.xtag.attributeValue) {
+          var val = attr.boolean ? '' : value;
+          this[method](name, val);
+          if (node && node != this) node[method](name, val);
         }
-        this[method](name, value, true);
-        if (node && node != this) node[method](name, value, true);
       };
     }
     
-    for (var z in accessor) {
-      var key = z.split(':'), type = key[0];
-      if (type == 'get') {
-        key[0] = prop;
-        tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
-      }
-      else if (type == 'set') {
-        key[0] = prop;
-        tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
-          setter.call(this, value);
-          accessor[z].call(this, value);
-        } : accessor[z], tag.pseudos);
-      }
-      else tag.prototype[prop][z] = accessor[z];
-    }
+    for (var z in accessor) attachProperties(tag, prop, z, accessor, attr, setter);
     
     if (attr) {
       if (!tag.prototype[prop].get) {
@@ -168,10 +168,11 @@
       
       var attributeChanged = tag.lifecycle.attributeChanged;
       tag.prototype.attributeChangedCallback = {
-        value: function(attr, value, last, skip){
+        value: function(attr, last){
           var obj = tag.attributes[attr.toLowerCase()] || {};
-          if (!skip && obj.setter) this[obj.setter] = value;
-          return attributeChanged ? attributeChanged.apply(this, xtag.toArray(arguments)) : null;
+          this.xtag.attributeValue = last;
+          if (obj.setter) this[obj.setter] = this.getAttribute(attr);
+          return attributeChanged ? attributeChanged.call(this, attr, last) : null;
         }
       };
 
