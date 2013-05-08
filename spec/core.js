@@ -2,24 +2,24 @@
 
 
 describe("x-tag ", function () {
-  
+
   var usingGoogle = window.location.hash.match('usegoogle');
-  
+
   it('should load x-tag.js and fire DOMComponentsLoaded', function (){
-    
+
     var DOMComponentsLoaded = false;
     document.addEventListener('DOMComponentsLoaded', function (){
       DOMComponentsLoaded = true;
     });
-    
+
     document.addEventListener('WebComponentsReady', function (){
       DOMComponentsLoaded = true;
     });
-    
+
     var xtagLoaded = false,
         head = document.querySelector('head'),
         register = document.createElement('script');
-        
+
     register.type = 'text/javascript';
     register.onload = function(){
       var script = document.createElement('script');
@@ -30,35 +30,35 @@ describe("x-tag ", function () {
           CustomElements.parser.parse(document);
           DOMComponentsLoaded = true;
         }
-      }
+      };
       head.appendChild(script);
       script.src = '../src/core.js?d=' + new Date().getTime();
-    }
-    
+    };
+
     if (usingGoogle) {
       var google = document.createElement('script');
       google.type = 'text/javascript';
       google.onload = function(){
         head.appendChild(register);
-        register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime(); 
-      }
+        register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
+      };
       head.appendChild(google);
-      google.src = '../components/google-polyfill.js?d=' + new Date().getTime(); 
+      google.src = '../components/google-polyfill.js?d=' + new Date().getTime();
     }
     else {
       head.appendChild(register);
-      register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime(); 
+      register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
     }
-    
+
     waitsFor(function(){
       return xtagLoaded && DOMComponentsLoaded && xtag;
-    }, "document.register should be polyfilled", 1000);  
+    }, "document.register should be polyfilled", 1000);
 
     runs(function () {
       expect(xtag).toBeDefined();
     });
   });
-  
+
   it('all new element proto objects should be unique', function (){
     var createdFired = false;
     xtag.register('x-unique', {
@@ -71,11 +71,11 @@ describe("x-tag ", function () {
 
     var foo1 = document.createElement('x-unique');
     var foo2 = document.createElement('x-unique');
-    
+
     waitsFor(function (){
       return createdFired;
     }, "new tag lifecycle event CREATED should fire", 1000);
-    
+
     runs(function (){
       expect(foo1.xtag == foo2.xtag).toEqual(false);
     });
@@ -148,7 +148,7 @@ describe("x-tag ", function () {
 
     it('should fire CREATED when custom element is added within a parent to innerHTML', function (){
       var created = false;
-      
+
       xtag.register('x-foo', {
         lifecycle: {
           created: function(){
@@ -201,15 +201,15 @@ describe("x-tag ", function () {
 
     if (!usingGoogle) it('should parse new tag as soon as it is registered', function (){
       var foo = document.createElement('x-foo2');
-     
+
       testbox.appendChild(foo);
-      
+
       xtag.register('x-foo2', {
         methods: {
-          bar: function(){ return 'baz' }
+          bar: function(){ return 'baz'; }
         }
       });
-      
+
       runs(function (){
         expect(foo.bar()).toEqual('baz');
       });
@@ -273,7 +273,7 @@ describe("x-tag ", function () {
       xtag.register('x-foo', {
         accessors: {
           name: {
-            set: function (value){ 
+            set: function (value){
               this.setAttribute('name', value);
             }
           }
@@ -432,7 +432,7 @@ describe("x-tag ", function () {
 
     it("should allow mixins to handle events", function (){
       var mixinEvent = false;
-      
+
       xtag.mixins.test = {
         events: {
           'click': function(e){
@@ -447,11 +447,11 @@ describe("x-tag ", function () {
 
       var foo = document.createElement('x-foo');
       testbox.appendChild(foo);
-      
+
       xtag.fireEvent(foo, 'click');
-      
+
       runs(function (){
-        expect(mixinEvent).toEqual(true);        
+        expect(mixinEvent).toEqual(true);
       });
     });
 
@@ -560,7 +560,7 @@ describe("x-tag ", function () {
           created: function (){
             this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
           }
-        },      
+        },
 
         events: {
           'click:delegate(div):delegate(bazz)': function (e, elem){
@@ -590,7 +590,7 @@ describe("x-tag ", function () {
       var foo = document.createElement('x-foo');
       testbox.appendChild(foo);
       foo.foo = 'bar';
-      
+
       expect(foo.getAttribute('foo')).toEqual('bar');
 
     });
@@ -607,7 +607,7 @@ describe("x-tag ", function () {
       testbox.appendChild(foo);
 
       foo.foo = 'bar';
-      
+
       expect(foo.getAttribute('bar')).toEqual('bar');
 
     });
@@ -710,11 +710,11 @@ describe("x-tag ", function () {
 
         xtag.addClass(body,'biz red');
 
-        expect('foo bar biz red').toEqual(body.getAttribute('class'));        
-        
+        expect('foo bar biz red').toEqual(body.getAttribute('class'));
+
         // prevent dups
         xtag.addClass(body,'foo red');
-        expect('foo bar biz red').toEqual(body.getAttribute('class'));        
+        expect('foo bar biz red').toEqual(body.getAttribute('class'));
 
       });
 
