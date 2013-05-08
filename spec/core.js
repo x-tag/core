@@ -1,6 +1,10 @@
 
-describe("x-tag ", function () {
 
+
+describe("x-tag ", function () {
+  
+  var usingGoogle = window.location.hash.match('usegoogle');
+  
   it('should load x-tag.js and fire DOMComponentsLoaded', function (){
     
     var DOMComponentsLoaded = false;
@@ -8,20 +12,43 @@ describe("x-tag ", function () {
       DOMComponentsLoaded = true;
     });
     
-    var xtagLoaded = false;
-    var register = document.createElement('script');
+    document.addEventListener('WebComponentsReady', function (){
+      DOMComponentsLoaded = true;
+    });
+    
+    var xtagLoaded = false,
+        head = document.querySelector('head'),
+        register = document.createElement('script');
+        
     register.type = 'text/javascript';
     register.onload = function(){
       var script = document.createElement('script');
       script.type = 'text/javascript';
       script.onload = function(){
         xtagLoaded = true;
+        if (window.CustomElements) {
+          CustomElements.parser.parse(document);
+          DOMComponentsLoaded = true;
+        }
       }
-      document.getElementsByTagName('head')[0].appendChild(script);
+      head.appendChild(script);
       script.src = '../src/core.js?d=' + new Date().getTime();
     }
-    document.getElementsByTagName('head')[0].appendChild(register);
-    register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime(); 
+    
+    if (usingGoogle) {
+      var google = document.createElement('script');
+      google.type = 'text/javascript';
+      google.onload = function(){
+        head.appendChild(register);
+        register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime(); 
+      }
+      head.appendChild(google);
+      google.src = '../components/google-polyfill.js?d=' + new Date().getTime(); 
+    }
+    else {
+      head.appendChild(register);
+      register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime(); 
+    }
     
     waitsFor(function(){
       return xtagLoaded && DOMComponentsLoaded && xtag;
@@ -172,7 +199,7 @@ describe("x-tag ", function () {
       });
     });
 
-    it('should parse new tag as soon as it is registered', function (){
+    if (!usingGoogle) it('should parse new tag as soon as it is registered', function (){
       var foo = document.createElement('x-foo2');
      
       testbox.appendChild(foo);
