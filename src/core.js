@@ -4,6 +4,7 @@
 
   var win = window,
     doc = document,
+    noop = function(){},
     regexPseudoSplit = /(\w+(?:\([^\)]+\))?)/g,
     regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
     regexDigits = /(\d+)/g,
@@ -294,10 +295,14 @@
     skipTransition: function(element, fn, bind){
       var duration = prefix.js + 'TransitionDuration';
       element.style[duration] = '0.001s';
-      fn.call(bind);
-      xtag.addEvent(element, 'transitionend', function(){
+      element.style.transitionDuration = '0.001s';
+      if (fn) fn.call(bind);
+      var callback = function(){
         element.style[duration] = '';
-      });
+        element.style.transitionDuration = '';
+        xtag.removeEvent(element, 'transitionend', callback);
+      };
+      xtag.addEvent(element, 'transitionend', callback);
     },
 
     requestFrame: (function(){
@@ -426,7 +431,6 @@
 
     parseEvent: function(type, fn) {
       var pseudos = type.split(':'),
-        noop = function(){},
         key = pseudos.shift(),
         event = xtag.merge({
           base: key,
