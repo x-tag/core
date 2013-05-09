@@ -427,6 +427,12 @@
       return listener;
     },
 
+    removePseudos: function(element, event){
+      event._pseudos.forEach(function(obj){
+        obj.onRemove.call(element, obj);
+      });
+    },
+
   /*** Events ***/
 
     parseEvent: function(type, fn) {
@@ -454,6 +460,7 @@
 
     addEvent: function (element, type, fn) {
       var event = (typeof fn == 'function') ? xtag.parseEvent(type, fn) : fn;
+      event.listener.event = event;
       event._pseudos.forEach(function(obj){
         obj.onAdd.call(element, obj);
       });
@@ -473,9 +480,9 @@
     },
 
     removeEvent: function (element, type, fn) {
-      var event = xtag.parseEvent(type);
+      var event = fn.event;
       event.onRemove.call(element, event, fn);
-      xtag.removePseudos(element, event.type, fn);
+      xtag.removePseudos(element, event);
       xtag.toArray(event.base).forEach(function (name) {
         element.removeEventListener(name, fn);
       });
