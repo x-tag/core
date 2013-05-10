@@ -296,13 +296,13 @@
       var duration = prefix.js + 'TransitionDuration';
       element.style[duration] = '0.001s';
       element.style.transitionDuration = '0.001s';
-      if (fn) fn.call(bind);
-      var callback = function(){
-        element.style[duration] = '';
-        element.style.transitionDuration = '';
-        xtag.removeEvent(element, 'transitionend', callback);
-      };
-      xtag.addEvent(element, 'transitionend', callback);
+      xtag.requestFrame(function(){
+        if (fn) fn.call(bind);
+        xtag.requestFrame(function(){
+          element.style[duration] = '';
+          element.style.transitionDuration = '';
+        });
+      });
     },
 
     requestFrame: (function(){
