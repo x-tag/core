@@ -371,8 +371,9 @@
       if (content) {
         var div = frag.appendChild(doc.createElement('div')),
           nodes = xtag.toArray(content.nodeName ? arguments : !(div.innerHTML = content) || div.children),
-          index = nodes.length;
-        while (index--) frag.insertBefore(nodes[index], div);
+          length = nodes.length,
+          index = 0;
+        while (index < length) frag.insertBefore(nodes[index++], div);
         frag.removeChild(div);
       }
       return frag;
