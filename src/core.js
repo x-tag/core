@@ -297,10 +297,12 @@
       element.style[duration] = '0.001s';
       element.style.transitionDuration = '0.001s';
       xtag.requestFrame(function(){
-        if (fn) fn.call(bind);
+        var callback;
+        if (fn) callback = fn.call(bind);
         xtag.requestFrame(function(){
           element.style[duration] = '';
           element.style.transitionDuration = '';
+          if (callback) xtag.requestFrame(callback);
         });
       });
     },
