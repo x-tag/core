@@ -43,7 +43,7 @@ describe("x-tag ", function () {
         register.src = '../components/document.register/src/document.register.js?d=' + new Date().getTime();
       };
       head.appendChild(google);
-      google.src = '../lib/google-polyfill.js?d=' + new Date().getTime();
+      google.src = '../lib/platform.basic.js?d=' + new Date().getTime();
     }
     else {
       head.appendChild(register);
