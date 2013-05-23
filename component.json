@@ -10,9 +10,7 @@
     "x-tag"
   ],
   "main": [
+    "lib/platform.basic.js",
     "src/core.js"
-  ],
-  "dependencies":{
-    "document.register":"*"
-  }
+  ]
 }

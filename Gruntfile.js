@@ -1,6 +1,25 @@
 module.exports = function (grunt) {
   'use strict';
 
+  // Polymer Platform custom biuld
+  var polyfillFiles = [
+   'lib/platform.bootstrap.js',
+   'lib/PolymerPlatform/CustomElements/src/sidetable.js',
+   'lib/PolymerPlatform/lib/patches-shadowdom-native.js',
+   'lib/PolymerPlatform/lib/lang.js',
+   'lib/PolymerPlatform/lib/dom.js',
+   'lib/PolymerPlatform/lib/template.js',
+   'lib/PolymerPlatform/HTMLImports/src/HTMLImports.js',
+   'lib/PolymerPlatform/CustomElements/MutationObservers/MutationObserver.js',
+   'lib/PolymerPlatform/CustomElements/src/MutationObserver.js',
+   'lib/PolymerPlatform/CustomElements/src/CustomElements.js',
+   'lib/PolymerPlatform/CustomElements/src/Observer.js',
+   'lib/PolymerPlatform/CustomElements/src/HTMLElementElement.js',
+   'lib/PolymerPlatform/CustomElements/src/Parser.js',
+   'lib/PolymerPlatform/CustomElements/src/boot.js',
+   'lib/PolymerPlatform/lib/patches-custom-elements.js'
+  ];
+
   // Project configuration.
   grunt.initConfig({
     meta : {
@@ -32,12 +51,16 @@ module.exports = function (grunt) {
       }
     },
     concat: {
-      all:{
+      core:{
         src:[
-          'components/document.register/src/document.register.js',
+          'lib/web-components-polyfill.js',
           'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'
+      },
+      platform: {
+        src: polyfillFiles,
+        dest: 'lib/web-components-polyfill.js'
       }
     },
     uglify: {
@@ -60,6 +83,7 @@ module.exports = function (grunt) {
 
   // Default task.
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('build', ['test','concat','uglify']);
+  grunt.registerTask('platform', ['concat:platform']);
+  grunt.registerTask('build', ['test','concat:core','uglify']);
 
 };
