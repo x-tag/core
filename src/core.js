@@ -38,7 +38,7 @@
   function typeOf(obj) {
     return typeObj.toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
   }
-  
+
   function clone(item, type){
     var fn = clone[type || typeOf(item)];
     return fn ? fn(item) : item;
@@ -53,20 +53,20 @@
       while (i--) array[i] = clone(src[i]);
       return array;
     };
-  
+
   var unsliceable = ['number', 'boolean', 'string', 'function'];
   function toArray(obj){
-    return unsliceable.indexOf(typeOf(obj)) == -1 ? 
+    return unsliceable.indexOf(typeOf(obj)) == -1 ?
     Array.prototype.slice.call(obj, 0) :
     [obj];
   }
-  
+
 // DOM
   var str = '';
   function query(element, selector){
     return (selector || str).length ? toArray(element.querySelectorAll(selector)) : [];
   }
-  
+
   function parseMutations(element, mutations) {
     var diff = { added: [], removed: [] };
     mutations.forEach(function(record){
@@ -117,9 +117,9 @@
     });
     return tag;
   }
-  
+
 // Accessors
-  
+
   function attachProperties(tag, prop, z, accessor, attr, sync){
     var key = z.split(':'), type = key[0];
     if (type == 'get') {
@@ -135,7 +135,7 @@
     }
     else tag.prototype[prop][z] = accessor[z];
   }
-  
+
   function parseAccessor(tag, prop){
     tag.prototype[prop] = {};
     var accessor = tag.accessors[prop],
@@ -193,10 +193,10 @@
         (event.orient == 2 && event.horizontalOverflow == flow && event.verticalOverflow == flow));
       }
     };
-  } 
+  }
 
 /*** X-Tag Object Definition ***/
-  
+
   var xtag = {
     tags: {},
     defaultOptions: {
@@ -230,7 +230,7 @@
           var element = this,
               setAttr = this.setAttribute,
               removeAttr = this.removeAttribute;
-          
+
           Object.defineProperties(this, {
             setAttribute: {
               value: function (name, value, skip){
@@ -248,18 +248,18 @@
               }
             }
           });
-          
+
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
           });
-          
+
           var output = ready ? ready.apply(this, toArray(arguments)) : null;
-          
+
           tag.pseudos.forEach(function(obj){
             obj.onAdd.call(element, obj);
           });
-          
+
           return output;
         }
       };
@@ -267,17 +267,17 @@
       if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted };
       if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged };
-      
+
       var constructor = doc.register(_name, {
         'extends': options['extends'],
         'prototype': Object.create((options['extends'] ? document.createElement(options['extends']).constructor : win.HTMLElement).prototype, tag.prototype)
       });
-      
+
       return constructor;
     },
 
     /* Exposed Variables */
-    
+
     mixins: {},
     prefix: prefix,
     captureEvents: ['focus', 'blur'],
@@ -344,11 +344,11 @@
     },
 
     /* UTILITIES */
-    
+
     clone: clone,
     typeOf: typeOf,
     toArray: toArray,
-    
+
     wrap: function (original, fn) {
       return function () {
         var args = toArray(arguments),
@@ -365,11 +365,11 @@
       }
       return source;
     },
-    
+
     /* DOM */
-    
+
     query: query,
-    
+
     skipTransition: function(element, fn, bind){
       var duration = prefix.js + 'TransitionDuration';
       element.style[duration] = '0.001s';
@@ -455,7 +455,7 @@
       }
       return frag;
     },
-    
+
     manipulate: function(element, fn){
       var next = element.nextSibling,
         parent = element.parentNode,
@@ -572,7 +572,7 @@
     removeEvents: function(element, listeners){
       for (var z in listeners) xtag.removeEvent(element, z, listeners[z]);
     },
-    
+
     fireEvent: function(element, type, data, options){
       options = options || {};
       var event = doc.createEvent('Event');
@@ -580,7 +580,7 @@
       for (var z in data) event[z] = data[z];
       element.dispatchEvent(event);
     },
-    
+
     addObserver: function(element, type, fn){
       if (!element._records) {
         element._records = { inserted: [], removed: [] };
@@ -606,7 +606,7 @@
       }
       if (element._records[type].indexOf(fn) == -1) element._records[type].push(fn);
     },
-    
+
     removeObserver: function(element, type, fn){
       var obj = element._records;
       if (obj && fn){
@@ -615,7 +615,7 @@
       else{
         obj[type] = [];
       }
-    },
+    }
 
   };
 

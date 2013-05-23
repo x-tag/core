@@ -3,7 +3,7 @@ module.exports = function (grunt) {
 
   // Polymer Platform custom biuld
   var polyfillFiles = [
-   'lib/platform.bootstrap.js',
+   'lib/platform-bootstrap.js',
    'lib/PolymerPlatform/CustomElements/src/sidetable.js',
    'lib/PolymerPlatform/lib/patches-shadowdom-native.js',
    'lib/PolymerPlatform/lib/lang.js',

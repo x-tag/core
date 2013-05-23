@@ -10,7 +10,7 @@
     "x-tag"
   ],
   "main": [
-    "lib/platform.basic.js",
+    "lib/web-components-polyfill.js",
     "src/core.js"
   ]
 }
