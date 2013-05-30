@@ -38,7 +38,7 @@
   function typeOf(obj) {
     return typeObj.toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
   }
-  
+
   function clone(item, type){
     var fn = clone[type || typeOf(item)];
     return fn ? fn(item) : item;
@@ -53,20 +53,20 @@
       while (i--) array[i] = clone(src[i]);
       return array;
     };
-  
+
   var unsliceable = ['number', 'boolean', 'string', 'function'];
   function toArray(obj){
-    return unsliceable.indexOf(typeOf(obj)) == -1 ? 
+    return unsliceable.indexOf(typeOf(obj)) == -1 ?
     Array.prototype.slice.call(obj, 0) :
     [obj];
   }
-  
+
 // DOM
   var str = '';
   function query(element, selector){
     return (selector || str).length ? toArray(element.querySelectorAll(selector)) : [];
   }
-  
+
   function parseMutations(element, mutations) {
     var diff = { added: [], removed: [] };
     mutations.forEach(function(record){
@@ -117,60 +117,6 @@
     });
     return tag;
   }
-  
-// Accessors
-  
-  function attachProperties(tag, prop, z, accessor, attr, sync){
-    var key = z.split(':'), type = key[0];
-    if (type == 'get') {
-      key[0] = prop;
-      tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
-    }
-    else if (type == 'set') {
-      key[0] = prop;
-      tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
-        sync.call(this, value);
-        accessor[z].call(this, value);
-      } : accessor[z], tag.pseudos);
-    }
-    else tag.prototype[prop][z] = accessor[z];
-  }
-  
-  function parseAccessor(tag, prop){
-    tag.prototype[prop] = {};
-    var accessor = tag.accessors[prop],
-        attr = accessor.attribute,
-        name = attr && attr.name ? attr.name.toLowerCase() : prop,
-        sync = null;
-
-    if (attr) {
-      tag.attributes[name] = attr;
-      tag.attributes[name].setter = prop;
-      sync = function(value){
-        var node = this.xtag.attributeNodes[name];
-        if (!node || (node != this && !node.parentNode)) {
-          node = this.xtag.attributeNodes[name] = attr.property ? this.xtag[attr.property] : attr.selector ? this.querySelector(attr.selector) : this;
-        }
-        var val = attr.boolean ? '' : value,
-            method = (attr.boolean && (value === false || value === null)) ? 'removeAttribute' : value === null ? 'removeAttribute' : 'setAttribute';
-        if (value != (attr.boolean ? this.hasAttribute(name) : this.getAttribute(name))) this[method](name, val, true);
-        if (node && node != this && (value != (attr.boolean ? node.hasAttribute(name) : node.getAttribute(name)))) node[method](name, val, true);
-      };
-    }
-
-    for (var z in accessor) attachProperties(tag, prop, z, accessor, attr, sync);
-
-    if (attr) {
-      if (!tag.prototype[prop].get) {
-        var method = (attr.boolean ? 'has' : 'get') + 'Attribute';
-        tag.prototype[prop].get = function(){
-          return this[method](name);
-        };
-      }
-      if (!tag.prototype[prop].set) tag.prototype[prop].set = sync;
-    }
-
-  }
 
 // Events
 
@@ -193,10 +139,85 @@
         (event.orient == 2 && event.horizontalOverflow == flow && event.verticalOverflow == flow));
       }
     };
-  } 
+  }
+  
+// Accessors
+  
+  function getArgs(attr, value){
+    return {
+      value: attr.boolean ? '' : value,
+      method: attr.boolean && (value === false || value === null) ? 'removeAttribute' : 'setAttribute'
+    }
+  }
+  
+  function setAttr(attr, name, value, skip){
+    var args = getArgs(attr, value);
+    this[args.method](name, args.value, skip);
+  }
+  
+  function syncAttr(attr, name, value){
+    var args = getArgs(attr, value),
+        nodes = attr.property ? [this.xtag[attr.property]] : attr.selector ? xtag.query(this, attr.selector) : [],
+        index = nodes.length;
+    while (index--) nodes[index][args.method](name, args.value);
+  }
+  
+  function wrapAttr(con, tag, method){
+    var original = con.prototype[method];
+    con.prototype[method] = function (name, value, skip){
+      var attr = tag.attributes[name.toLowerCase()];
+      original.call(this, name, attr && attr.boolean ? '' : value);
+      if (attr) {
+        syncAttr.call(this, attr, name, value);
+        if (!skip && !attr.skip) {
+          attr.setter.call(this, attr.boolean ? method == 'setAttribute' : this.getAttribute(name));
+        }
+      }
+    }
+  }
+  
+  function attachProperties(tag, prop, z, accessor, attr, name){
+    var key = z.split(':'), type = key[0];
+    if (type == 'get') {
+      key[0] = prop;
+      tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
+    }
+    else if (type == 'set') {
+      key[0] = prop;
+      if (attr) attr.setter = accessor[z];
+      tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value, skip){
+        if (!skip && !attr.skip) setAttr.call(this, attr, name, value, true);
+        syncAttr.call(this, attr, name, value);
+        accessor[z].call(this, value);
+      } : accessor[z], tag.pseudos);
+    }
+    else tag.prototype[prop][z] = accessor[z];
+  }
+
+  function parseAccessor(tag, prop){
+    tag.prototype[prop] = {};
+    var accessor = tag.accessors[prop],
+        attr = accessor.attribute,
+        name = attr && attr.name ? attr.name.toLowerCase() : prop;
+
+    if (attr) tag.attributes[name] = attr;
+    for (var z in accessor) attachProperties(tag, prop, z, accessor, attr, name);
+
+    if (attr) {
+      if (!tag.prototype[prop].get) {
+        var method = (attr.boolean ? 'has' : 'get') + 'Attribute';
+        tag.prototype[prop].get = function(){
+          return this[method](name);
+        };
+      }
+      if (!tag.prototype[prop].set) tag.prototype[prop].set = function(value){
+        setAttr.call(this, attr, name, value, true);
+      };
+    }
+  }
 
 /*** X-Tag Object Definition ***/
-  
+
   var xtag = {
     tags: {},
     defaultOptions: {
@@ -210,7 +231,7 @@
       'prototype': {
         xtag: {
           get: function(){
-            return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {}, attributeNodes: {} });
+            return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {} });
           }
         }
       }
@@ -222,62 +243,48 @@
       for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos) };
-      for (var prop in tag.accessors) parseAccessor(tag, prop);
-
+      for (z in tag.accessors) parseAccessor(tag, z);
+      
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.readyCallback = {
         value: function(){
-          var element = this,
-              setAttr = this.setAttribute,
-              removeAttr = this.removeAttribute;
-          
-          Object.defineProperties(this, {
-            setAttribute: {
-              value: function (name, value, skip){
-                var attr = tag.attributes[name.toLowerCase()],
-                    val = attr && attr.boolean ? '' : value;
-                setAttr.call(this, name, val);
-                if (attr && !skip) this[attr.setter] = attr.boolean ? this.hasAttribute(name) : this.getAttribute(name);
-              }
-            },
-            removeAttribute: {
-              value: function (name, value, skip){
-                var attr = tag.attributes[name.toLowerCase()];
-                removeAttr.call(this, name);
-                if (attr && !skip) this[attr.setter] = attr.boolean ? false : null;
-              }
-            }
-          });
-          
+          var element = this;
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
           });
-          
           var output = ready ? ready.apply(this, toArray(arguments)) : null;
-          
+          for (var name in tag.attributes) {
+            var attr = tag.attributes[name],
+                hasAttr = this.hasAttribute(name),
+                value = attr.boolean ? hasAttr : this.getAttribute(name);
+            syncAttr.call(this, attr, name, value);
+            if (attr.setter && (attr.boolean ? true : value !== null)) attr.setter.call(this, value, true);
+          }
           tag.pseudos.forEach(function(obj){
             obj.onAdd.call(element, obj);
           });
-          
           return output;
         }
       };
-
+      
       if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted };
       if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged };
-      
+
       var constructor = doc.register(_name, {
         'extends': options['extends'],
         'prototype': Object.create((options['extends'] ? document.createElement(options['extends']).constructor : win.HTMLElement).prototype, tag.prototype)
       });
+
+      wrapAttr(constructor, tag, 'setAttribute');
+      wrapAttr(constructor, tag, 'removeAttribute');
       
       return constructor;
     },
 
     /* Exposed Variables */
-    
+
     mixins: {},
     prefix: prefix,
     captureEvents: ['focus', 'blur'],
@@ -344,13 +351,13 @@
     },
 
     /* UTILITIES */
-    
+
     clone: clone,
     typeOf: typeOf,
     toArray: toArray,
-    
+
     wrap: function (original, fn) {
-      return function () {
+      return function(){
         var args = toArray(arguments),
           returned = original.apply(this, args);
         return returned === false ? false : fn.apply(this, typeof returned != 'undefined' ? toArray(returned) : args);
@@ -365,11 +372,11 @@
       }
       return source;
     },
-    
+
     /* DOM */
-    
+
     query: query,
-    
+
     skipTransition: function(element, fn, bind){
       var duration = prefix.js + 'TransitionDuration';
       element.style[duration] = '0.001s';
@@ -455,7 +462,7 @@
       }
       return frag;
     },
-    
+
     manipulate: function(element, fn){
       var next = element.nextSibling,
         parent = element.parentNode,
@@ -572,7 +579,7 @@
     removeEvents: function(element, listeners){
       for (var z in listeners) xtag.removeEvent(element, z, listeners[z]);
     },
-    
+
     fireEvent: function(element, type, data, options){
       options = options || {};
       var event = doc.createEvent('Event');
@@ -580,7 +587,7 @@
       for (var z in data) event[z] = data[z];
       element.dispatchEvent(event);
     },
-    
+
     addObserver: function(element, type, fn){
       if (!element._records) {
         element._records = { inserted: [], removed: [] };
@@ -606,7 +613,7 @@
       }
       if (element._records[type].indexOf(fn) == -1) element._records[type].push(fn);
     },
-    
+
     removeObserver: function(element, type, fn){
       var obj = element._records;
       if (obj && fn){
@@ -615,11 +622,15 @@
       else{
         obj[type] = [];
       }
-    },
+    }
 
   };
 
   if (typeof define == 'function' && define.amd) define(xtag);
   else win.xtag = xtag;
+
+  doc.addEventListener('WebComponentsReady', function(){
+    xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
+  });
 
 })();

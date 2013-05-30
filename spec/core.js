@@ -13,7 +13,6 @@ describe("x-tag ", function () {
     });
 
     window.addEventListener('WebComponentsReady', function (){
-      console.log('WebComponentsReady');
       DOMComponentsLoaded = true;
     });
     
@@ -170,7 +169,8 @@ describe("x-tag ", function () {
       expect(el.bar).toEqual(true);
       expect(el.baz).toEqual('baz-1');
       expect(el.getAttribute('zoo')).toEqual('');
-      expect(foo == 5 && bar == 5 && baz == 5 && zoo == 6).toEqual(true);
+      console.log(foo, bar, baz, zoo)
+      expect(foo == 5 && bar == 7 && baz == 5 && zoo == 8).toEqual(true);
     });
   });
 
