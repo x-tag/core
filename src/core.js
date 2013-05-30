@@ -140,28 +140,28 @@
       }
     };
   }
-  
+
 // Accessors
-  
+
   function getArgs(attr, value){
     return {
       value: attr.boolean ? '' : value,
       method: attr.boolean && (value === false || value === null) ? 'removeAttribute' : 'setAttribute'
     }
   }
-  
+
   function setAttr(attr, name, value, skip){
     var args = getArgs(attr, value);
     this[args.method](name, args.value, skip);
   }
-  
+
   function syncAttr(attr, name, value){
     var args = getArgs(attr, value),
         nodes = attr.property ? [this.xtag[attr.property]] : attr.selector ? xtag.query(this, attr.selector) : [],
         index = nodes.length;
     while (index--) nodes[index][args.method](name, args.value);
   }
-  
+
   function wrapAttr(con, tag, method){
     var original = con.prototype[method];
     con.prototype[method] = function (name, value, skip){
@@ -175,7 +175,7 @@
       }
     }
   }
-  
+
   function attachProperties(tag, prop, z, accessor, attr, name){
     var key = z.split(':'), type = key[0];
     if (type == 'get') {
@@ -244,7 +244,7 @@
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos) };
       for (z in tag.accessors) parseAccessor(tag, z);
-      
+
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.readyCallback = {
         value: function(){
@@ -258,8 +258,10 @@
             var attr = tag.attributes[name],
                 hasAttr = this.hasAttribute(name),
                 value = attr.boolean ? hasAttr : this.getAttribute(name);
-            syncAttr.call(this, attr, name, value);
-            if (attr.setter && (attr.boolean ? true : value !== null)) attr.setter.call(this, value, true);
+            if (attr.boolean || hasAttr) {
+              syncAttr.call(this, attr, name, value);
+              if (attr.setter) attr.setter.call(this, value, true);
+            }
           }
           tag.pseudos.forEach(function(obj){
             obj.onAdd.call(element, obj);
@@ -267,7 +269,7 @@
           return output;
         }
       };
-      
+
       if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted };
       if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged };
@@ -279,7 +281,7 @@
 
       wrapAttr(constructor, tag, 'setAttribute');
       wrapAttr(constructor, tag, 'removeAttribute');
-      
+
       return constructor;
     },
 
