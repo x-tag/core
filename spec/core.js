@@ -2,12 +2,12 @@
 
 
 describe("x-tag ", function () {
-  
+
   it('should load x-tag.js and fire DOMComponentsLoaded', function (){
 
     var DOMComponentsLoaded = false;
     var HTMLImportsLoaded = false;
-    
+
     document.addEventListener('DOMComponentsLoaded', function (){
       DOMComponentsLoaded = true;
     });
@@ -15,22 +15,23 @@ describe("x-tag ", function () {
     window.addEventListener('WebComponentsReady', function (){
       DOMComponentsLoaded = true;
     });
-    
+
     window.addEventListener('HTMLImportsLoaded', function (){
       HTMLImportsLoaded = true;
     });
 
     var xtagLoaded = false,
         script = document.createElement('script');
-        
+
     script.type = 'text/javascript';
     script.onload = function(){
       xtagLoaded = true;
       DOMComponentsLoaded = true;
     };
+
     document.querySelector('head').appendChild(script);
     script.src = '../src/core.js?d=' + new Date().getTime();
-      
+
     waitsFor(function(){
       return xtagLoaded && DOMComponentsLoaded && xtag;
     }, "document.register should be polyfilled", 1000);
@@ -39,9 +40,9 @@ describe("x-tag ", function () {
       expect(xtag).toBeDefined();
     });
   });
-  
+
   it('upgrades all elements synchronously when registered', function (){
-    var createdFired = false;      
+    var createdFired = false;
     xtag.register('x-sync', {
       lifecycle: {
         created: function (){
@@ -56,10 +57,10 @@ describe("x-tag ", function () {
         }
       }
     });
-    
+
     var created = document.createElement('x-sync');
     var existing = document.getElementById('sync_element');
-    
+
     waitsFor(function (){
       return createdFired;
     }, "new tag lifecycle event CREATED should fire", 1000);
@@ -68,10 +69,10 @@ describe("x-tag ", function () {
       expect(existing.foo).toEqual('bar');
     });
   });
-  
-  
+
+
   it('all new element proto objects should be unique', function (){
-    var createdFired = false;      
+    var createdFired = false;
     xtag.register('x-unique', {
       lifecycle: {
         created: function (){
@@ -79,10 +80,10 @@ describe("x-tag ", function () {
         }
       }
     });
-    
+
     var u1 = document.createElement('x-unique');
     var u2 = document.createElement('x-unique');
-    
+
     waitsFor(function (){
       return createdFired;
     }, "new tag lifecycle event CREATED should fire", 1000);
@@ -91,14 +92,14 @@ describe("x-tag ", function () {
       expect(u1.xtag == u2.xtag).toEqual(false);
     });
   });
-  
+
   it('all elements should be parsed for attributes and sync to setters', function (){
     var createdFired = false,
         foo = 0,
         bar = 0,
         baz = 0,
         zoo = 0;
-        
+
     xtag.register('x-attr', {
       lifecycle: {
         created: function (){
@@ -132,34 +133,34 @@ describe("x-tag ", function () {
         }
       }
     });
-    
+
     var el = document.createElement('x-attr');
-    
+
     el.foo = 'foo-1';
     el.setAttribute('foo', 'foo-2');
     el.setAttribute('foo', 'foo-2');
     el.foo = 'foo-2';
     el.removeAttribute('foo');
-    
+
     el.bar = false;
     el.setAttribute('bar', true);
     el.removeAttribute('bar');
     el.removeAttribute('bar');
     el.bar = 'bar';
-    
+
     el.baz = 'baz-0';
     el.removeAttribute('baz');
     el.setAttribute('baz', 'baz-1');
     el.setAttribute('baz', 'baz-1');
     el.setAttribute('baz', 'baz-1');
-    
+
     el.zoo = false;
     el.zoo = true;
     el.removeAttribute('zoo');
     el.setAttribute('zoo', true);
     el.setAttribute('zoo', true);
     el.zoo = true;
-    
+
     waitsFor(function (){
       return createdFired;
     }, "new tag lifecycle event CREATED should fire", 1000);
@@ -169,7 +170,6 @@ describe("x-tag ", function () {
       expect(el.bar).toEqual(true);
       expect(el.baz).toEqual('baz-1');
       expect(el.getAttribute('zoo')).toEqual('');
-      console.log(foo, bar, baz, zoo)
       expect(foo == 5 && bar == 7 && baz == 5 && zoo == 8).toEqual(true);
     });
   });
@@ -683,7 +683,7 @@ describe("x-tag ", function () {
       var foo = document.createElement('x-foo');
       testbox.appendChild(foo);
       foo.foo = 'bar';
-      
+
       expect(foo.getAttribute('foo')).toEqual('bar');
 
     });
