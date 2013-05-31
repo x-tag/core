@@ -20,11 +20,11 @@ To get started hacking on X-Tag:
 
     $ cd x-tag-core
 
+    $ git submodule update --init --recursive
+
     $ npm install   // for devDependencies
 
-    $ npm install bower -g   //for X-Tag components dependencies
-
-    $ bower install  // installs component dependencies
+    $ grunt build    // output to ./dist
 
 
 #### Tests
@@ -34,7 +34,7 @@ To get started hacking on X-Tag:
 
 
 #### Distributable Build
-	
+
 	$ grunt build
 
 	// See ./dist/ directory for the js files that can be used in your project
@@ -43,6 +43,6 @@ To get started hacking on X-Tag:
 
 #### Create your own X-Tags
 
-To get started making your own X-Tags visit [x-tags.org](http://x-tags.org).  
+To get started making your own X-Tags visit [x-tags.org](http://x-tags.org).
 
 Share your tags by adding them to the offical [X-Tag Registry](http://registry.x-tags.org/).
