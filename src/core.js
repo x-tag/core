@@ -380,15 +380,13 @@
     query: query,
 
     skipTransition: function(element, fn, bind){
-      var duration = prefix.js + 'TransitionDuration';
-      element.style[duration] = '0.001s';
-      element.style.transitionDuration = '0.001s';
+      var prop = prefix.js + 'TransitionProperty';
+      element.style[prop] = element.style.transitionProperty = 'none';
       xtag.requestFrame(function(){
         var callback;
         if (fn) callback = fn.call(bind);
         xtag.requestFrame(function(){
-          element.style[duration] = '';
-          element.style.transitionDuration = '';
+          element.style[prop] = element.style.transitionProperty = '';
           if (callback) xtag.requestFrame(callback);
         });
       });
