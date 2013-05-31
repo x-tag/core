@@ -147,7 +147,7 @@
     return {
       value: attr.boolean ? '' : value,
       method: attr.boolean && (value === false || value === null) ? 'removeAttribute' : 'setAttribute'
-    }
+    };
   }
 
   function setAttr(attr, name, value, skip){
@@ -173,7 +173,7 @@
           attr.setter.call(this, attr.boolean ? method == 'setAttribute' : this.getAttribute(name));
         }
       }
-    }
+    };
   }
 
   function attachProperties(tag, prop, z, accessor, attr, name){
