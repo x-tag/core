@@ -164,16 +164,19 @@
 
   function wrapAttr(tag, method){
     var original = tag.prototype[method] || HTMLElement.prototype[method];
-    tag.prototype[method] = function (name, value, skip){
-      var attr = tag.attributes[name.toLowerCase()];
-      original.call(this, name, attr && attr.boolean ? '' : value);
-      if (attr) {
-        syncAttr.call(this, attr, name, value);
-        if (!skip && !attr.skip) {
-          attr.setter.call(this, attr.boolean ? method == 'setAttribute' : this.getAttribute(name));
+    tag.prototype[method] = {
+      enumberable: true,
+      value: function (name, value, skip){
+        var attr = tag.attributes[name.toLowerCase()];
+        original.call(this, name, attr && attr.boolean ? '' : value);
+        if (attr) {
+          syncAttr.call(this, attr, name, value);
+          if (!skip && !attr.skip) {
+            attr.setter.call(this, attr.boolean ? method == 'setAttribute' : this.getAttribute(name));
+          }
         }
       }
-    };
+    }
   }
 
   function attachProperties(tag, prop, z, accessor, attr, name){
@@ -286,7 +289,6 @@
 
       wrapAttr(tag, 'setAttribute');
       wrapAttr(tag, 'removeAttribute');
-
 
       if (element){
         element.register({
