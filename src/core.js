@@ -162,9 +162,9 @@
     while (index--) nodes[index][args.method](name, args.value);
   }
 
-  function wrapAttr(con, tag, method){
-    var original = con.prototype[method];
-    con.prototype[method] = function (name, value, skip){
+  function wrapAttr(tag, method){
+    var original = tag.prototype[method] || HTMLElement.prototype[method];
+    tag.prototype[method] = function (name, value, skip){
       var attr = tag.attributes[name.toLowerCase()];
       original.call(this, name, attr && attr.boolean ? '' : value);
       if (attr) {
@@ -284,30 +284,22 @@
       if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed, enumerable: true };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
-      var constructor;
+      wrapAttr(tag, 'setAttribute');
+      wrapAttr(tag, 'removeAttribute');
+
+
       if (element){
-        constructor = element.getAttribute('constructor');
-        if (!constructor){
-          constructor = '__xtag_' + _name + '__';
-          element.setAttribute('constructor', constructor);
-        }
         element.register({
           'prototype': Object.create(Object.prototype, tag.prototype)
         });
-        constructor = win[constructor];
       } else {
-        constructor = doc.register(_name, {
+        return doc.register(_name, {
           'extends': options['extends'],
           'prototype': Object.create((options['extends'] ?
             document.createElement(options['extends']).constructor :
             win.HTMLElement).prototype, tag.prototype)
         });
       }
-
-      wrapAttr(constructor, tag, 'setAttribute');
-      wrapAttr(constructor, tag, 'removeAttribute');
-
-      return constructor;
     },
 
     /* Exposed Variables */
