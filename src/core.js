@@ -237,16 +237,26 @@
       }
     },
     register: function (name, options) {
-      var _name = name.toLowerCase();
+      var element, _name;
+      if (typeof name == 'string') {
+        _name = name.toLowerCase();
+      } else if (name.nodeName == 'ELEMENT') {
+        element = name;
+        _name = element.getAttribute('name').toLowerCase();
+      } else {
+        return;
+      }
+
       var tag = xtag.tags[_name] = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
 
       for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos);
-      for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos) };
+      for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.readyCallback = {
+        enumerable: true,
         value: function(){
           var element = this;
           xtag.addEvents(this, tag.events);
@@ -270,14 +280,29 @@
         }
       };
 
-      if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted };
-      if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed };
-      if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged };
+      if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted, enumerable: true };
+      if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed, enumerable: true };
+      if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
-      var constructor = doc.register(_name, {
-        'extends': options['extends'],
-        'prototype': Object.create((options['extends'] ? document.createElement(options['extends']).constructor : win.HTMLElement).prototype, tag.prototype)
-      });
+      var constructor;
+      if (element){
+        constructor = element.getAttribute('constructor');
+        if (!constructor){
+          constructor = '__xtag_' + _name + '__';
+          element.setAttribute('constructor', constructor);
+        }
+        element.register({
+          'prototype': Object.create(Object.prototype, tag.prototype)
+        });
+        constructor = win[constructor];
+      } else {
+        constructor = doc.register(_name, {
+          'extends': options['extends'],
+          'prototype': Object.create((options['extends'] ?
+            document.createElement(options['extends']).constructor :
+            win.HTMLElement).prototype, tag.prototype)
+        });
+      }
 
       wrapAttr(constructor, tag, 'setAttribute');
       wrapAttr(constructor, tag, 'removeAttribute');
