@@ -176,7 +176,7 @@
           }
         }
       }
-    }
+    };
   }
 
   function attachProperties(tag, prop, z, accessor, attr, name){
