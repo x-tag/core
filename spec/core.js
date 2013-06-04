@@ -170,6 +170,7 @@ describe("x-tag ", function () {
       expect(el.bar).toEqual(true);
       expect(el.baz).toEqual('baz-1');
       expect(el.getAttribute('zoo')).toEqual('');
+      expect(el.getAttribute('baz')).toEqual('baz-1');
       expect(foo == 5 && bar == 7 && baz == 5 && zoo == 8).toEqual(true);
     });
   });
