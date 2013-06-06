@@ -175,6 +175,32 @@ describe("x-tag ", function () {
     });
   });
 
+  it('should fire attributeChanged any attributes are updated', function(){
+
+    var attributeChanged = false;
+
+    xtag.register('x-foo1', {
+      lifecycle: {
+        attributeChanged: function(){
+          attributeChanged = true;
+        }
+      }
+    });
+
+    var foo1 = document.createElement('x-foo1');
+    foo1.setAttribute('foo', 'bar');
+    foo1.setAttribute('foo', 'adf');
+
+    waitsFor(function(){
+      return attributeChanged;
+    });
+
+    runs(function (){
+      expect(attributeChanged).toEqual(true);
+    });
+  });
+
+
   it('should fire lifecycle event CREATED when a new tag is created', function (){
     var createdFired = false;
     xtag.register('x-foo', {
