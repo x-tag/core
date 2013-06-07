@@ -150,9 +150,9 @@
     };
   }
 
-  function setAttr(attr, name, value, skip){
+  function setAttr(attr, name, value){
     var args = getArgs(attr, value);
-    this[args.method](name, args.value, skip);
+    this[args.method](name, args.value);
   }
 
   function syncAttr(attr, name, value){
@@ -165,15 +165,17 @@
   function wrapAttr(tag, method){
     var original = tag.prototype[method] || HTMLElement.prototype[method];
     tag.prototype[method] = {
+      writable: true,
       enumberable: true,
       value: function (name, value, skip){
         var attr = tag.attributes[name.toLowerCase()];
         original.call(this, name, attr && attr.boolean ? '' : value);
         if (attr) {
           syncAttr.call(this, attr, name, value);
-          if (!skip && !attr.skip) {
+          if (!attr.skip && !this.xtag._skipAttr) {
             attr.setter.call(this, attr.boolean ? method == 'setAttribute' : this.getAttribute(name));
           }
+          delete this.xtag._skipAttr;
         }
       }
     };
@@ -189,7 +191,10 @@
       key[0] = prop;
       if (attr) attr.setter = accessor[z];
       tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value, skip){
-        if (!skip && !attr.skip) setAttr.call(this, attr, name, value, true);
+        if (!skip && !attr.skip) {
+          this.xtag._skipAttr = true;
+          setAttr.call(this, attr, name, value);
+        }
         syncAttr.call(this, attr, name, value);
         accessor[z].call(this, value);
       } : accessor[z], tag.pseudos);
@@ -214,7 +219,8 @@
         };
       }
       if (!tag.prototype[prop].set) tag.prototype[prop].set = function(value){
-        setAttr.call(this, attr, name, value, true);
+        this.xtag._skipAttr = true;
+        setAttr.call(this, attr, name, value);
       };
     }
   }
@@ -289,7 +295,7 @@
 
       wrapAttr(tag, 'setAttribute');
       wrapAttr(tag, 'removeAttribute');
-
+      
       if (element){
         element.register({
           'prototype': Object.create(Object.prototype, tag.prototype)
@@ -297,9 +303,9 @@
       } else {
         return doc.register(_name, {
           'extends': options['extends'],
-          'prototype': Object.create((options['extends'] ?
+          'prototype': Object.create(Object.create((options['extends'] ?
             document.createElement(options['extends']).constructor :
-            win.HTMLElement).prototype, tag.prototype)
+            win.HTMLElement).prototype, tag.prototype), tag.prototype)
         });
       }
     },
