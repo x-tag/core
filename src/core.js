@@ -181,6 +181,12 @@
     };
   }
 
+  function updateTemplate(element, name, value){
+    if (element.template && element.xtag.template){
+      element.xtag.template.updateBindingValue.call(element.xtag.template, element, name, value);
+    }
+  }
+
   function attachProperties(tag, prop, z, accessor, attr, name){
     var key = z.split(':'), type = key[0];
     if (type == 'get') {
@@ -197,7 +203,11 @@
         }
         syncAttr.call(this, attr, name, value);
         accessor[z].call(this, value);
-      } : accessor[z], tag.pseudos);
+        updateTemplate(this, name, value);
+      } : accessor[z] ? function(value){
+        accessor[z].call(this, value);
+        updateTemplate(this, name, value);
+      } : null, tag.pseudos);
     }
     else tag.prototype[prop][z] = accessor[z];
   }
@@ -221,6 +231,7 @@
       if (!tag.prototype[prop].set) tag.prototype[prop].set = function(value){
         this.xtag._skipAttr = true;
         setAttr.call(this, attr, name, value);
+        updateTemplate(this, name, value);
       };
     }
   }
@@ -234,7 +245,19 @@
       mixins: [],
       events: {},
       methods: {},
-      accessors: {},
+      accessors: {
+        template: {
+          attribute: {},
+          get: function(){
+            return this.getAttribute('template');
+          },
+          set: function(value){
+            var attr = this.getAttribute('template');
+            this.xtag.__previousTemplate__ = attr;
+            xtag.fireEvent(this, 'templatechange', { template: value });
+          }
+        }
+      },
       lifecycle: {},
       attributes: {},
       'prototype': {
@@ -268,6 +291,10 @@
         enumerable: true,
         value: function(){
           var element = this;
+          var template = element.getAttribute('template');
+          if (template){
+            xtag.fireEvent(this, 'templatechange', { template: template });
+          }
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
@@ -295,7 +322,7 @@
 
       wrapAttr(tag, 'setAttribute');
       wrapAttr(tag, 'removeAttribute');
-      
+
       if (element){
         element.register({
           'prototype': Object.create(Object.prototype, tag.prototype)
