@@ -5,7 +5,7 @@
   var win = window,
     doc = document,
     noop = function(){},
-    regexPseudoSplit = /(\w+(?:\([^\)]+\))?)/g,
+    regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
     regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
     regexDigits = /(\d+)/g,
     keypseudo = {
@@ -182,8 +182,8 @@
   }
 
   function updateTemplate(element, name, value){
-    if (element.template && element.xtag.template){
-      element.xtag.template.updateBindingValue.call(element.xtag.template, element, name, value);
+    if (element.template){
+      element.xtag.template.updateBindingValue(element, name, value);
     }
   }
 
@@ -197,13 +197,14 @@
       key[0] = prop;
       if (attr) attr.setter = accessor[z];
       tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value, skip){
+        syncAttr.call(this, attr, name, value);
+        accessor[z].call(this, value);
         if (!skip && !attr.skip) {
           this.xtag._skipAttr = true;
           setAttr.call(this, attr, name, value);
         }
-        syncAttr.call(this, attr, name, value);
-        accessor[z].call(this, value);
         updateTemplate(this, name, value);
+
       } : accessor[z] ? function(value){
         accessor[z].call(this, value);
         updateTemplate(this, name, value);
@@ -248,12 +249,9 @@
       accessors: {
         template: {
           attribute: {},
-          get: function(){
-            return this.getAttribute('template');
-          },
           set: function(value){
-            var attr = this.getAttribute('template');
-            this.xtag.__previousTemplate__ = attr;
+            var last = this.getAttribute('template');
+            this.xtag.__previousTemplate__ = last;
             xtag.fireEvent(this, 'templatechange', { template: value });
           }
         }
@@ -341,6 +339,7 @@
 
     mixins: {},
     prefix: prefix,
+    templates: {},
     captureEvents: ['focus', 'blur'],
     customEvents: {
       overflow: createFlowEvent('over'),
