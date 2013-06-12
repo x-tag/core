@@ -534,11 +534,11 @@
             i = split.length;
         while (--i) {
           split[i].replace(regexPseudoReplace, function (match, name, value) {
+            if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + split;
             var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
-            if (!pseudo) throw "pseudo not found: " + name;
             var last = listener;
             listener = function(){
               var args = toArray(arguments),
