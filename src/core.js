@@ -5,7 +5,7 @@
   var win = window,
     doc = document,
     noop = function(){},
-    regexPseudoSplit = /(\w+(?:\([^\)]+\))?)/g,
+    regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
     regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
     regexDigits = /(\d+)/g,
     keypseudo = {
@@ -181,6 +181,12 @@
     };
   }
 
+  function updateTemplate(element, name, value){
+    if (element.template){
+      element.xtag.template.updateBindingValue(element, name, value);
+    }
+  }
+
   function attachProperties(tag, prop, z, accessor, attr, name){
     var key = z.split(':'), type = key[0];
     if (type == 'get') {
@@ -191,13 +197,18 @@
       key[0] = prop;
       if (attr) attr.setter = accessor[z];
       tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value, skip){
+        syncAttr.call(this, attr, name, value);
+        accessor[z].call(this, value);
         if (!skip && !attr.skip) {
           this.xtag._skipAttr = true;
           setAttr.call(this, attr, name, value);
         }
-        syncAttr.call(this, attr, name, value);
+        updateTemplate(this, name, value);
+
+      } : accessor[z] ? function(value){
         accessor[z].call(this, value);
-      } : accessor[z], tag.pseudos);
+        updateTemplate(this, name, value);
+      } : null, tag.pseudos);
     }
     else tag.prototype[prop][z] = accessor[z];
   }
@@ -221,6 +232,7 @@
       if (!tag.prototype[prop].set) tag.prototype[prop].set = function(value){
         this.xtag._skipAttr = true;
         setAttr.call(this, attr, name, value);
+        updateTemplate(this, name, value);
       };
     }
   }
@@ -234,7 +246,16 @@
       mixins: [],
       events: {},
       methods: {},
-      accessors: {},
+      accessors: {
+        template: {
+          attribute: {},
+          set: function(value){
+            var last = this.getAttribute('template');
+            this.xtag.__previousTemplate__ = last;
+            xtag.fireEvent(this, 'templatechange', { template: value });
+          }
+        }
+      },
       lifecycle: {},
       attributes: {},
       'prototype': {
@@ -295,7 +316,7 @@
 
       wrapAttr(tag, 'setAttribute');
       wrapAttr(tag, 'removeAttribute');
-      
+
       if (element){
         element.register({
           'prototype': Object.create(Object.prototype, tag.prototype)
@@ -314,6 +335,7 @@
 
     mixins: {},
     prefix: prefix,
+    templates: {},
     captureEvents: ['focus', 'blur'],
     customEvents: {
       overflow: createFlowEvent('over'),
@@ -507,11 +529,11 @@
             i = split.length;
         while (--i) {
           split[i].replace(regexPseudoReplace, function (match, name, value) {
+            if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + split;
             var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
-            if (!pseudo) throw "pseudo not found: " + name;
             var last = listener;
             listener = function(){
               var args = toArray(arguments),
