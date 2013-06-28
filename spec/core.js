@@ -6,6 +6,7 @@ describe("x-tag ", function () {
   it('should load x-tag.js and fire DOMComponentsLoaded', function (){
 
     var DOMComponentsLoaded = false;
+    var WebComponentsReady = false;
     var HTMLImportsLoaded = false;
 
     document.addEventListener('DOMComponentsLoaded', function (){
@@ -13,7 +14,7 @@ describe("x-tag ", function () {
     });
 
     window.addEventListener('WebComponentsReady', function (){
-      DOMComponentsLoaded = true;
+      WebComponentsReady = true;
     });
 
     window.addEventListener('HTMLImportsLoaded', function (){
@@ -33,7 +34,7 @@ describe("x-tag ", function () {
     script.src = '../src/core.js?d=' + new Date().getTime();
 
     waitsFor(function(){
-      return xtagLoaded && DOMComponentsLoaded && xtag;
+      return xtagLoaded && DOMComponentsLoaded && WebComponentsReady && xtag;
     }, "document.register should be polyfilled", 1000);
 
     runs(function () {

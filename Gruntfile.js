@@ -4,20 +4,18 @@ module.exports = function (grunt) {
   // Polymer Platform custom biuld
   var polyfillFiles = [
    'lib/platform-bootstrap.js',
-   'lib/PolymerPlatform/CustomElements/src/sidetable.js',
-   'lib/PolymerPlatform/lib/patches-shadowdom-native.js',
-   'lib/PolymerPlatform/lib/lang.js',
-   'lib/PolymerPlatform/lib/dom.js',
-   'lib/PolymerPlatform/lib/template.js',
-   'lib/PolymerPlatform/HTMLImports/src/HTMLImports.js',
-   'lib/PolymerPlatform/CustomElements/MutationObservers/MutationObserver.js',
-   'lib/PolymerPlatform/CustomElements/src/MutationObserver.js',
-   'lib/PolymerPlatform/CustomElements/src/CustomElements.js',
-   'lib/PolymerPlatform/CustomElements/src/Observer.js',
-   'lib/PolymerPlatform/CustomElements/src/HTMLElementElement.js',
-   'lib/PolymerPlatform/CustomElements/src/Parser.js',
-   'lib/PolymerPlatform/CustomElements/src/boot.js',
-   'lib/PolymerPlatform/lib/patches-custom-elements.js'
+   'lib/DOMTokenList.js',
+   'lib/CustomElements/src/sidetable.js',
+   'lib/MutationObservers/MutationObserver.js',
+   'lib/CustomElements/src/MutationObserver.js',
+   'lib/CustomElements/src/CustomElements.js',
+   'lib/CustomElements/src/Observer.js',
+   'lib/CustomElements/src/HTMLElementElement.js',
+   'lib/HTMLImports/src/HTMLImports.js',
+   'lib/HTMLImports/src/Parser.js',
+   'lib/HTMLImports/src/boot.js',
+   'lib/CustomElements/src/Parser.js',
+   'lib/CustomElements/src/boot.js'
   ];
 
   // Project configuration.
@@ -39,14 +37,14 @@ module.exports = function (grunt) {
     concat: {
       core:{
         src:[
-          'lib/web-components-polyfill.js',
+          'lib/web-components-polyfills.js',
           'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'
       },
-      platform: {
+      polyfill: {
         src: polyfillFiles,
-        dest: 'lib/web-components-polyfill.js'
+        dest: 'lib/web-components-polyfills.js'
       }
     },
     uglify: {
@@ -74,7 +72,7 @@ module.exports = function (grunt) {
 
   // Default task.
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('platform', ['concat:platform']);
+  grunt.registerTask('polyfill', ['concat:polyfill']);
   grunt.registerTask('build', ['test','concat:core','uglify']);
 
 };
