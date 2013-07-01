@@ -908,13 +908,64 @@ describe("x-tag ", function () {
         expect('number').toEqual(xtag.typeOf(42));
       });
 
+      it('toArray', function (){
+        expect([]).toEqual(xtag.toArray({}));
+      });
+
       it('uid', function(){
         expect(xtag.uid).toBeDefined();
         expect('string').toEqual(typeof xtag.uid());
       });
 
-      it('toArray', function (){
-        expect([]).toEqual(xtag.toArray({}));
+      describe('wrap', function(){
+        it('should create new function that calls both functions', function(){
+          var f1Called = false,
+            f1 = function(){
+              f1Called = true;
+            };
+
+          var f2Called = false,
+            f2 = function(){
+              f2Called = true;
+            }
+
+          var f3 = xtag.wrap(f1, f2);
+          f3();
+
+          expect(f1Called).toEqual(true);
+          expect(f2Called).toEqual(true);
+        });
+
+        it('should not call second fn if false returned from first fn', function(){
+          var f1Called = false,
+            f1 = function(){
+              f1Called = true;
+              return false;
+            };
+
+          var f2Called = false,
+            f2 = function(){
+              f2Called = true;
+            }
+
+          var f3 = xtag.wrap(f1, f2);
+          f3();
+
+          expect(f1Called).toEqual(true);
+          expect(f2Called).toEqual(false);
+        });
+
+      })
+
+
+      it('queryChildren', function(){
+        testbox.appendChild(document.createElement('a'));
+        testbox.appendChild(document.createElement('a'));
+        var div = document.createElement('div');
+        div.appendChild(document.createElement('a'));
+        testbox.appendChild(div);
+
+        expect(2).toEqual(xtag.queryChildren(testbox, 'a').length);
       });
 
     });
