@@ -431,6 +431,10 @@
       return source;
     },
 
+    uid: function(){
+      return Math.random().toString(36).substr(2,10);
+    },
+
     /* DOM */
 
     query: query,
@@ -498,7 +502,7 @@
 
     queryChildren: function (element, selector) {
       var id = element.id,
-        guid = element.id = id || 'x_' + new Date().getTime(),
+        guid = element.id = id || 'x_' + xtag.uid(),
         attr = '#' + guid + ' > ';
       selector = attr + (selector + '').replace(',', ',' + attr, 'g');
       var result = element.parentNode.querySelectorAll(selector);

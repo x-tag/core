@@ -908,6 +908,11 @@ describe("x-tag ", function () {
         expect('number').toEqual(xtag.typeOf(42));
       });
 
+      it('uid', function(){
+        expect(xtag.uid).toBeDefined();
+        expect('string').toEqual(typeof xtag.uid());
+      });
+
       it('toArray', function (){
         expect([]).toEqual(xtag.toArray({}));
       });
