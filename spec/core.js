@@ -927,7 +927,7 @@ describe("x-tag ", function () {
           var f2Called = false,
             f2 = function(){
               f2Called = true;
-            }
+            };
 
           var f3 = xtag.wrap(f1, f2);
           f3();
@@ -946,7 +946,7 @@ describe("x-tag ", function () {
           var f2Called = false,
             f2 = function(){
               f2Called = true;
-            }
+            };
 
           var f3 = xtag.wrap(f1, f2);
           f3();
@@ -955,7 +955,7 @@ describe("x-tag ", function () {
           expect(f2Called).toEqual(false);
         });
 
-      })
+      });
 
 
       it('queryChildren', function(){
