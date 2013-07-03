@@ -24,7 +24,7 @@
         dom: pre == 'ms' ? pre.toUpperCase() : pre,
         lowercase: pre,
         css: '-' + pre + '-',
-        js: pre[0].toUpperCase() + pre.substr(1)
+        js: pre == 'ms' ? pre : pre[0].toUpperCase() + pre.substr(1)
       };
 
     })(),
