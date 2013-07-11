@@ -6,6 +6,7 @@ describe("x-tag ", function () {
   it('should load x-tag.js and fire DOMComponentsLoaded', function (){
 
     var DOMComponentsLoaded = false;
+    var WebComponentsReady = false;
     var HTMLImportsLoaded = false;
 
     document.addEventListener('DOMComponentsLoaded', function (){
@@ -13,7 +14,7 @@ describe("x-tag ", function () {
     });
 
     window.addEventListener('WebComponentsReady', function (){
-      DOMComponentsLoaded = true;
+      WebComponentsReady = true;
     });
 
     window.addEventListener('HTMLImportsLoaded', function (){
@@ -33,7 +34,7 @@ describe("x-tag ", function () {
     script.src = '../src/core.js?d=' + new Date().getTime();
 
     waitsFor(function(){
-      return xtagLoaded && DOMComponentsLoaded && xtag;
+      return xtagLoaded && DOMComponentsLoaded && WebComponentsReady && xtag;
     }, "document.register should be polyfilled", 1000);
 
     runs(function () {
@@ -927,6 +928,62 @@ describe("x-tag ", function () {
 
       it('toArray', function (){
         expect([]).toEqual(xtag.toArray({}));
+      });
+
+      it('uid', function(){
+        expect(xtag.uid).toBeDefined();
+        expect('string').toEqual(typeof xtag.uid());
+      });
+
+      describe('wrap', function(){
+        it('should create new function that calls both functions', function(){
+          var f1Called = false,
+            f1 = function(){
+              f1Called = true;
+            };
+
+          var f2Called = false,
+            f2 = function(){
+              f2Called = true;
+            };
+
+          var f3 = xtag.wrap(f1, f2);
+          f3();
+
+          expect(f1Called).toEqual(true);
+          expect(f2Called).toEqual(true);
+        });
+
+        it('should not call second fn if false returned from first fn', function(){
+          var f1Called = false,
+            f1 = function(){
+              f1Called = true;
+              return false;
+            };
+
+          var f2Called = false,
+            f2 = function(){
+              f2Called = true;
+            };
+
+          var f3 = xtag.wrap(f1, f2);
+          f3();
+
+          expect(f1Called).toEqual(true);
+          expect(f2Called).toEqual(false);
+        });
+
+      });
+
+
+      it('queryChildren', function(){
+        testbox.appendChild(document.createElement('a'));
+        testbox.appendChild(document.createElement('a'));
+        var div = document.createElement('div');
+        div.appendChild(document.createElement('a'));
+        testbox.appendChild(div);
+
+        expect(2).toEqual(xtag.queryChildren(testbox, 'a').length);
       });
 
     });

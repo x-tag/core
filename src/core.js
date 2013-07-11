@@ -24,7 +24,7 @@
         dom: pre == 'ms' ? pre.toUpperCase() : pre,
         lowercase: pre,
         css: '-' + pre + '-',
-        js: pre[0].toUpperCase() + pre.substr(1)
+        js: pre == 'ms' ? pre : pre[0].toUpperCase() + pre.substr(1)
       };
 
     })(),
@@ -121,10 +121,15 @@
 // Events
 
   function touchFilter(custom, event) {
-    if (custom.listener.touched) return custom.listener.touched = false;
-    else {
-      if (event.type.match('touch')) custom.listener.touched = true;
+    var retVal;
+    if (custom.listener.touched) {
+      custom.listener.touched = false;
+      retVal = false;
     }
+    else if (event.type.match('touch')){
+     custom.listener.touched = true;
+    }
+    return retVal;
   }
 
   function createFlowEvent(type) {
@@ -267,6 +272,10 @@
         enumerable: true,
         value: function(){
           var element = this;
+          var template = element.getAttribute('template');
+          if (template){
+            xtag.fireEvent(this, 'templatechange', { template: template });
+          }
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
@@ -432,6 +441,10 @@
       return source;
     },
 
+    uid: function(){
+      return Math.random().toString(36).substr(2,10);
+    },
+
     /* DOM */
 
     query: query,
@@ -499,7 +512,7 @@
 
     queryChildren: function (element, selector) {
       var id = element.id,
-        guid = element.id = id || 'x_' + new Date().getTime(),
+        guid = element.id = id || 'x_' + xtag.uid(),
         attr = '#' + guid + ' > ';
       selector = attr + (selector + '').replace(',', ',' + attr, 'g');
       var result = element.parentNode.querySelectorAll(selector);
