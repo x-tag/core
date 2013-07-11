@@ -104,11 +104,14 @@ describe("x-tag ", function () {
       lifecycle: {
         created: function (){
           createdFired = true;
+          this.innerHTML = '<div foo="bar">';
         }
       },
       accessors: {
         foo: {
-          attribute: {},
+          attribute: {
+            selector: 'div'
+          },
           set: function (value){
             foo++;
           }
@@ -120,9 +123,12 @@ describe("x-tag ", function () {
           }
         },
         baz: {
-          attribute: {},
+          attribute: {
+            skip: true
+          },
           set: function (value){
             baz++;
+            if (value !== undefined) this.setAttribute('baz', value);
           }
         },
         zoo: {
@@ -134,26 +140,29 @@ describe("x-tag ", function () {
       }
     });
 
-    var el = document.createElement('x-attr');
-
+    var el = document.getElementById('attr_element');
+    //var el = document.createElement('x-attr');
+    
     el.foo = 'foo-1';
     el.setAttribute('foo', 'foo-2');
     el.setAttribute('foo', 'foo-2');
     el.foo = 'foo-2';
     el.removeAttribute('foo');
-
-    el.bar = false;
+    el.setAttribute('foo', 'foo-3');
+    
     el.setAttribute('bar', true);
-    el.removeAttribute('bar');
+    el.bar = false;
+    el.bar = true;
     el.removeAttribute('bar');
     el.bar = 'bar';
-
+    el.bar = false;
+    
     el.baz = 'baz-0';
     el.removeAttribute('baz');
     el.setAttribute('baz', 'baz-1');
     el.setAttribute('baz', 'baz-1');
-    el.setAttribute('baz', 'baz-1');
-
+    el.removeAttribute('baz');
+    
     el.zoo = false;
     el.zoo = true;
     el.removeAttribute('zoo');
@@ -166,12 +175,21 @@ describe("x-tag ", function () {
     }, "new tag lifecycle event CREATED should fire", 1000);
 
     runs(function (){
-      expect(el.foo).toEqual(null);
-      expect(el.bar).toEqual(true);
-      expect(el.baz).toEqual('baz-1');
+      expect(el.foo).toEqual('foo-3');
+      expect(el.getAttribute('foo')).toEqual('foo-3');
+      
+      expect(el.bar).toEqual(false);
+      expect(el.getAttribute('bar')).toEqual(null);
+      
+      expect(el.baz).toEqual(null);
+      expect(el.getAttribute('baz')).toEqual(null);
+      
+      expect(el.zoo).toEqual(true);
       expect(el.getAttribute('zoo')).toEqual('');
-      expect(el.getAttribute('baz')).toEqual('baz-1');
-      expect(foo == 5 && bar == 7 && baz == 5 && zoo == 8).toEqual(true);
+      
+      //console.log(el);
+      //console.log(foo, bar, baz, zoo);
+      expect(foo == 6 && bar == 7 && baz == 6 && zoo == 7).toEqual(true);
     });
   });
 
