@@ -121,15 +121,12 @@
 // Events
 
   function touchFilter(custom, event) {
-    var retVal;
     if (custom.listener.touched) {
-      custom.listener.touched = false;
-      retVal = false;
+      return custom.listener.touched = false;
     }
     else if (event.type.match('touch')){
      custom.listener.touched = true;
     }
-    return retVal;
   }
 
   function createFlowEvent(type) {
