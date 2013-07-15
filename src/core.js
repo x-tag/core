@@ -122,12 +122,14 @@
 // Events
 
   function touchFilter(custom, event) {
-    if (custom.listener.touched) {
-      return custom.listener.touched = false;
+    if (event.type.match('touch')){
+      custom.listener.touched = true;
     }
-    else if (event.type.match('touch')){
-     custom.listener.touched = true;
+    else if (custom.listener.touched && event.type.match('mouse')){
+      custom.listener.touched = false;
+      return false;
     }
+    return true;
   }
 
   function createFlowEvent(type) {
@@ -163,7 +165,7 @@
         index = nodes.length;
     while (index--) nodes[index][method](name, value);
   }
-  
+
   function updateView(element, name, value){
     if (element.__view__){
       element.__view__.updateBindingValue(element, name, value);
@@ -177,7 +179,7 @@
       tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
     }
     else if (type == 'set') {
-      key[0] = prop; 
+      key[0] = prop;
       var setter = tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
         this.xtag._skipSet = true;
         if (!this.xtag._skipAttr) modAttr(this, attr, name, value);
@@ -189,7 +191,7 @@
         accessor[z].call(this, value);
         updateView(this, name, value);
       } : null, tag.pseudos);
-      
+
       if (attr) attr.setter = setter;
     }
     else tag.prototype[prop][z] = accessor[z];
@@ -315,7 +317,7 @@
           delete this.xtag._skipAttr;
         }
       };
-      
+
       var removeAttribute = tag.prototype.removeAttribute || HTMLElement.prototype.removeAttribute;
       tag.prototype.removeAttribute = {
         writable: true,
