@@ -203,7 +203,11 @@
         attr = accessor.attribute,
         name = attr && attr.name ? attr.name.toLowerCase() : prop;
 
-    if (attr) tag.attributes[name] = attr;
+    if (attr) {
+      attr.key = prop;
+      tag.attributes[name] = attr;
+    }
+    
     for (var z in accessor) attachProperties(tag, prop, z, accessor, attr, name);
 
     if (attr) {
@@ -284,8 +288,8 @@
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
                 hasAttr = this.hasAttribute(name);
-            if (attr.setter && (attr.boolean || hasAttr)) {
-              attr.setter.call(this, attr.boolean ? hasAttr : this.getAttribute(name));
+            if (hasAttr || attr.boolean) {
+              this[attr.key] = attr.boolean ? hasAttr : this.getAttribute(name);
             }
           }
           tag.pseudos.forEach(function(obj){
@@ -507,7 +511,6 @@
 
     toggleClass: function (element, klass) {
       return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
-
     },
 
     queryChildren: function (element, selector) {
