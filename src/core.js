@@ -547,7 +547,7 @@
 
     /* PSEUDOS */
 
-    applyPseudos: function(key, fn, element) {
+    applyPseudos: function(key, fn, element, source) {
       var listener = fn,
           pseudos = {};
       if (key.match(':')) {
@@ -560,6 +560,7 @@
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
+                pseudo.source = source;
             var last = listener;
             listener = function(){
               var args = toArray(arguments),
@@ -567,23 +568,21 @@
                     key: key,
                     name: name,
                     value: value,
+                    source: source,
                     listener: last
                   };
               if (pseudo.action && pseudo.action.apply(this, [obj].concat(args)) === false) return false;
               return obj.listener.apply(this, args);
             };
             if (element && pseudo.onAdd) {
-              if (element.getAttribute) {
-                pseudo.onAdd.call(element, pseudo);
-              } else {
-                element.push(pseudo);
-              }
+              if (element.getAttribute) pseudo.onAdd.call(element, pseudo);
+              else element.push(pseudo);
             }
           });
         }
       }
       for (var z in pseudos) {
-        if (pseudos[z].onCompiled) listener = pseudos[z].onCompiled(listener, pseudos[z]);
+        if (pseudos[z].onCompiled) listener = pseudos[z].onCompiled(listener, pseudos[z]) || listener;
       }
       return listener;
     },
@@ -598,22 +597,34 @@
 
     parseEvent: function(type, fn) {
       var pseudos = type.split(':'),
-        key = pseudos.shift(),
-        event = xtag.merge({
-          base: key,
-          pseudos: '',
-          _pseudos: [],
-          onAdd: noop,
-          onRemove: noop,
-          condition: noop
-        }, xtag.customEvents[key] || {});
+          key = pseudos.shift(),
+          event = xtag.merge({
+            key: key,
+            base: key,
+            chain: fn,
+            pseudos: '',
+            _pseudos: [],
+            onAdd: noop,
+            onRemove: noop,
+            condition: noop
+          }, xtag.customEvents[key] || {});
       event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
+      if (xtag.customEvents[key]) {
+        event.object = doc.createEvent('CustomEvent');
+        event.object.initCustomEvent(key, true, true, {});
+      }
       if (fn) {
-        var chained = xtag.applyPseudos(event.type, fn, event._pseudos);
+        event.chain = xtag.applyPseudos(event.type, function(e){
+          if (event.object && e.type != key) {
+            if (e != event.object) event.object.baseEvent = e;
+            this.dispatchEvent(event.object);
+          }
+          else return fn.apply(this, toArray(arguments));
+        }, event._pseudos, event);
         event.listener = function(){
           var args = toArray(arguments);
           if (event.condition.apply(this, [event].concat(args)) === false) return false;
-          return chained.apply(this, args);
+          return event.chain.apply(this, args);
         };
       }
       return event;
@@ -627,8 +638,10 @@
       });
       event.onAdd.call(element, event, event.listener);
       toArray(event.base).forEach(function (name) {
-        element.addEventListener(name, event.listener, xtag.captureEvents.indexOf(name) > -1);
+        if (type != name && xtag.customEvents[name]) xtag.addEvent(element, name, event.listener);
+        else element.addEventListener(name, event.listener, xtag.captureEvents.indexOf(name) > -1);
       });
+      if (xtag.customEvents[event.key]) element.addEventListener(event.key, event.chain, true);
       return event.listener;
     },
 
@@ -645,8 +658,10 @@
       event.onRemove.call(element, event, fn);
       xtag.removePseudos(element, event);
       toArray(event.base).forEach(function (name) {
-        element.removeEventListener(name, fn);
+        if (type != name && xtag.customEvents[name]) xtag.removeEvent(element, name, fn);
+        else element.removeEventListener(name, fn);
       });
+      if (xtag.customEvents[event.key]) element.removeEventListener(event.key, event.chain);
     },
 
     removeEvents: function(element, listeners){
