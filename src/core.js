@@ -167,8 +167,8 @@
   }
 
   function updateView(element, name, value){
-    if (element.__view__){
-      element.__view__.updateBindingValue(element, name, value);
+    if (element.xtag.__view__){
+      element.xtag.__view__.updateBindingValue(element, name, value);
     }
   }
 
@@ -207,7 +207,7 @@
       attr.key = prop;
       tag.attributes[name] = attr;
     }
-    
+
     for (var z in accessor) attachProperties(tag, prop, z, accessor, attr, name);
 
     if (attr) {
