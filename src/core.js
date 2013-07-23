@@ -239,7 +239,7 @@
           set: function(value){
             var last = this.getAttribute('template');
             this.xtag.__previousTemplate__ = last;
-            xtag.fireEvent(this, 'templatechange', { template: value });
+            xtag.fireEvent(this, 'templatechange', { detail:{ template: value }});
           }
         }
       },
@@ -278,7 +278,7 @@
           var element = this;
           var template = element.getAttribute('template');
           if (template){
-            xtag.fireEvent(this, 'templatechange', { template: template });
+            xtag.fireEvent(this, 'templatechange', { detail:{ template: template }});
           }
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
@@ -669,12 +669,12 @@
     },
 
     fireEvent: function(element, type, options, warn){
-      var options = options || {},
-          event = doc.createEvent('CustomEvent');
+      var event = doc.createEvent('CustomEvent');
+      options = options || {};
       if (warn) console.warn('fireEvent has been modified, more info here: ');
       event.initCustomEvent(type,
-        options.bubbles == false ? false : true,
-        options.cancelable == false ? false : true,
+        options.bubbles === false ? false : true,
+        options.cancelable === false ? false : true,
         options.detail
       );
       try { element.dispatchEvent(event); }
