@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+	<head>
+	  <title>X-Tag: Event Tester</title>
+	  <meta charset="UTF-8">
+	  <script type="text/javascript" src="../lib/web-components-polyfills.js"></script>
+	  <script type="text/javascript" src="../src/core.js"></script>
+	  <script type="text/javascript" src="../spec/events.js"></script>
+
+	  <style type="text/css">
+		.event {
+			margin: 20px;
+			padding: 50px;
+			background: #eee;
+			border: 1px solid #bbb;
+			text-align: center;
+		}
+		
+		
+		.event[result=pass] {
+			background: #D3FFD7;
+			border-color: #42A54A;
+		}
+		
+		.event[result=pass]:after {
+			content: ' PASSED';
+		}
+		
+		.event[result=fail] {
+			background: #FFD6D7;
+			border-color: #B75054;
+		}
+		
+		.event[result=pass]:after {
+			content: ' FAILED';
+		}
+		
+	  </style>
+	</head>
+
+	<body>
+	  <div id="tap" class="event">Tap</div>
+	</body>
+</html>

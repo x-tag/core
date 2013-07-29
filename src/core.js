@@ -146,6 +146,28 @@
     };
   }
 
+  var eventProps = {}, eventTypes = {};
+
+  function defineEventProperty(key, source){
+    eventProps[key] = {
+      get: function(){
+        return this.baseEvent ? this.baseEvent[key] : this[key];
+      }
+    }
+  }
+
+  function inheritEvent(event, base){
+    var type = event.type;
+    if (!eventTypes[base.type]) {
+      eventTypes[base.type] = 1;
+      for(var z in base) defineEventProperty(z, base);
+      delete eventProps.type;
+      delete eventProps.baseEvent;
+    }
+    event.baseEvent = base;  
+    Object.defineProperties(event, eventProps);
+  }
+  
 // Accessors
 
   function getArgs(attr, value){
@@ -379,9 +401,28 @@
           'webkitTransitionEnd'
         ]
       },
-      tap: {
-        base: ['click', 'touchend'],
+      move: {
+        base: ['mousemove', 'touchmove'],
         condition: touchFilter
+      },
+      enter: {
+        base: ['mouseover', 'touchenter'],
+        condition: touchFilter
+      },
+      leave: {
+        base: ['mouseout', 'touchleave'],
+        condition: touchFilter
+      },
+      tap: {
+        base: ['click', 'touchstart', 'touchend'],
+        condition: function(custom, event){
+          if (event.type == 'touchstart') custom.target = event.target;
+          if (event.type == 'touchend' && custom.target != event.target) {
+            delete custom.target;
+            return false;
+          }
+          return touchFilter.apply(this, toArray(arguments));
+        }
       },
       tapstart: {
         base: ['mousedown', 'touchstart'],
@@ -391,18 +432,34 @@
         base: ['mouseup', 'touchend'],
         condition: touchFilter
       },
-      tapenter: {
-        base: ['mouseover', 'touchenter'],
-        condition: touchFilter
-      },
-      tapleave: {
-        base: ['mouseout', 'touchleave'],
-        condition: touchFilter
-      },
       tapmove: {
-        base: ['mousemove', 'touchmove'],
-        condition: touchFilter
-      }
+        
+        base: ['tapstart', 'tapend', 'dragend'],
+        condition: function(custom, event){ 
+          switch (event.type) {
+            case 'move': return true;
+            
+            case 'dragover':
+              var last = custom.lastDrag || {};
+              custom.lastDrag = event;
+              return (last.pageX != event.pageX && last.pageY != event.pageY) ? true : false;
+            
+            case 'tapstart':
+              custom.move = custom.move || xtag.addEvents(this, {
+                'move': custom.listener,
+                'dragover': custom.listener
+              });
+              return true;
+            
+            case 'tapend': case 'dragend':
+              xtag.removeEvents(this, custom.move || {});
+              delete custom.lastDrag;
+              delete custom.move;
+              return true
+          }
+          return false;
+        }
+      }  
     },
     pseudos: {
       keypass: keypseudo,
@@ -598,50 +655,45 @@
     parseEvent: function(type, fn) {
       var pseudos = type.split(':'),
           key = pseudos.shift(),
+          custom = xtag.customEvents[key],
           event = xtag.merge({
-            key: key,
+            type: key,
             base: key,
-            chain: fn,
+            stack: fn,
             pseudos: '',
             _pseudos: [],
             onAdd: noop,
             onRemove: noop,
             condition: noop
-          }, xtag.customEvents[key] || {});
-      event.type = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
-      if (xtag.customEvents[key]) {
-        event.object = doc.createEvent('CustomEvent');
-        event.object.initCustomEvent(key, true, true, {});
-      }
+          }, custom || {});
+      event.base = toArray(event.base);
+      event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
-        event.chain = xtag.applyPseudos(event.type, function(e){
-          if (event.object && e.type != key) {
-            if (e != event.object) event.object.baseEvent = e;
-            this.dispatchEvent(event.object);
-          }
-          else return fn.apply(this, toArray(arguments));
+        event.stack = xtag.applyPseudos(event.chain, function(e){        
+          if (e.type == key) return fn.apply(this, toArray(arguments));
+          if (custom) xtag.fireEvent(this, key, { baseEvent: e });
         }, event._pseudos, event);
-        event.listener = function(){
+        event.listener = function(e){
           var args = toArray(arguments);
           if (event.condition.apply(this, [event].concat(args)) === false) return false;
-          return event.chain.apply(this, args);
+          return event.stack.apply(this, args);
         };
+        event.listener.event = event;
       }
       return event;
     },
 
     addEvent: function (element, type, fn) {
       var event = (typeof fn == 'function') ? xtag.parseEvent(type, fn) : fn;
-      event.listener.event = event;
       event._pseudos.forEach(function(obj){
         obj.onAdd.call(element, obj);
       });
       event.onAdd.call(element, event, event.listener);
-      toArray(event.base).forEach(function (name) {
-        if (type != name && xtag.customEvents[name]) xtag.addEvent(element, name, event.listener);
+      event.base.forEach(function(name) {
+        if (event.type != name && xtag.customEvents[name]) xtag.addEvent(element, name, event.listener);
         else element.addEventListener(name, event.listener, xtag.captureEvents.indexOf(name) > -1);
       });
-      if (xtag.customEvents[event.key]) element.addEventListener(event.key, event.chain, true);
+      if (xtag.customEvents[event.type] && event.base.indexOf(event.type) == -1) element.addEventListener(event.type, event.stack, false);
       return event.listener;
     },
 
@@ -661,7 +713,7 @@
         if (type != name && xtag.customEvents[name]) xtag.removeEvent(element, name, fn);
         else element.removeEventListener(name, fn);
       });
-      if (xtag.customEvents[event.key]) element.removeEventListener(event.key, event.chain);
+      if (xtag.customEvents[event.type]) element.removeEventListener(event.type, event.stack);
     },
 
     removeEvents: function(element, listeners){
@@ -669,14 +721,15 @@
     },
 
     fireEvent: function(element, type, options, warn){
-      var event = doc.createEvent('CustomEvent');
-      options = options || {};
+      var options = options || {},
+          event = doc.createEvent('CustomEvent');
       if (warn) console.warn('fireEvent has been modified, more info here: ');
       event.initCustomEvent(type,
-        options.bubbles === false ? false : true,
-        options.cancelable === false ? false : true,
+        !(options.bubbles == false),
+        !(options.cancelable == false),
         options.detail
       );
+      if (options.baseEvent) inheritEvent(event, options.baseEvent);
       try { element.dispatchEvent(event); }
       catch (e) {
         console.warn('This error may have been caused by a change in the fireEvent method, more info here: ', e);
