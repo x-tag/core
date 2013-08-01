@@ -256,16 +256,7 @@
       mixins: [],
       events: {},
       methods: {},
-      accessors: {
-        template: {
-          attribute: {},
-          set: function(value){
-            var last = this.getAttribute('view');
-            this.xtag.__previousTemplate__ = last;
-            xtag.fireEvent(this, 'view', { detail:{ view: value }});
-          }
-        }
-      },
+      accessors: {},
       lifecycle: {},
       attributes: {},
       'prototype': {
