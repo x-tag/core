@@ -704,8 +704,10 @@
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
         event.stack = xtag.applyPseudos(event.chain, function(e){
+          if (event.detail && event.detail.synthetic) Object.defineProperty(e, 'currentTarget', {
+            value: event.element
+          });
           var args = toArray(arguments);
-          if (event.element) Object.defineProperty(e, 'currentTarget', { value: event.element });
           if (e.type == key) return fn.apply(this, args);
           if (custom) {
             var _event = doc.createEvent('CustomEvent');
@@ -729,7 +731,7 @@
         for (var z in custom.observe) (custom.observe[z] || document).addEventListener(z, function(e){
           var output = event.condition.apply(this, [custom].concat(toArray(arguments)));
           if (output !== true) return output;
-          xtag.fireEvent(e.target, key, { baseEvent: e });
+          xtag.fireEvent(e.target, key, { baseEvent: e, detail: { synthetic: true } });
         }, true);
         custom.__observing__ = true;
       }
