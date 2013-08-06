@@ -153,7 +153,7 @@
       get: function(){
         return this.baseEvent ? this.baseEvent[key] : this[key];
       }
-    }
+    };
   }
 
   function inheritEvent(event, base){
@@ -438,7 +438,7 @@
               xtag.removeEvents(this, custom.move || {});
               delete custom.lastDrag;
               delete custom.move;
-              return true
+              return true;
           }
           return;
         }
@@ -726,12 +726,12 @@
     },
 
     fireEvent: function(element, type, options, warn){
-      var options = options || {},
-          event = doc.createEvent('CustomEvent');
+      var event = doc.createEvent('CustomEvent');
+      options = options || {};
       if (warn) console.warn('fireEvent has been modified, more info here: ');
       event.initCustomEvent(type,
-        !(options.bubbles == false),
-        !(options.cancelable == false),
+        !(options.bubbles === false),
+        !(options.cancelable === false),
         options.detail
       );
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
@@ -842,99 +842,20 @@
           if (!el.__tap__) addTap(el, tap, e);
           return;
 
-        case 'scroll': case 'touchcancel':
+        case 'scroll':
+        case 'touchcancel':
           removeTap(this, tap);
           return;
 
-        case 'touchmove': case 'touchend':
+        case 'touchmove':
+        case 'touchend':
           if (this.__tap__ && !checkTapPosition(this, tap, e)) {
             removeTap(this, tap);
             return;
-          }
-          if (e.type == 'touchmove') return;
+          } else if (e.type == 'touchmove') return;
 
-        case 'touchend': case 'click':
-          removeTap(this, tap);
-          return true;
-      }
-    }
-  };
-
-/*** Custom Event Definitions ***/
-
-  function addTap(el, tap, e){
-    if (!el.__tap__) {
-      el.__tap__ = { click: e.type == 'mousedown' };
-      if (el.__tap__.click) el.addEventListener('click', tap.observer);
-      else {
-        el.__tap__.scroll = tap.observer.bind(el);
-        window.addEventListener('scroll', el.__tap__.scroll, true);
-        el.addEventListener('touchmove', tap.observer);
-        el.addEventListener('touchcancel', tap.observer);
-        el.addEventListener('touchend', tap.observer);
-      }
-    }
-    if (!el.__tap__.click) {
-      el.__tap__.x = e.touches[0].pageX;
-      el.__tap__.y = e.touches[0].pageY;
-    }
-  }
-
-  function removeTap(el, tap){
-    if (el.__tap__) {
-      if (el.__tap__.click) el.removeEventListener('click', tap.observer);
-      else {
-        window.removeEventListener('scroll', el.__tap__.scroll, true);
-        el.removeEventListener('touchmove', tap.observer);
-        el.removeEventListener('touchcancel', tap.observer);
-        el.removeEventListener('touchend', tap.observer);
-      }
-      delete el.__tap__;
-    }
-  }
-
-  function checkTapPosition(el, tap, e){
-    var touch = e.changedTouches[0];
-    if (
-      touch.pageX < el.__tap__.x + tap.gesture.tolerance &&
-      touch.pageX > el.__tap__.x - tap.gesture.tolerance &&
-      touch.pageY < el.__tap__.y + tap.gesture.tolerance &&
-      touch.pageY > el.__tap__.y - tap.gesture.tolerance
-    ) return true;
-  }
-
-  xtag.customEvents.tap = {
-    observe: {
-      mousedown: document,
-      touchstart: document
-    },
-    gesture: {
-      tolerance: 8
-    },
-    condition: function(e, tap){
-      var el = e.target;
-      switch (e.type) {
-        case 'touchstart':
-          if (el.__tap__ && el.__tap__.click) removeTap(el, tap);
-          addTap(el, tap, e);
-          return;
-
-        case 'mousedown':
-          if (!el.__tap__) addTap(el, tap, e);
-          return;
-
-        case 'scroll': case 'touchcancel':
-          removeTap(this, tap);
-          return;
-
-        case 'touchmove': case 'touchend':
-          if (this.__tap__ && !checkTapPosition(this, tap, e)) {
-            removeTap(this, tap);
-            return;
-          }
-          if (e.type == 'touchmove') return;
-
-        case 'touchend': case 'click':
+        case 'touchend':
+        case 'click':
           removeTap(this, tap);
           return true;
       }
