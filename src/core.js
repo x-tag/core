@@ -26,7 +26,6 @@
         css: '-' + pre + '-',
         js: pre == 'ms' ? pre : pre[0].toUpperCase() + pre.substr(1)
       };
-
     })(),
     matchSelector = Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'],
     mutation = win.MutationObserver || win[prefix.js + 'MutationObserver'];
@@ -121,13 +120,13 @@
 
 // Events
 
-  function touchFilter(custom, event) {
+  function touchFilter(event) {
     if (event.type.match('touch')){
-      custom.listener.touched = true;
+      event.target.__touched__ = true;
     }
-    else if (custom.listener.touched && event.type.match('mouse')){
-      custom.listener.touched = false;
-      return false;
+    else if (event.target.__touched__ && event.type.match('mouse')){
+      delete event.target.__touched__;
+      return;
     }
     return true;
   }
@@ -136,7 +135,7 @@
     var flow = type == 'over';
     return {
       attach: 'OverflowEvent' in win ? 'overflowchanged' : type + 'flow',
-      condition: function (custom, event) {
+      condition: function (event, custom) {
         event.flow = type;
         return event.type == (type + 'flow') ||
         ((event.orient === 0 && event.horizontalOverflow == flow) ||
@@ -403,70 +402,30 @@
         attach: ['mouseout', 'touchleave'],
         condition: touchFilter
       },
-      tap: {
-        observe: {
-          touchstart: document,
-          focus: document,
-          blur: document,
-          click: document
-        },
-        condition: function(tap, e){
-          var el = e.target;
-          switch (e.type) {
-            case 'touchstart':
-              el.__tapStart__ = true;
-              if (el.tabIndex == -1) {
-                 el.tabIndex = 0;
-                 el.__tapIndex__ = true;
-              }
-              break;
-              
-            case 'focus':
-              if (el.__tapStart__ && e.explicitOriginalTarget == el) return true;
-              if (el.__tapIndex__) {
-                el.removeAttribute('tabindex');
-                delete el.__tapIndex__;
-                e.preventDefault();
-                e.stopPropagation();
-                el.__tapBlur__ = true;
-                el.blur();
-                return false;
-              }
-              break;
-              
-            case 'blur':
-              if (el.__tapBlur__) {
-                 e.preventDefault();
-                 e.stopPropagation();
-                 delete el.__tapBlur__;
-              }
-              break;
-            
-            case 'click':
-              if (!el.__tapStart__) return true;
-              else delete el.__tapStart__;
-              break;
-          }
-        }
-      },
       tapstart: {
-        attach: ['mousedown', 'touchstart'],
+        observe: {
+          mousedown: document,
+          touchstart: document
+        },
         condition: touchFilter
       },
       tapend: {
-        attach: ['mouseup', 'touchend'],
+        observe: {
+          mouseup: document,
+          touchend: document
+        },
         condition: touchFilter
       },
       tapmove: {
         attach: ['tapstart', 'tapend', 'dragend'],
-        condition: function(custom, event){ 
+        condition: function(event, custom){
           switch (event.type) {
             case 'move': return true;
             
             case 'dragover':
               var last = custom.lastDrag || {};
               custom.lastDrag = event;
-              return (last.pageX != event.pageX && last.pageY != event.pageY) ? true : false;
+              return (last.pageX != event.pageX && last.pageY != event.pageY) || null;
             
             case 'tapstart':
               custom.move = custom.move || xtag.addEvents(this, {
@@ -481,7 +440,7 @@
               delete custom.move;
               return true
           }
-          return false;
+          return;
         }
       }  
     },
@@ -490,7 +449,7 @@
       keyfail: keypseudo,
       delegate: {
         action: function (pseudo, event) {
-          var target = query(this, pseudo.value).filter(function (node) {
+          var target = query(this, pseudo.value).filter(function(node){
             return node == event.target || node.contains ? node.contains(event.target) : false;
           })[0];
           return target ? pseudo.listener = pseudo.listener.bind(target) : false;
@@ -711,7 +670,7 @@
         }, event._pseudos, event);
         event.listener = function(e){
           var args = toArray(arguments),
-              output = event.condition.apply(this, [event].concat(args));
+              output = event.condition.apply(this, args.concat([event]));
           if (output !== true) return output;
           return event.stack.apply(this, args);
         };
@@ -720,11 +679,12 @@
         });
       }
       if (custom && custom.observe && !custom.__observing__) {
-        for (var z in custom.observe) (custom.observe[z] || document).addEventListener(z, function(e){
-          var output = event.condition.apply(this, [custom].concat(toArray(arguments)));
+        custom.observer = function(e){
+          var output = event.condition.apply(this, toArray(arguments).concat([custom]));
           if (output !== true) return output;
           xtag.fireEvent(e.target, key, { baseEvent: e });
-        }, true);
+        };
+        for (var z in custom.observe) (custom.observe[z] || document).addEventListener(z, custom.observer, true);
         custom.__observing__ = true;
       }
       return event;
@@ -817,6 +777,87 @@
       }
     }
 
+  };
+
+/*** Custom Event Definitions ***/
+
+  function addTap(el, tap, e){
+    if (!el.__tap__) {
+      el.__tap__ = { click: e.type == 'mousedown' };
+      if (el.__tap__.click) el.addEventListener('click', tap.observer);
+      else {
+        el.__tap__.scroll = tap.observer.bind(el);
+        window.addEventListener('scroll', el.__tap__.scroll, true);
+        el.addEventListener('touchmove', tap.observer);
+        el.addEventListener('touchcancel', tap.observer);
+        el.addEventListener('touchend', tap.observer);
+      }
+    }
+    if (!el.__tap__.click) {
+      el.__tap__.x = e.touches[0].pageX;
+      el.__tap__.y = e.touches[0].pageY;
+    }
+  }
+
+  function removeTap(el, tap){
+    if (el.__tap__) {
+      if (el.__tap__.click) el.removeEventListener('click', tap.observer);
+      else {
+        window.removeEventListener('scroll', el.__tap__.scroll, true);
+        el.removeEventListener('touchmove', tap.observer);
+        el.removeEventListener('touchcancel', tap.observer);
+        el.removeEventListener('touchend', tap.observer);
+      }
+      delete el.__tap__;
+    }
+  }
+
+  function checkTapPosition(el, tap, e){
+    var touch = e.changedTouches[0];
+    if (
+      touch.pageX < el.__tap__.x + tap.gesture.tolerance &&
+      touch.pageX > el.__tap__.x - tap.gesture.tolerance &&
+      touch.pageY < el.__tap__.y + tap.gesture.tolerance &&
+      touch.pageY > el.__tap__.y - tap.gesture.tolerance
+    ) return true;
+  }
+
+  xtag.customEvents.tap = {
+    observe: {
+      mousedown: document,
+      touchstart: document
+    },
+    gesture: {
+      tolerance: 8
+    },
+    condition: function(e, tap){
+      var el = e.target;
+      switch (e.type) {
+        case 'touchstart':
+          if (el.__tap__ && el.__tap__.click) removeTap(el, tap);
+          addTap(el, tap, e);
+          return;
+
+        case 'mousedown':
+          if (!el.__tap__) addTap(el, tap, e);
+          return;
+
+        case 'scroll': case 'touchcancel':
+          removeTap(this, tap);
+          return;
+
+        case 'touchmove': case 'touchend':
+          if (this.__tap__ && !checkTapPosition(this, tap, e)) {
+            removeTap(this, tap);
+            return;
+          }
+          if (e.type == 'touchmove') return;
+
+        case 'touchend': case 'click':
+          removeTap(this, tap);
+          return true;
+      }
+    }
   };
 
   if (typeof define == 'function' && define.amd) define(xtag);
