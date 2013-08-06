@@ -730,8 +730,8 @@
       options = options || {};
       if (warn) console.warn('fireEvent has been modified, more info here: ');
       event.initCustomEvent(type,
-        !(options.bubbles === false),
-        !(options.cancelable === false),
+        options.bubbles !== false,
+        options.cancelable !== false,
         options.detail
       );
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
