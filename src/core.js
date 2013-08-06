@@ -837,24 +837,20 @@
           if (el.__tap__ && el.__tap__.click) removeTap(el, tap);
           addTap(el, tap, e);
           return;
-
         case 'mousedown':
           if (!el.__tap__) addTap(el, tap, e);
           return;
-
         case 'scroll':
         case 'touchcancel':
           removeTap(this, tap);
           return;
-
         case 'touchmove':
         case 'touchend':
           if (this.__tap__ && !checkTapPosition(this, tap, e)) {
             removeTap(this, tap);
             return;
           } else if (e.type == 'touchmove') return;
-
-        case 'touchend':
+        /* falls through */
         case 'click':
           removeTap(this, tap);
           return true;
