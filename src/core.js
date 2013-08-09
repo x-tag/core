@@ -653,11 +653,7 @@
       event.attach = toArray(event.base || event.attach);  
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
-        event.stack = xtag.applyPseudos(event.chain, function(e){
-          Object.defineProperty(e, 'currentTarget', {
-            configurable: true,
-            value: event.element
-          });
+        var stack = xtag.applyPseudos(event.chain, function(e){
           var args = toArray(arguments);
           if (e.type == key) return fn.apply(this, args);
           if (custom) {
@@ -668,6 +664,13 @@
             fn.apply(this, args);
           }
         }, event._pseudos, event);
+        event.stack = function(e){
+          Object.defineProperty(e, 'currentTarget', {
+            configurable: true,
+            value: this
+          });
+          return stack.apply(this, toArray(arguments));
+        };
         event.listener = function(e){
           var args = toArray(arguments),
               output = event.condition.apply(this, args.concat([event]));
@@ -679,8 +682,9 @@
         });
       }
       if (custom && custom.observe && !custom.__observing__) {
+        var condition = custom.condition || function(){ return true; };
         custom.observer = function(e){
-          var output = event.condition.apply(this, toArray(arguments).concat([custom]));
+          var output = condition.apply(this, toArray(arguments).concat([custom]));
           if (output !== true) return output;
           xtag.fireEvent(e.target, key, { baseEvent: e });
         };
@@ -692,7 +696,6 @@
 
     addEvent: function (element, type, fn) {
       var event = (typeof fn == 'function') ? xtag.parseEvent(type, fn) : fn;
-      event.element = element;
       event._pseudos.forEach(function(obj){
         obj.onAdd.call(element, obj);
       });
@@ -851,9 +854,9 @@
             removeTap(this, tap);
             return;
           }
-          if (e.type == 'touchmove') return;
+          return e.type == 'touchend' || null;
           
-        case 'touchend': case 'click':
+        case 'click':
           removeTap(this, tap);
           return true;
       }
