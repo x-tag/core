@@ -144,7 +144,7 @@
       }
     };
   }
-  
+
   var eventProps = {}, eventTypes = {};
 
   function defineEventProperty(key, source){
@@ -153,7 +153,7 @@
       get: function(){
         return this.baseEvent ? this.baseEvent[key] : this[key];
       }
-    }
+    };
   }
 
   function inheritEvent(event, base){
@@ -164,10 +164,10 @@
       delete eventProps.type;
       delete eventProps.baseEvent;
     }
-    event.baseEvent = base;  
+    event.baseEvent = base;
     Object.defineProperties(event, eventProps);
   }
-  
+
 // Accessors
 
   function getArgs(attr, value){
@@ -418,31 +418,31 @@
       },
       tapmove: {
         attach: ['tapstart', 'tapend', 'dragend'],
-        condition: function(event, custom){ 
+        condition: function(event, custom){
           switch (event.type) {
             case 'move': return true;
-            
+
             case 'dragover':
               var last = custom.lastDrag || {};
               custom.lastDrag = event;
               return (last.pageX != event.pageX && last.pageY != event.pageY) || null;
-            
+
             case 'tapstart':
               custom.move = custom.move || xtag.addEvents(this, {
                 'move': custom.listener,
                 'dragover': custom.listener
               });
               return true;
-            
+
             case 'tapend': case 'dragend':
               xtag.removeEvents(this, custom.move || {});
               delete custom.lastDrag;
               delete custom.move;
-              return true
+              return true;
           }
           return;
         }
-      }  
+      }
     },
     pseudos: {
       keypass: keypseudo,
@@ -650,7 +650,7 @@
             onAdd: noop,
             onRemove: noop
           }, custom || {});
-      event.attach = toArray(event.base || event.attach);  
+      event.attach = toArray(event.base || event.attach);
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
         var stack = xtag.applyPseudos(event.chain, function(e){
@@ -729,12 +729,12 @@
     },
 
     fireEvent: function(element, type, options, warn){
-      var options = options || {},
-          event = doc.createEvent('CustomEvent');
+      var event = doc.createEvent('CustomEvent');
+      options = options || {};
       if (warn) console.warn('fireEvent has been modified, more info here: ');
       event.initCustomEvent(type,
-        !(options.bubbles == false),
-        !(options.cancelable == false),
+        options.bubbles !== false,
+        options.cancelable !== false,
         options.detail
       );
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
@@ -781,9 +781,9 @@
     }
 
   };
-  
+
 /*** Custom Event Definitions ***/
-  
+
   function addTap(el, tap, e){
     if (!el.__tap__) {
       el.__tap__ = { click: e.type == 'mousedown' };
@@ -801,7 +801,7 @@
       el.__tap__.y = e.touches[0].pageY;
     }
   }
-  
+
   function removeTap(el, tap){
     if (el.__tap__) {
       if (el.__tap__.click) el.removeEventListener('click', tap.observer);
@@ -814,7 +814,7 @@
       delete el.__tap__;
     }
   }
-  
+
   function checkTapPosition(el, tap, e){
     var touch = e.changedTouches[0];
     if (
@@ -824,7 +824,7 @@
       touch.pageY > el.__tap__.y - tap.gesture.tolerance
     ) return true;
   }
-  
+
   xtag.customEvents.tap = {
     observe: {
       mousedown: document,
@@ -840,16 +840,15 @@
           if (el.__tap__ && el.__tap__.click) removeTap(el, tap);
           addTap(el, tap, e);
           return;
-          
         case 'mousedown':
           if (!el.__tap__) addTap(el, tap, e);
           return;
-        
-        case 'scroll': case 'touchcancel':
+        case 'scroll':
+        case 'touchcancel':
           removeTap(this, tap);
           return;
-          
-        case 'touchmove': case 'touchend':
+        case 'touchmove':
+        case 'touchend':
           if (this.__tap__ && !checkTapPosition(this, tap, e)) {
             removeTap(this, tap);
             return;
