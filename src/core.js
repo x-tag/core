@@ -421,19 +421,16 @@
         condition: function(event, custom){
           switch (event.type) {
             case 'move': return true;
-
             case 'dragover':
               var last = custom.lastDrag || {};
               custom.lastDrag = event;
               return (last.pageX != event.pageX && last.pageY != event.pageY) || null;
-
             case 'tapstart':
               custom.move = custom.move || xtag.addEvents(this, {
                 'move': custom.listener,
                 'dragover': custom.listener
               });
               return true;
-
             case 'tapend': case 'dragend':
               xtag.removeEvents(this, custom.move || {});
               delete custom.lastDrag;
@@ -854,7 +851,6 @@
             return;
           }
           return e.type == 'touchend' || null;
-          
         case 'click':
           removeTap(this, tap);
           return true;
