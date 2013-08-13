@@ -2304,7 +2304,7 @@ if (document.readyState === 'complete') {
   function createFlowEvent(type) {
     var flow = type == 'over';
     return {
-      attach: 'OverflowEvent' in win ? 'overflowchanged' : type + 'flow',
+      attach: 'OverflowEvent' in win ? 'overflowchanged' : [],
       condition: function (event, custom) {
         event.flow = type;
         return event.type == (type + 'flow') ||
