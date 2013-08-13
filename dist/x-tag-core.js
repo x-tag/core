@@ -2459,10 +2459,6 @@ if (document.readyState === 'complete') {
         enumerable: true,
         value: function(){
           var element = this;
-          var template = element.getAttribute('template');
-          if (template){
-            xtag.fireEvent(this, 'templatechange', { detail:{ template: template }});
-          }
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
