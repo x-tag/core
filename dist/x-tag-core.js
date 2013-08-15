@@ -2180,7 +2180,7 @@ if (document.readyState === 'complete') {
     regexDigits = /(\d+)/g,
     keypseudo = {
       action: function (pseudo, event) {
-        return pseudo.value.match(regexDigits).indexOf(String(event.keyCode)) > -1 == (pseudo.name == 'keypass');
+        return pseudo.value.match(regexDigits).indexOf(String(event.keyCode)) > -1 == (pseudo.name == 'keypass') || null;
       }
     },
     prefix = (function () {
@@ -2613,9 +2613,9 @@ if (document.readyState === 'complete') {
       delegate: {
         action: function (pseudo, event) {
           var target = query(this, pseudo.value).filter(function(node){
-            return node == event.target || node.contains ? node.contains(event.target) : false;
+            return node == event.target || node.contains ? node.contains(event.target) : null;
           })[0];
-          return target ? pseudo.listener = pseudo.listener.bind(target) : false;
+          return target ? pseudo.listener = pseudo.listener.bind(target) : null;
         }
       },
       preventable: {
@@ -2763,7 +2763,8 @@ if (document.readyState === 'complete') {
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
-                pseudo.source = source;
+                pseudo.action = pseudo.action || function(){ return true; };
+                pseudo.source = source; 
             var last = listener;
             listener = function(){
               var args = toArray(arguments),
@@ -2774,7 +2775,8 @@ if (document.readyState === 'complete') {
                     source: source,
                     listener: last
                   };
-              if (pseudo.action && pseudo.action.apply(this, [obj].concat(args)) === false) return false;
+              var output = pseudo.action.apply(this, [obj].concat(args));
+              if (!output) return output;
               return obj.listener.apply(this, args);
             };
             if (element && pseudo.onAdd) {
@@ -2837,7 +2839,7 @@ if (document.readyState === 'complete') {
         event.listener = function(e){
           var args = toArray(arguments),
               output = event.condition.apply(this, args.concat([event]));
-          if (output !== true) return output;
+          if (!output) return output;
           return event.stack.apply(this, args);
         };
         event.attach.forEach(function(name) {
@@ -2848,7 +2850,7 @@ if (document.readyState === 'complete') {
         var condition = custom.condition || function(){ return true; };
         custom.observer = function(e){
           var output = condition.apply(this, toArray(arguments).concat([custom]));
-          if (output !== true) return output;
+          if (!output) return output;
           xtag.fireEvent(e.target, key, { baseEvent: e });
         };
         for (var z in custom.observe) (custom.observe[z] || document).addEventListener(z, custom.observer, true);
