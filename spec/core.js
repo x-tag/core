@@ -790,6 +790,7 @@ describe("x-tag ", function () {
         action: function (pseudo, event){
           pseudoFired = true;
           event.foo = this;
+          return true;
         }
       };
 

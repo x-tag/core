@@ -5,6 +5,7 @@
   var win = window,
     doc = document,
     noop = function(){},
+    trueop = function(){ return true; },
     regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
     regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
     regexDigits = /(\d+)/g,
@@ -119,7 +120,14 @@
   }
 
 // Events
-
+  
+  function delegateAction(pseudo, event) {
+    var target = query(this, pseudo.value).filter(function(node){
+      return node == event.target || node.contains ? node.contains(event.target) : null;
+    })[0];
+    return target ? pseudo.listener = pseudo.listener.bind(target) : null;
+  }
+  
   function touchFilter(event) {
     if (event.type.match('touch')){
       event.target.__touched__ = true;
@@ -433,19 +441,22 @@
               delete custom.move;
               return true;
           }
-          return;
         }
       }
     },
     pseudos: {
       keypass: keypseudo,
       keyfail: keypseudo,
-      delegate: {
-        action: function (pseudo, event) {
-          var target = query(this, pseudo.value).filter(function(node){
-            return node == event.target || node.contains ? node.contains(event.target) : null;
-          })[0];
-          return target ? pseudo.listener = pseudo.listener.bind(target) : null;
+      delegate: { action: delegateAction },
+      within: {
+        action: delegateAction,
+        onAdd: function(pseudo){
+          var condition = pseudo.source.condition;
+          if (condition) pseudo.source.condition = function(event, custom){
+            return xtag.query(this, pseudo.value).filter(function(node){
+              return node == event.target || node.contains ? node.contains(event.target) : null;
+            })[0] ? condition.call(this, event, custom) : null;
+          }
         }
       },
       preventable: {
@@ -593,7 +604,8 @@
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
-                pseudo.action = pseudo.action || function(){ return true; };
+                pseudo.arguments = value.split(',');
+                pseudo.action = pseudo.action || trueop;
                 pseudo.source = source; 
             var last = listener;
             listener = function(){
@@ -605,7 +617,7 @@
                     source: source,
                     listener: last
                   };
-              var output = pseudo.action.apply(this, [obj].concat(args));
+              var output = pseudo.action.apply(this, [obj].concat(args))
               if (!output) return output;
               return obj.listener.apply(this, args);
             };
@@ -637,7 +649,7 @@
           event = xtag.merge({
             type: key,
             stack: noop,
-            condition: function(){ return true; },
+            condition: trueop,
             attach: [],
             _attach: [],
             pseudos: '',
@@ -677,19 +689,19 @@
         });
       }
       if (custom && custom.observe && !custom.__observing__) {
-        var condition = custom.condition || function(){ return true; };
+        var condition = custom.condition || trueop;
         custom.observer = function(e){
           var output = condition.apply(this, toArray(arguments).concat([custom]));
           if (!output) return output;
           xtag.fireEvent(e.target, key, { baseEvent: e });
         };
-        for (var z in custom.observe) (custom.observe[z] || document).addEventListener(z, custom.observer, true);
+        for (var z in custom.observe) xtag.addEvent(custom.observe[z] || document, z, custom.observer, true);
         custom.__observing__ = true;
       }
       return event;
     },
-
-    addEvent: function (element, type, fn) {
+    
+    addEvent: function (element, type, fn, capture) {
       var event = (typeof fn == 'function') ? xtag.parseEvent(type, fn) : fn;
       event._pseudos.forEach(function(obj){
         obj.onAdd.call(element, obj);
@@ -698,7 +710,7 @@
         xtag.addEvent(element, obj.type, obj);
       });
       event.onAdd.call(element, event, event.listener);
-      element.addEventListener(event.type, event.stack, xtag.captureEvents.indexOf(event.type) > -1);
+      element.addEventListener(event.type, event.stack, capture || xtag.captureEvents.indexOf(event.type) > -1);
       return event;
     },
 
@@ -716,7 +728,7 @@
       event._attach.forEach(function(obj) {
         xtag.removeEvent(element, obj.type, obj);
       });
-      element.removeEventListener(type, event.stack);
+      element.removeEventListener(event.type, event.stack);
     },
 
     removeEvents: function(element, obj){
