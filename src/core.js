@@ -636,10 +636,10 @@
 
     removePseudos: function(element, event){
       event._pseudos.forEach(function(obj){
-        obj.onRemove.call(element, obj);
+        if (obj.onRemove) obj.onRemove.call(element, obj);
       });
     },
-
+    
   /*** Events ***/
 
     parseEvent: function(type, fn) {
@@ -723,6 +723,7 @@
     },
 
     removeEvent: function (element, type, event) {
+      event = event || type;
       event.onRemove.call(element, event, event.listener);
       xtag.removePseudos(element, event);
       event._attach.forEach(function(obj) {
@@ -732,7 +733,7 @@
     },
 
     removeEvents: function(element, obj){
-      for (var z in obj) xtag.removeEvent(element, z, obj[z]);
+      for (var z in obj) xtag.removeEvent(element, obj[z]);
     },
 
     fireEvent: function(element, type, options, warn){
