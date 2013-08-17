@@ -120,14 +120,14 @@
   }
 
 // Events
-  
+
   function delegateAction(pseudo, event) {
     var target = query(this, pseudo.value).filter(function(node){
       return node == event.target || node.contains ? node.contains(event.target) : null;
     })[0];
     return target ? pseudo.listener = pseudo.listener.bind(target) : null;
   }
-  
+
   function touchFilter(event) {
     if (event.type.match('touch')){
       event.target.__touched__ = true;
@@ -456,7 +456,7 @@
             return xtag.query(this, pseudo.value).filter(function(node){
               return node == event.target || node.contains ? node.contains(event.target) : null;
             })[0] ? condition.call(this, event, custom) : null;
-          }
+          };
         }
       },
       preventable: {
@@ -604,9 +604,9 @@
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
-                pseudo.arguments = (value || '').split(',');
+                pseudo['arguments'] = (value || '').split(',');
                 pseudo.action = pseudo.action || trueop;
-                pseudo.source = source; 
+                pseudo.source = source;
             var last = listener;
             listener = function(){
               var args = toArray(arguments),
@@ -617,7 +617,7 @@
                     source: source,
                     listener: last
                   };
-              var output = pseudo.action.apply(this, [obj].concat(args))
+              var output = pseudo.action.apply(this, [obj].concat(args));
               if (!output) return output;
               return obj.listener.apply(this, args);
             };
@@ -639,7 +639,7 @@
         if (obj.onRemove) obj.onRemove.call(element, obj);
       });
     },
-    
+
   /*** Events ***/
 
     parseEvent: function(type, fn) {
@@ -700,7 +700,7 @@
       }
       return event;
     },
-    
+
     addEvent: function (element, type, fn, capture) {
       var event = (typeof fn == 'function') ? xtag.parseEvent(type, fn) : fn;
       event._pseudos.forEach(function(obj){
