@@ -2774,7 +2774,7 @@ if (document.readyState === 'complete') {
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
-                pseudo.arguments = value.split(',');
+                pseudo.arguments = (value || '').split(',');
                 pseudo.action = pseudo.action || trueop;
                 pseudo.source = source; 
             var last = listener;
