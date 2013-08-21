@@ -836,15 +836,30 @@ describe("x-tag ", function () {
 
     });
 
-    it('prototype of existing elements should work', function(){
-      xtag.register("x-foo-template", {
-        prototype: Object.create(HTMLTemplateElement.prototype),
+    it('should allow a custom prototype to be used', function(){
+      var proto = Object.create(HTMLElement.prototype);
+      proto.fn = function(){};
+      xtag.register("x-foo-proto", {
+        prototype: proto
       });
 
-      var foo = document.createElement('x-foo-template');
+      var foo = document.createElement('x-foo-proto');
       testbox.appendChild(foo);
 
-      expect(foo.content).toBeDefined();
+      expect(foo.fn).toBeDefined();
+      expect(foo.click).toBeDefined();
+
+    });
+
+    it('should be able to extend existing elements', function(){
+      xtag.register("x-foo-extend", {
+        extends: 'div'
+      });
+
+      var foo = document.createElement('x-foo-extend');
+      testbox.appendChild(foo);
+
+      expect(foo.click).toBeDefined();
 
     });
   });

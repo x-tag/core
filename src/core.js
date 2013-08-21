@@ -275,15 +275,16 @@
       }
     },
     register: function (name, options) {
-      var element, _name;
+      var _name;
       if (typeof name == 'string') {
         _name = name.toLowerCase();
-      } else if (name.nodeName == 'ELEMENT') {
-        element = name;
-        _name = element.getAttribute('name').toLowerCase();
       } else {
         return;
       }
+
+      // save prototype for actual object creation below
+      var basePrototype = options.prototype;
+      delete options.prototype;
 
       var tag = xtag.tags[_name] = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
 
@@ -293,7 +294,7 @@
       for (z in tag.accessors) parseAccessor(tag, z);
 
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
-      tag.prototype.readyCallback = {
+      tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
@@ -316,8 +317,8 @@
         }
       };
 
-      if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted, enumerable: true };
-      if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed, enumerable: true };
+      if (tag.lifecycle.inserted) tag.prototype.enteredDocumentCallback = { value: tag.lifecycle.inserted, enumerable: true };
+      if (tag.lifecycle.removed) tag.prototype.leftDocumentCallback = { value: tag.lifecycle.removed, enumerable: true };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
       var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;
@@ -357,18 +358,18 @@
         }
       };
 
-      if (element){
-        element.register({
-          'prototype': Object.create(Object.prototype, tag.prototype)
-        });
-      } else {
-        return doc.register(_name, {
-          'extends': options['extends'],
-          'prototype': Object.create(Object.create((options['extends'] ?
-            document.createElement(options['extends']).constructor :
-            win.HTMLElement).prototype, tag.prototype), tag.prototype)
-        });
-      }
+      var elementProto = basePrototype ?
+        basePrototype :
+          options['extends'] ?
+            Object.create(document.createElement(options['extends'])
+              .constructor).prototype :
+          win.HTMLElement.prototype;
+
+      return doc.register(_name, {
+        'extends': options['extends'],
+        'prototype': Object.create(elementProto, tag.prototype)
+      });
+
     },
 
     /* Exposed Variables */
