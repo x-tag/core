@@ -143,27 +143,27 @@ describe("x-tag ", function () {
 
     var el = document.getElementById('attr_element');
     //var el = document.createElement('x-attr');
-    
+
     el.foo = 'foo-1';
     el.setAttribute('foo', 'foo-2');
     el.setAttribute('foo', 'foo-2');
     el.foo = 'foo-2';
     el.removeAttribute('foo');
     el.setAttribute('foo', 'foo-3');
-    
+
     el.setAttribute('bar', true);
     el.bar = false;
     el.bar = true;
     el.removeAttribute('bar');
     el.bar = 'bar';
     el.bar = false;
-    
+
     el.baz = 'baz-0';
     el.removeAttribute('baz');
     el.setAttribute('baz', 'baz-1');
     el.setAttribute('baz', 'baz-1');
     el.removeAttribute('baz');
-    
+
     el.zoo = false;
     el.zoo = true;
     el.removeAttribute('zoo');
@@ -178,16 +178,16 @@ describe("x-tag ", function () {
     runs(function (){
       expect(el.foo).toEqual('foo-3');
       expect(el.getAttribute('foo')).toEqual('foo-3');
-      
+
       expect(el.bar).toEqual(false);
       expect(el.getAttribute('bar')).toEqual(null);
-      
+
       expect(el.baz).toEqual(null);
       expect(el.getAttribute('baz')).toEqual(null);
-      
+
       expect(el.zoo).toEqual(true);
       expect(el.getAttribute('zoo')).toEqual('');
-      
+
       //console.log(el);
       //console.log(foo, bar, baz, zoo);
       expect(foo == 6 && bar == 7 && baz == 6 && zoo == 7).toEqual(true);
@@ -819,7 +819,34 @@ describe("x-tag ", function () {
 
     });
 
+    it('extends should allow elements to use other elements base functionality', function(){
+      xtag.register("x-foo", {
+        extends: 'template',
+        lifecycle: {
+          created: function() {
+            this.innerHTML = '<div>hello</div>';
+          }
+        }
+      });
 
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      expect(foo.content).toBeDefined();
+
+    });
+
+    it('prototype of existing elements should work', function(){
+      xtag.register("x-foo-template", {
+        prototype: Object.create(HTMLTemplateElement.prototype),
+      });
+
+      var foo = document.createElement('x-foo-template');
+      testbox.appendChild(foo);
+
+      expect(foo.content).toBeDefined();
+
+    });
   });
 
   describe('helper methods', function (){
