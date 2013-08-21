@@ -10,7 +10,6 @@ module.exports = function (grunt) {
    'lib/CustomElements/src/MutationObserver.js',
    'lib/CustomElements/src/CustomElements.js',
    'lib/CustomElements/src/Observer.js',
-   'lib/CustomElements/src/HTMLElementElement.js',
    'lib/HTMLImports/src/HTMLImports.js',
    'lib/HTMLImports/src/Parser.js',
    'lib/HTMLImports/src/boot.js',
