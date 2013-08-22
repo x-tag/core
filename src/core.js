@@ -173,6 +173,7 @@
       delete eventProps.baseEvent;
     }
     event.baseEvent = base;
+    event = Object.create(event);
     Object.defineProperties(event, eventProps);
   }
 
@@ -672,10 +673,7 @@
           }
         }, event._pseudos, event);
         event.stack = function(e){
-          Object.defineProperty(e, 'currentTarget', {
-            configurable: true,
-            value: this
-          });
+          e = Object.create(e, { currentTarget: { value: this }});
           return stack.apply(this, toArray(arguments));
         };
         event.listener = function(e){

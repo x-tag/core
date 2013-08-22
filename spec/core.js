@@ -780,45 +780,6 @@ describe("x-tag ", function () {
 
     });
 
-
-    it('custom event pseudo should fire', function (){
-
-      var pseudoFired = false,
-        clickThis = null;
-
-      xtag.pseudos.blah = {
-        action: function (pseudo, event){
-          pseudoFired = true;
-          event.foo = this;
-          return true;
-        }
-      };
-
-      xtag.register('x-foo', {
-        lifecycle: {
-          created: function (){
-            this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
-          }
-        },
-        events: {
-          'click:delegate(div):blah:delegate(bazz)': function (e, elem){
-            clickThis = this;
-          }
-        }
-      });
-
-      var foo = document.createElement('x-foo');
-      testbox.appendChild(foo);
-
-      var innerDiv = xtag.query(foo,'bazz')[0];
-      xtag.fireEvent(innerDiv,'click');
-
-      expect(pseudoFired).toEqual(true);
-
-      expect(innerDiv).toEqual(clickThis);
-
-    });
-
     it('extends should allow elements to use other elements base functionality', function(){
       xtag.register("x-foo", {
         extends: 'template',
@@ -845,6 +806,96 @@ describe("x-tag ", function () {
       testbox.appendChild(foo);
 
       expect(foo.content).toBeDefined();
+
+    });
+
+    describe("custom events", function () {
+
+      it('custom event pseudo should fire', function (){
+
+        var pseudoFired = false,
+          clickThis = null;
+
+        xtag.pseudos.blah = {
+          action: function (pseudo, event){
+            pseudoFired = true;
+            event.foo = this;
+            return true;
+          }
+        };
+
+        xtag.register('x-foo', {
+          lifecycle: {
+            created: function (){
+              this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
+            }
+          },
+          events: {
+            'click:delegate(div):blah:delegate(bazz)': function (e, elem){
+              clickThis = this;
+            }
+          }
+        });
+
+        var foo = document.createElement('x-foo');
+        testbox.appendChild(foo);
+
+        var innerDiv = xtag.query(foo,'bazz')[0];
+        xtag.fireEvent(innerDiv,'click');
+
+        expect(pseudoFired).toEqual(true);
+
+        expect(innerDiv).toEqual(clickThis);
+
+      });
+
+      it('tap should tap', function(){
+
+        var tap = document.createElement('div'),
+          tapped = false;
+        testbox.appendChild(tap);
+
+        xtag.addEvent(tap, 'tap', function(){
+          tapped = true;
+        });
+
+        waitsFor(function (){
+          return tapped;
+        }, "waiting for tap event to fire", 1000);
+
+        xtag.fireEvent(tap,'tap');
+
+        runs(function (){
+          expect(tapped).toEqual(true);
+        });
+
+      });
+
+      /*it('preventDefault should cancel base event', function(){
+
+        var tap = document.createElement('div'),
+          baseClickFired = false;
+        testbox.appendChild(tap);
+
+        xtag.addEvent(tap, 'tap', function(e){
+          console.log('click')
+          //e.preventDefault();
+        });
+
+        var fn = xtag.addEvent(testbox, 'tap', function(){
+          console.log('clickd');
+          baseClickFired = true;
+        });
+
+        xtag.fireEvent(tap,'click');
+
+
+        expect(baseClickFired).toEqual(false);
+
+        xtag.removeEvent(testbox, 'click', fn);
+
+
+      });*/
 
     });
   });
