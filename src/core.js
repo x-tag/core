@@ -153,27 +153,24 @@
     };
   }
 
-  var eventProps = {}, eventTypes = {};
-
-  function defineEventProperty(key, source){
-    eventProps[key] = {
-      configurable: true,
-      get: function(){
-        return this.baseEvent ? this.baseEvent[key] : this[key];
-      }
-    };
+  function writeProperty(key, event, base, desc){
+    if (event[key] === null || event[key] === undefined) {
+      if (desc) event[key] = base[key];
+      else Object.defineProperty(event, key, {
+        writable: true,
+        enumerable: true,
+        value: base[key]
+      });
+    }
   }
 
   function inheritEvent(event, base){
     var type = event.type;
-    if (!eventTypes[base.type]) {
-      eventTypes[base.type] = 1;
-      for(var z in base) defineEventProperty(z, base);
-      delete eventProps.type;
-      delete eventProps.baseEvent;
-    }
+    var desc = Object.getOwnPropertyDescriptor(event, 'target');
+    for (var z in base) writeProperty(z, event, base, desc);
+    event.touches = base.touches ? base.touches : [event];
     event.baseEvent = base;
-    Object.defineProperties(event, eventProps);
+    event.type = type;
   }
 
 // Accessors
@@ -456,7 +453,7 @@
             return xtag.query(this, pseudo.value).filter(function(node){
               return node == event.target || node.contains ? node.contains(event.target) : null;
             })[0] ? condition.call(this, event, custom) : null;
-          }
+          };
         }
       },
       preventable: {
@@ -604,7 +601,7 @@
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
-                pseudo.arguments = (value || '').split(',');
+                pseudo['arguments'] = value ? value.split(',') : [];
                 pseudo.action = pseudo.action || trueop;
                 pseudo.source = source; 
             var last = listener;
@@ -617,7 +614,7 @@
                     source: source,
                     listener: last
                   };
-              var output = pseudo.action.apply(this, [obj].concat(args))
+              var output = pseudo.action.apply(this, [obj].concat(args));
               if (!output) return output;
               return obj.listener.apply(this, args);
             };
@@ -639,7 +636,7 @@
         if (obj.onRemove) obj.onRemove.call(element, obj);
       });
     },
-    
+
   /*** Events ***/
 
     parseEvent: function(type, fn) {
@@ -660,29 +657,24 @@
       event.attach = toArray(event.base || event.attach);
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
-        var stack = xtag.applyPseudos(event.chain, function(e){
-          var args = toArray(arguments);
-          if (e.type == key) return fn.apply(this, args);
-          if (custom) {
-            var _event = doc.createEvent('CustomEvent');
-            _event.initCustomEvent(key, true, true, {});
-            inheritEvent(_event, e);
-            args[0] = _event;
-            fn.apply(this, args);
-          }
-        }, event._pseudos, event);
+        var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
         event.stack = function(e){
-          Object.defineProperty(e, 'currentTarget', {
-            configurable: true,
-            value: this
-          });
-          return stack.apply(this, toArray(arguments));
+          var detail = e.detail || {};
+          if (detail.__stack__) {
+            if (detail.__stack__ == stack) {
+              e.stopPropagation();
+              e.cancelBubble = true;
+              return stack.apply(this, toArray(arguments));
+            }
+          }
+          else return stack.apply(this, toArray(arguments));
         };
         event.listener = function(e){
           var args = toArray(arguments),
               output = event.condition.apply(this, args.concat([event]));
           if (!output) return output;
-          return event.stack.apply(this, args);
+          if (e.type != key) xtag.fireEvent(e.target, key, { baseEvent: e, detail: { __stack__: stack } });
+          else return event.stack.apply(this, args);
         };
         event.attach.forEach(function(name) {
           event._attach.push(xtag.parseEvent(name, event.listener));
