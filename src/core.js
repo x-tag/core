@@ -661,14 +661,12 @@
         var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
         event.stack = function(e){
           var detail = e.detail || {};
-          if (detail.__stack__) {
-            if (detail.__stack__ == stack) {
-              e.stopPropagation();
-              e.cancelBubble = true;
-              return stack.apply(this, toArray(arguments));
-            }
+          if (!detail.__stack__) return stack.apply(this, toArray(arguments));
+          else if (detail.__stack__ == stack) {
+            e.stopPropagation();
+            e.cancelBubble = true;
+            return stack.apply(this, toArray(arguments));
           }
-          else return stack.apply(this, toArray(arguments));
         };
         event.listener = function(e){
           var args = toArray(arguments),
