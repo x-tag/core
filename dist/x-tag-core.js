@@ -2196,11 +2196,14 @@ if (document.readyState === 'complete') {
       });
     }
   }
-
+  
+  var skipProps = { target: 1, currentTarget: 1, originalTarget: 1, bubbles: 1, cancelable: 1, defaultPrevented: 1, detail: 1, type: 1 };
   function inheritEvent(event, base){
     var type = event.type;
     var desc = Object.getOwnPropertyDescriptor(event, 'target');
-    for (var z in base) writeProperty(z, event, base, desc);
+    for (var z in base) {
+      if (!skipProps[z]) writeProperty(z, event, base, desc);
+    }
     event.touches = base.touches ? base.touches : [event];
     event.baseEvent = base;
     event.type = type;
