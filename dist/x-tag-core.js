@@ -675,8 +675,8 @@ if (typeof WeakMap !== 'undefined' && navigator.userAgent.indexOf('Firefox/') < 
  */
 
 if (!window.MutationObserver) {
-  window.MutationObserver =
-      window.WebKitMutationObserver ||
+  window.MutationObserver = 
+      window.WebKitMutationObserver || 
       window.JsMutationObserver;
   if (!MutationObserver) {
     throw new Error("no mutation observer support");
@@ -724,7 +724,7 @@ if (useNative) {
   // exports
   scope.registry = {};
   scope.upgradeElement = nop;
-
+  
   scope.watchShadow = nop;
   scope.watchAllShadows = nop;
   scope.upgrade = nop;
@@ -968,7 +968,7 @@ if (useNative) {
   function changeAttribute(name, value, operation) {
     var oldValue = this.getAttribute(name);
     operation.apply(this, arguments);
-    if (this.attributeChangedCallback
+    if (this.attributeChangedCallback 
         && (this.getAttribute(name) !== oldValue)) {
       this.attributeChangedCallback(name, oldValue);
     }
@@ -1032,7 +1032,7 @@ if (useNative) {
 
   /**
    * Upgrade an element to a custom element. Upgrading an element
-   * causes the custom prototype to be applied, an `is` attribute
+   * causes the custom prototype to be applied, an `is` attribute 
    * to be attached (as needed), and invocation of the `readyCallback`.
    * `upgrade` does nothing if the element is already upgraded, or
    * if it matches no registered custom tag name.
@@ -1067,9 +1067,9 @@ if (HTMLElement.prototype.webkitShadowRoot) {
 }
 */
 
-// walk the subtree rooted at node, applying 'find(element, data)' function
+// walk the subtree rooted at node, applying 'find(element, data)' function 
 // to each element
-// if 'find' returns true for 'element', do not search element's subtree
+// if 'find' returns true for 'element', do not search element's subtree  
 function findAll(node, find, data) {
   var e = node.firstElementChild;
   if (!e) {
@@ -1096,7 +1096,7 @@ function forRoots(node, cb) {
   }
 }
 
-// walk the subtree rooted at node, including descent into shadow-roots,
+// walk the subtree rooted at node, including descent into shadow-roots, 
 // applying 'cb' to each element
 function forSubtree(node, cb) {
   //logFlags.dom && node.childNodes && node.childNodes.length && console.group('subTree: ', node);
@@ -1114,7 +1114,7 @@ function forSubtree(node, cb) {
 function added(node) {
   if (upgrade(node)) {
     insertedNode(node);
-    return true;
+    return true; 
   }
   inserted(node);
 }
@@ -1123,7 +1123,7 @@ function added(node) {
 function addedSubtree(node) {
   forSubtree(node, function(e) {
     if (added(e)) {
-      return true;
+      return true; 
     }
   });
 }
@@ -1575,7 +1575,7 @@ Loader.prototype = {
       this.receive(url, elt, err, resource);
     }.bind(this);
     xhr.load(url, receiveXhr);
-    // TODO(sorvell): blocked on
+    // TODO(sorvell): blocked on 
     // https://code.google.com/p/chromium/issues/detail?id=257221
     // xhr'ing for a document makes scripts in imports runnable; otherwise
     // they are not; however, it requires that we have doctype=html in
@@ -1836,7 +1836,7 @@ var importParser = {
           var moniker = scope.path.documentUrlFromNode(scriptElt);
           // there could be more than one script this url
           var tag = '[' + Math.floor((Math.random()+1)*1000) + ']';
-          // TODO(sjmiles): Polymer hack, should be pluggable if we need to allow
+          // TODO(sjmiles): Polymer hack, should be pluggable if we need to allow 
           // this sort of thing
           var matches = code.match(/Polymer\(['"]([^'"]*)/);
           tag = matches && matches[1] || tag;
@@ -1862,7 +1862,7 @@ function isDocumentLink(elt) {
 function needsMainDocumentContext(node) {
   // nodes can be moved to the main document:
   // if they are in a tree but not in the main document and not children of <element>
-  return node.parentNode && !inMainDocument(node)
+  return node.parentNode && !inMainDocument(node) 
       && !isElementElementChild(node);
 }
 
@@ -1997,8 +1997,8 @@ function bootstrap() {
     // parse document
     CustomElements.parser.parse(document);
     // one more pass before register is 'live'
-    CustomElements.upgradeDocument(document);
-    // set internal 'ready' flag, now document.register will trigger
+    CustomElements.upgradeDocument(document);  
+    // set internal 'ready' flag, now document.register will trigger 
     // synchronous upgrades
     CustomElements.ready = true;
     // capture blunt profiling data
