@@ -727,6 +727,7 @@ if (useNative) {
   
   scope.watchShadow = nop;
   scope.watchAllShadows = nop;
+  scope.upgrade = nop;
   scope.upgradeAll = nop;
   scope.upgradeSubtree = nop;
   scope.observeDocument = nop;
@@ -896,10 +897,10 @@ if (useNative) {
     // flag as upgraded
     inElement.__upgraded__ = true;
     // there should never be a shadow root on inElement at this point
-    // we require child nodes be upgraded before ready
+    // we require child nodes be upgraded before `created`
     scope.upgradeSubtree(inElement);
     // lifecycle management
-    ready(inElement);
+    created(inElement);
     // OUTPUT
     return inElement;
   }
@@ -941,10 +942,10 @@ if (useNative) {
     }
   }
 
-  function ready(inElement) {
-    // invoke readyCallback
-    if (inElement.readyCallback) {
-      inElement.readyCallback();
+  function created(inElement) {
+    // invoke createdCallback
+    if (inElement.createdCallback) {
+      inElement.createdCallback();
     }
   }
 
@@ -987,12 +988,14 @@ if (useNative) {
     };
   }
 
-  function createElement(inTag) {
-    var definition = registry[inTag];
+  function createElement(tag, typeExtension) {
+    // TODO(sjmiles): ignore 'tag' when using 'typeExtension', we could
+    // error check it, or perhaps there should only ever be one argument
+    var definition = registry[typeExtension || tag];
     if (definition) {
       return new definition.ctor();
     }
-    return domCreateElement(inTag);
+    return domCreateElement(tag);
   }
 
   function upgradeElement(inElement) {
@@ -1166,7 +1169,7 @@ function inserted(element) {
   // TODO(sjmiles): when logging, do work on all custom elements so we can
   // track behavior even when callbacks not defined
   //console.log('inserted: ', element.localName);
-  if (element.insertedCallback || (element.__upgraded__ && logFlags.dom)) {
+  if (element.enteredDocumentCallback || (element.__upgraded__ && logFlags.dom)) {
     logFlags.dom && console.group('inserted:', element.localName);
     if (inDocument(element)) {
       element.__inserted = (element.__inserted || 0) + 1;
@@ -1178,9 +1181,9 @@ function inserted(element) {
       if (element.__inserted > 1) {
         logFlags.dom && console.warn('inserted:', element.localName,
           'insert/remove count:', element.__inserted)
-      } else if (element.insertedCallback) {
+      } else if (element.enteredDocumentCallback) {
         logFlags.dom && console.log('inserted:', element.localName);
-        element.insertedCallback();
+        element.enteredDocumentCallback();
       }
     }
     logFlags.dom && console.groupEnd();
@@ -1197,7 +1200,7 @@ function removedNode(node) {
 function removed(element) {
   // TODO(sjmiles): temporary: do work on all custom elements so we can track
   // behavior even when callbacks not defined
-  if (element.removedCallback || (element.__upgraded__ && logFlags.dom)) {
+  if (element.leftDocumentCallback || (element.__upgraded__ && logFlags.dom)) {
     logFlags.dom && console.log('removed:', element.localName);
     if (!inDocument(element)) {
       element.__inserted = (element.__inserted || 0) - 1;
@@ -1209,8 +1212,8 @@ function removed(element) {
       if (element.__inserted < 0) {
         logFlags.dom && console.warn('removed:', element.localName,
             'insert/remove count:', element.__inserted)
-      } else if (element.removedCallback) {
-        element.removedCallback();
+      } else if (element.leftDocumentCallback) {
+        element.leftDocumentCallback();
       }
     }
   }
@@ -1346,141 +1349,6 @@ scope.upgradeDocument = upgradeDocument;
 scope.takeRecords = takeRecords;
 
 })(window.CustomElements);
-
-/*
- * Copyright 2013 The Polymer Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style
- * license that can be found in the LICENSE file.
- */
-
-(function(){
-
-var HTMLElementElement = function(inElement) {
-  inElement.register = HTMLElementElement.prototype.register;
-  parseElementElement(inElement);
-  return inElement;
-};
-
-HTMLElementElement.prototype = {
-  register: function(inMore) {
-    if (inMore) {
-      this.options.lifecycle = inMore.lifecycle;
-      if (inMore.prototype) {
-        mixin(this.options.prototype, inMore.prototype);
-      }
-    }
-  }
-};
-
-function parseElementElement(inElement) {
-  // options to glean from inElement attributes
-  var options = {
-    name: '',
-    extends: null
-  };
-  // glean them
-  takeAttributes(inElement, options);
-  // default base
-  var base = HTMLElement.prototype;
-  // optional specified base
-  if (options.extends) {
-    // build an instance of options.extends
-    var archetype = document.createElement(options.extends);
-    // acquire the prototype
-    // TODO(sjmiles): __proto__ may be hinted by the custom element
-    // system on platforms that don't support native __proto__
-    // on those platforms the API is mixed into archetype and the
-    // effective base is not archetype's real prototype
-    base = archetype.__proto__ || Object.getPrototypeOf(archetype);
-  }
-  // extend base
-  options.prototype = Object.create(base);
-  // install options
-  inElement.options = options;
-  // locate user script
-  var script = inElement.querySelector('script:not([type]),script[type="text/javascript"],scripts');
-  if (script) {
-    // execute user script in 'inElement' context
-    executeComponentScript(script.textContent, inElement, options.name);
-  };
-  // register our new element
-  var ctor = document.register(options.name, options);
-  inElement.ctor = ctor;
-  // store optional constructor reference
-  var refName = inElement.getAttribute('constructor');
-  if (refName) {
-    window[refName] = ctor;
-  }
-}
-
-// each property in inDictionary takes a value
-// from the matching attribute in inElement, if any
-function takeAttributes(inElement, inDictionary) {
-  for (var n in inDictionary) {
-    var a = inElement.attributes[n];
-    if (a) {
-      inDictionary[n] = a.value;
-    }
-  }
-}
-
-// invoke inScript in inContext scope
-function executeComponentScript(inScript, inContext, inName) {
-  // set (highlander) context
-  context = inContext;
-  // source location
-  var owner = context.ownerDocument;
-  var url = (owner._URL || owner.URL || owner.impl
-      && (owner.impl._URL || owner.impl.URL));
-  // ensure the component has a unique source map so it can be debugged
-  // if the name matches the filename part of the owning document's url,
-  // use this, otherwise, add ":<name>" to the document url.
-  var match = url.match(/.*\/([^.]*)[.]?.*$/);
-  if (match) {
-    var name = match[1];
-    url += name != inName ? ':' + inName : '';
-  }
-  // compose script
-  var code = "__componentScript('"
-    + inName
-    + "', function(){"
-    + inScript
-    + "});"
-    + "\n//# sourceURL=" + url + "\n"
-  ;
-  // inject script
-  eval(code);
-}
-
-var context;
-
-// global necessary for script injection
-window.__componentScript = function(inName, inFunc) {
-  inFunc.call(context);
-};
-
-// utility
-
-// copy top level properties from props to obj
-function mixin(obj, props) {
-  obj = obj || {};
-  try {
-    Object.getOwnPropertyNames(props).forEach(function(n) {
-      var pd = Object.getOwnPropertyDescriptor(props, n);
-      if (pd) {
-        Object.defineProperty(obj, n, pd);
-      }
-    });
-  } catch(x) {
-  }
-  return obj;
-}
-
-// exports
-
-window.HTMLElementElement = HTMLElementElement;
-
-})();
 
 /*
  * Copyright 2013 The Polymer Authors. All rights reserved.
@@ -2067,12 +1935,10 @@ var IMPORT_LINK_TYPE = window.HTMLImports ? HTMLImports.IMPORT_LINK_TYPE : 'none
 
 var parser = {
   selectors: [
-    'link[rel=' + IMPORT_LINK_TYPE + ']',
-    'element'
+    'link[rel=' + IMPORT_LINK_TYPE + ']'
   ],
   map: {
-    link: 'parseLink',
-    element: 'parseElement'
+    link: 'parseLink'
   },
   parse: function(inDocument) {
     if (!inDocument.__parsed) {
@@ -2101,9 +1967,6 @@ var parser = {
     if (linkElt.content) {
       parser.parse(linkElt.content);
     }
-  },
-  parseElement: function(inElementElt) {
-    new HTMLElementElement(inElementElt);
   }
 };
 
@@ -2323,27 +2186,24 @@ if (document.readyState === 'complete') {
     };
   }
 
-  var eventProps = {}, eventTypes = {};
-
-  function defineEventProperty(key, source){
-    eventProps[key] = {
-      configurable: true,
-      get: function(){
-        return this.baseEvent ? this.baseEvent[key] : this[key];
-      }
-    };
+  function writeProperty(key, event, base, desc){
+    if (event[key] === null || event[key] === undefined) {
+      if (desc) event[key] = base[key];
+      else Object.defineProperty(event, key, {
+        writable: true,
+        enumerable: true,
+        value: base[key]
+      });
+    }
   }
 
   function inheritEvent(event, base){
     var type = event.type;
-    if (!eventTypes[base.type]) {
-      eventTypes[base.type] = 1;
-      for(var z in base) defineEventProperty(z, base);
-      delete eventProps.type;
-      delete eventProps.baseEvent;
-    }
+    var desc = Object.getOwnPropertyDescriptor(event, 'target');
+    for (var z in base) writeProperty(z, event, base, desc);
+    event.touches = base.touches ? base.touches : [event];
     event.baseEvent = base;
-    Object.defineProperties(event, eventProps);
+    event.type = type;
   }
 
 // Accessors
@@ -2445,15 +2305,16 @@ if (document.readyState === 'complete') {
       }
     },
     register: function (name, options) {
-      var element, _name;
+      var _name;
       if (typeof name == 'string') {
         _name = name.toLowerCase();
-      } else if (name.nodeName == 'ELEMENT') {
-        element = name;
-        _name = element.getAttribute('name').toLowerCase();
       } else {
         return;
       }
+
+      // save prototype for actual object creation below
+      var basePrototype = options.prototype;
+      delete options.prototype;
 
       var tag = xtag.tags[_name] = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
 
@@ -2463,7 +2324,7 @@ if (document.readyState === 'complete') {
       for (z in tag.accessors) parseAccessor(tag, z);
 
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
-      tag.prototype.readyCallback = {
+      tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
@@ -2486,8 +2347,8 @@ if (document.readyState === 'complete') {
         }
       };
 
-      if (tag.lifecycle.inserted) tag.prototype.insertedCallback = { value: tag.lifecycle.inserted, enumerable: true };
-      if (tag.lifecycle.removed) tag.prototype.removedCallback = { value: tag.lifecycle.removed, enumerable: true };
+      if (tag.lifecycle.inserted) tag.prototype.enteredDocumentCallback = { value: tag.lifecycle.inserted, enumerable: true };
+      if (tag.lifecycle.removed) tag.prototype.leftDocumentCallback = { value: tag.lifecycle.removed, enumerable: true };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
       var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;
@@ -2527,18 +2388,18 @@ if (document.readyState === 'complete') {
         }
       };
 
-      if (element){
-        element.register({
-          'prototype': Object.create(Object.prototype, tag.prototype)
-        });
-      } else {
-        return doc.register(_name, {
-          'extends': options['extends'],
-          'prototype': Object.create(Object.create((options['extends'] ?
-            document.createElement(options['extends']).constructor :
-            win.HTMLElement).prototype, tag.prototype), tag.prototype)
-        });
-      }
+      var elementProto = basePrototype ?
+        basePrototype :
+          options['extends'] ?
+            Object.create(document.createElement(options['extends'])
+              .constructor).prototype :
+          win.HTMLElement.prototype;
+
+      return doc.register(_name, {
+        'extends': options['extends'],
+        'prototype': Object.create(elementProto, tag.prototype)
+      });
+
     },
 
     /* Exposed Variables */
@@ -2830,29 +2691,22 @@ if (document.readyState === 'complete') {
       event.attach = toArray(event.base || event.attach);
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       if (fn) {
-        var stack = xtag.applyPseudos(event.chain, function(e){
-          var args = toArray(arguments);
-          if (e.type == key) return fn.apply(this, args);
-          if (custom) {
-            var _event = doc.createEvent('CustomEvent');
-            _event.initCustomEvent(key, true, true, {});
-            inheritEvent(_event, e);
-            args[0] = _event;
-            fn.apply(this, args);
-          }
-        }, event._pseudos, event);
+        var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
         event.stack = function(e){
-          Object.defineProperty(e, 'currentTarget', {
-            configurable: true,
-            value: this
-          });
-          return stack.apply(this, toArray(arguments));
+          var detail = e.detail || {};
+          if (!detail.__stack__) return stack.apply(this, toArray(arguments));
+          else if (detail.__stack__ == stack) {
+            e.stopPropagation();
+            e.cancelBubble = true;
+            return stack.apply(this, toArray(arguments));
+          }
         };
         event.listener = function(e){
           var args = toArray(arguments),
               output = event.condition.apply(this, args.concat([event]));
           if (!output) return output;
-          return event.stack.apply(this, args);
+          if (e.type != key) xtag.fireEvent(e.target, key, { baseEvent: e, detail: { __stack__: stack } });
+          else return event.stack.apply(this, args);
         };
         event.attach.forEach(function(name) {
           event._attach.push(xtag.parseEvent(name, event.listener));
