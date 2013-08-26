@@ -821,7 +821,7 @@ describe("x-tag ", function () {
 
     it('extends should allow elements to use other elements base functionality', function(){
       xtag.register("x-foo", {
-        extends: 'template',
+        extends: 'div',
         lifecycle: {
           created: function() {
             this.innerHTML = '<div>hello</div>';
@@ -832,7 +832,7 @@ describe("x-tag ", function () {
       var foo = document.createElement('x-foo');
       testbox.appendChild(foo);
 
-      expect(foo.content).toBeDefined();
+      expect(foo.innerHTML).toBeDefined();
 
     });
 
