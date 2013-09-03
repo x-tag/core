@@ -22,7 +22,7 @@
             .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
           )[1];
       return {
-        dom: pre == 'ms' ? pre.toUpperCase() : pre,
+        dom: pre == 'ms' ? 'MS' : pre,
         lowercase: pre,
         css: '-' + pre + '-',
         js: pre == 'ms' ? pre : pre[0].toUpperCase() + pre.substr(1)
@@ -120,7 +120,7 @@
   }
 
 // Events
-
+  
   function delegateAction(pseudo, event) {
     var target = query(this, pseudo.value).filter(function(node){
       return node == event.target || node.contains ? node.contains(event.target) : null;
@@ -169,7 +169,6 @@
     for (var z in base) {
       if (!skipProps[z]) writeProperty(z, event, base, desc);
     }
-    event.touches = base.touches ? base.touches : [event];
     event.baseEvent = base;
   }
 
@@ -358,7 +357,7 @@
       var elementProto = basePrototype ?
         basePrototype :
           options['extends'] ?
-            Object.create(document.createElement(options['extends'])
+            Object.create(doc.createElement(options['extends'])
               .constructor).prototype :
           win.HTMLElement.prototype;
 
@@ -373,24 +372,22 @@
 
     mixins: {},
     prefix: prefix,
-    templates: {},
+    touches: {
+      active: [],
+      changed: []
+    },
     captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged'],
     customEvents: {
       overflow: createFlowEvent('over'),
       underflow: createFlowEvent('under'),
       animationstart: {
-        attach: [
-          'oAnimationStart',
-          'MSAnimationStart',
-          'webkitAnimationStart'
-        ]
+        attach: [prefix.dom + 'AnimationStart']
+      },
+      animationend: {
+        attach: [prefix.dom + 'AnimationEnd']
       },
       transitionend: {
-        attach: [
-          'oTransitionEnd',
-          'MSTransitionEnd',
-          'webkitTransitionEnd'
-        ]
+        attach: [prefix.dom + 'TransitionEnd']
       },
       move: {
         attach: ['mousemove', 'touchmove'],
@@ -406,38 +403,48 @@
       },
       tapstart: {
         observe: {
-          mousedown: document,
-          touchstart: document
+          mousedown: doc,
+          touchstart: doc
         },
         condition: touchFilter
       },
       tapend: {
         observe: {
-          mouseup: document,
-          touchend: document
+          mouseup: doc,
+          touchend: doc
         },
         condition: touchFilter
       },
       tapmove: {
-        attach: ['tapstart', 'tapend', 'dragend'],
+        attach: ['tapstart', 'dragend', 'touchcancel'],
         condition: function(event, custom){
           switch (event.type) {
-            case 'move': return true;
+            case 'move':  return true;
             case 'dragover':
               var last = custom.lastDrag || {};
               custom.lastDrag = event;
               return (last.pageX != event.pageX && last.pageY != event.pageY) || null;
             case 'tapstart':
-              custom.move = custom.move || xtag.addEvents(this, {
-                'move': custom.listener,
-                'dragover': custom.listener
-              });
-              return true;
-            case 'tapend': case 'dragend':
-              xtag.removeEvents(this, custom.move || {});
-              delete custom.lastDrag;
-              delete custom.move;
-              return true;
+              custom.touches = custom.touches || 1;
+              if (!custom.move) {
+                custom.current = this;
+                custom.move = xtag.addEvents(this, {
+                  move: custom.listener,
+                  dragover: custom.listener
+                });
+                custom.tapend = xtag.addEvent(doc, 'tapend', custom.listener);
+              }
+              break;
+            case 'tapend': case 'dragend': case 'touchcancel':
+              custom.touches--;
+              if (!custom.touches) {
+                xtag.removeEvents(custom.current , custom.move || {});
+                xtag.removeEvent(doc, custom.tapend || {});
+                delete custom.lastDrag;
+                delete custom.current
+                delete custom.tapend
+                delete custom.move;
+              }
           }
         }
       }
@@ -639,7 +646,7 @@
     },
 
   /*** Events ***/
-
+    
     parseEvent: function(type, fn) {
       var pseudos = type.split(':'),
           key = pseudos.shift(),
@@ -657,32 +664,37 @@
           }, custom || {});
       event.attach = toArray(event.base || event.attach);
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
-      if (fn) {
-        var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
-        event.stack = function(e){
-          var detail = e.detail || {};
-          if (!detail.__stack__) return stack.apply(this, toArray(arguments));
-          else if (detail.__stack__ == stack) {
-            e.stopPropagation();
-            e.cancelBubble = true;
-            return stack.apply(this, toArray(arguments));
-          }
-        };
-        event.listener = function(e){
-          var args = toArray(arguments),
-              output = event.condition.apply(this, args.concat([event]));
-          if (!output) return output;
-          if (e.type != key) xtag.fireEvent(e.target, key, { baseEvent: e, detail: { __stack__: stack } });
-          else return event.stack.apply(this, args);
-        };
-        event.attach.forEach(function(name) {
-          event._attach.push(xtag.parseEvent(name, event.listener));
-        });
-      }
+      var condition = event.condition;
+      event.condition = function(e){
+        e.touches;
+        e.targetTouches;
+        return condition.apply(this, toArray(arguments));
+      }; 
+      var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
+      event.stack = function(e){
+        e.touches;
+        e.targetTouches;
+        var detail = e.detail || {};
+        if (!detail.__stack__) return stack.apply(this, toArray(arguments));
+        else if (detail.__stack__ == stack) {
+          e.stopPropagation();
+          e.cancelBubble = true;
+          return stack.apply(this, toArray(arguments));
+        }
+      };
+      event.listener = function(e){
+        var args = toArray(arguments),
+            output = event.condition.apply(this, args.concat([event]));
+        if (!output) return output;
+        if (e.type != key) xtag.fireEvent(e.target, key, { baseEvent: e, detail: { __stack__: stack } });
+        else return event.stack.apply(this, args);
+      };
+      event.attach.forEach(function(name) {
+        event._attach.push(xtag.parseEvent(name, event.listener));
+      });
       if (custom && custom.observe && !custom.__observing__) {
-        var condition = custom.condition || trueop;
         custom.observer = function(e){
-          var output = condition.apply(this, toArray(arguments).concat([custom]));
+          var output = event.condition.apply(this, toArray(arguments).concat([custom]));
           if (!output) return output;
           xtag.fireEvent(e.target, key, { baseEvent: e });
         };
@@ -718,7 +730,7 @@
       event.onRemove.call(element, event, event.listener);
       xtag.removePseudos(element, event);
       event._attach.forEach(function(obj) {
-        xtag.removeEvent(element, obj.type, obj);
+        xtag.removeEvent(element, obj);
       });
       element.removeEventListener(event.type, event.stack);
     },
@@ -780,6 +792,69 @@
     }
 
   };
+
+/*** Universal Touch ***/
+
+var touchCount = 0, touchTarget = null;
+
+doc.addEventListener('mousedown', function(e){
+  touchCount++;
+  touchTarget = e.target;
+}, true);
+
+doc.addEventListener('mouseup', function(){
+  touchCount--;
+  touchTarget = null;
+}, false);
+
+var UIEventProto = {
+  touches: {
+    configurable: true,
+    get: function(){
+      return this.__touches__ ||
+        (this.identifier = 0) ||
+        (this.__touches__ = touchCount ? [this] : []);
+    }
+  },
+  targetTouches: {
+    configurable: true,
+    get: function(){
+      return this.__targetTouches__ || (this.__targetTouches__ =
+        (touchCount && this.currentTarget &&
+        (this.currentTarget == touchTarget ||
+        (this.currentTarget.contains && this.currentTarget.contains(touchTarget)))) ? [this] : []);
+    }
+  },
+  changedTouches: {
+    configurable: true,
+    get: function(){
+      return this.touches;
+    }
+  }
+};
+
+for (var z in UIEventProto){
+  UIEvent.prototype[z] = UIEventProto[z];
+  Object.defineProperty(UIEvent.prototype, z, UIEventProto[z]);
+}
+
+var touchReset = {
+    value: null,
+    writable: true,
+    configurable: true
+  },
+  TouchEventProto = {
+    touches: touchReset,
+    targetTouches: touchReset,
+    changedTouches: touchReset
+  };
+
+if (win.TouchEvent) {
+  for (var z in TouchEventProto) {
+    win.TouchEvent.prototype[z] = TouchEventProto[z];
+    Object.defineProperty(win.TouchEvent.prototype, z, TouchEventProto[z]);
+  }
+}
 
 /*** Custom Event Definitions ***/
 
