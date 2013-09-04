@@ -104,8 +104,7 @@ if (typeof WeakMap !== 'undefined' && navigator.userAgent.indexOf('Firefox/') < 
 } else {
   (function() {
     var defineProperty = Object.defineProperty;
-    var hasOwnProperty = Object.hasOwnProperty;
-    var counter = new Date().getTime() % 1e9;
+    var counter = Date.now() % 1e9;
 
     SideTable = function() {
       this.name = '__st' + (Math.random() * 1e9 >>> 0) + (counter++ + '__');
@@ -113,10 +112,16 @@ if (typeof WeakMap !== 'undefined' && navigator.userAgent.indexOf('Firefox/') < 
 
     SideTable.prototype = {
       set: function(key, value) {
-        defineProperty(key, this.name, {value: value, writable: true});
+        var entry = key[this.name];
+        if (entry && entry[0] === key)
+          entry[1] = value;
+        else
+          defineProperty(key, this.name, {value: [key, value], writable: true});
       },
       get: function(key) {
-        return hasOwnProperty.call(key, this.name) ? key[this.name] : undefined;
+        var entry;
+        return (entry = key[this.name]) && entry[0] === key ?
+            entry[1] : undefined;
       },
       delete: function(key) {
         this.set(key, undefined);
@@ -726,7 +731,6 @@ if (useNative) {
   scope.upgradeElement = nop;
   
   scope.watchShadow = nop;
-  scope.watchAllShadows = nop;
   scope.upgrade = nop;
   scope.upgradeAll = nop;
   scope.upgradeSubtree = nop;
@@ -741,23 +745,23 @@ if (useNative) {
    *
    * When a registered element is created, a `readyCallback` method is called
    * in the scope of the element. The `readyCallback` method can be specified on
-   * either `inOptions.prototype` or `inOptions.lifecycle` with the latter taking
+   * either `options.prototype` or `options.lifecycle` with the latter taking
    * precedence.
    *
    * @method register
-   * @param {String} inName The tag name to register. Must include a dash ('-'),
+   * @param {String} name The tag name to register. Must include a dash ('-'),
    *    for example 'x-component'.
-   * @param {Object} inOptions
-   *    @param {String} [inOptions.extends]
+   * @param {Object} options
+   *    @param {String} [options.extends]
    *      (_off spec_) Tag name of an element to extend (or blank for a new
    *      element). This parameter is not part of the specification, but instead
    *      is a hint for the polyfill because the extendee is difficult to infer.
    *      Remember that the input prototype must chain to the extended element's
    *      prototype (or HTMLElement.prototype) regardless of the value of
    *      `extends`.
-   *    @param {Object} inOptions.prototype The prototype to use for the new
+   *    @param {Object} options.prototype The prototype to use for the new
    *      element. The prototype must inherit from HTMLElement.
-   *    @param {Object} [inOptions.lifecycle]
+   *    @param {Object} [options.lifecycle]
    *      Callbacks that fire at important phases in the life of the custom
    *      element.
    *
@@ -774,18 +778,23 @@ if (useNative) {
    *      });
    * @return {Function} Constructor for the newly registered type.
    */
-  function register(inName, inOptions) {
-    //console.warn('document.register("' + inName + '", ', inOptions, ')');
+  function register(name, options) {
+    //console.warn('document.register("' + name + '", ', options, ')');
     // construct a defintion out of options
-    // TODO(sjmiles): probably should clone inOptions instead of mutating it
-    var definition = inOptions || {};
-    if (!inName) {
+    // TODO(sjmiles): probably should clone options instead of mutating it
+    var definition = options || {};
+    if (!name) {
       // TODO(sjmiles): replace with more appropriate error (EricB can probably
       // offer guidance)
-      throw new Error('Name argument must not be empty');
+      throw new Error('document.register: first argument `name` must not be empty');
+    }
+    if (name.indexOf('-') < 0) {
+      // TODO(sjmiles): replace with more appropriate error (EricB can probably
+      // offer guidance)
+      throw new Error('document.register: first argument `name` must contain a dash (\'-\'). Argument was \'' + String(name) + '\'.');
     }
     // record name
-    definition.name = inName;
+    definition.name = name;
     // must have a prototype, default to an extension of HTMLElement
     // TODO(sjmiles): probably should throw if no prototype, check spec
     if (!definition.prototype) {
@@ -808,7 +817,7 @@ if (useNative) {
     // overrides to implement attributeChanged callback
     overrideAttributeApi(definition.prototype);
     // 7.1.5: Register the DEFINITION with DOCUMENT
-    registerDefinition(inName, definition);
+    registerDefinition(name, definition);
     // 7.1.7. Run custom element constructor generation algorithm with PROTOTYPE
     // 7.1.8. Return the output of the previous step.
     definition.ctor = generateConstructor(definition);
@@ -823,98 +832,98 @@ if (useNative) {
     return definition.ctor;
   }
 
-  function ancestry(inExtends) {
-    var extendee = registry[inExtends];
+  function ancestry(extnds) {
+    var extendee = registry[extnds];
     if (extendee) {
       return ancestry(extendee.extends).concat([extendee]);
     }
     return [];
   }
 
-  function resolveTagName(inDefinition) {
+  function resolveTagName(definition) {
     // if we are explicitly extending something, that thing is our
     // baseTag, unless it represents a custom component
-    var baseTag = inDefinition.extends;
+    var baseTag = definition.extends;
     // if our ancestry includes custom components, we only have a
     // baseTag if one of them does
-    for (var i=0, a; (a=inDefinition.ancestry[i]); i++) {
+    for (var i=0, a; (a=definition.ancestry[i]); i++) {
       baseTag = a.is && a.tag;
     }
     // our tag is our baseTag, if it exists, and otherwise just our name
-    inDefinition.tag = baseTag || inDefinition.name;
+    definition.tag = baseTag || definition.name;
     if (baseTag) {
       // if there is a base tag, use secondary 'is' specifier
-      inDefinition.is = inDefinition.name;
+      definition.is = definition.name;
     }
   }
 
-  function resolvePrototypeChain(inDefinition) {
+  function resolvePrototypeChain(definition) {
     // if we don't support __proto__ we need to locate the native level
     // prototype for precise mixing in
     if (!Object.__proto__) {
       // default prototype
-      var native = HTMLElement.prototype;
+      var nativePrototype = HTMLElement.prototype;
       // work out prototype when using type-extension
-      if (inDefinition.is) {
-        var inst = document.createElement(inDefinition.tag);
-        native = Object.getPrototypeOf(inst);
+      if (definition.is) {
+        var inst = document.createElement(definition.tag);
+        nativePrototype = Object.getPrototypeOf(inst);
       }
       // ensure __proto__ reference is installed at each point on the prototype
       // chain.
       // NOTE: On platforms without __proto__, a mixin strategy is used instead
       // of prototype swizzling. In this case, this generated __proto__ provides
       // limited support for prototype traversal.
-      var proto = inDefinition.prototype, ancestor;
-      while (proto && (proto !== native)) {
+      var proto = definition.prototype, ancestor;
+      while (proto && (proto !== nativePrototype)) {
         var ancestor = Object.getPrototypeOf(proto);
         proto.__proto__ = ancestor;
         proto = ancestor;
       }
     }
     // cache this in case of mixin
-    inDefinition.native = native;
+    definition.native = nativePrototype;
   }
 
   // SECTION 4
 
-  function instantiate(inDefinition) {
+  function instantiate(definition) {
     // 4.a.1. Create a new object that implements PROTOTYPE
     // 4.a.2. Let ELEMENT by this new object
     //
     // the custom element instantiation algorithm must also ensure that the
     // output is a valid DOM element with the proper wrapper in place.
     //
-    return upgrade(domCreateElement(inDefinition.tag), inDefinition);
+    return upgrade(domCreateElement(definition.tag), definition);
   }
 
-  function upgrade(inElement, inDefinition) {
+  function upgrade(element, definition) {
     // some definitions specify an 'is' attribute
-    if (inDefinition.is) {
-      inElement.setAttribute('is', inDefinition.is);
+    if (definition.is) {
+      element.setAttribute('is', definition.is);
     }
-    // make 'element' implement inDefinition.prototype
-    implement(inElement, inDefinition);
+    // make 'element' implement definition.prototype
+    implement(element, definition);
     // flag as upgraded
-    inElement.__upgraded__ = true;
-    // there should never be a shadow root on inElement at this point
+    element.__upgraded__ = true;
+    // there should never be a shadow root on element at this point
     // we require child nodes be upgraded before `created`
-    scope.upgradeSubtree(inElement);
+    scope.upgradeSubtree(element);
     // lifecycle management
-    created(inElement);
+    created(element);
     // OUTPUT
-    return inElement;
+    return element;
   }
 
-  function implement(inElement, inDefinition) {
+  function implement(element, definition) {
     // prototype swizzling is best
     if (Object.__proto__) {
-      inElement.__proto__ = inDefinition.prototype;
+      element.__proto__ = definition.prototype;
     } else {
       // where above we can re-acquire inPrototype via
       // getPrototypeOf(Element), we cannot do so when
       // we use mixin, so we install a magic reference
-      customMixin(inElement, inDefinition.prototype, inDefinition.native);
-      inElement.__proto__ = inDefinition.prototype;
+      customMixin(element, definition.prototype, definition.native);
+      element.__proto__ = definition.prototype;
     }
   }
 
@@ -942,10 +951,10 @@ if (useNative) {
     }
   }
 
-  function created(inElement) {
+  function created(element) {
     // invoke createdCallback
-    if (inElement.createdCallback) {
-      inElement.createdCallback();
+    if (element.createdCallback) {
+      element.createdCallback();
     }
   }
 
@@ -978,13 +987,13 @@ if (useNative) {
 
   var registry = {};
 
-  function registerDefinition(inName, inDefinition) {
-    registry[inName] = inDefinition;
+  function registerDefinition(name, definition) {
+    registry[name] = definition;
   }
 
-  function generateConstructor(inDefinition) {
+  function generateConstructor(definition) {
     return function() {
-      return instantiate(inDefinition);
+      return instantiate(definition);
     };
   }
 
@@ -998,11 +1007,11 @@ if (useNative) {
     return domCreateElement(tag);
   }
 
-  function upgradeElement(inElement) {
-    if (!inElement.__upgraded__ && (inElement.nodeType === Node.ELEMENT_NODE)) {
-      var type = inElement.getAttribute('is') || inElement.localName;
+  function upgradeElement(element) {
+    if (!element.__upgraded__ && (element.nodeType === Node.ELEMENT_NODE)) {
+      var type = element.getAttribute('is') || element.localName;
       var definition = registry[type];
-      return definition && upgrade(inElement, definition);
+      return definition && upgrade(element, definition);
     }
   }
 
@@ -1038,7 +1047,7 @@ if (useNative) {
    * if it matches no registered custom tag name.
    *
    * @method ugprade
-   * @param {Element} inElement The element to upgrade.
+   * @param {Element} element The element to upgrade.
    * @return {Element} The upgraded element.
    */
   scope.upgrade = upgradeElement;
@@ -1057,15 +1066,7 @@ license that can be found in the LICENSE file.
 
 (function(scope){
 
-/*
-if (HTMLElement.prototype.webkitShadowRoot) {
-  Object.defineProperty(HTMLElement.prototype, 'shadowRoot', {
-    get: function() {
-      return this.webkitShadowRoot;
-    }
-  };
-}
-*/
+var logFlags = window.logFlags || {};
 
 // walk the subtree rooted at node, applying 'find(element, data)' function 
 // to each element
@@ -1248,13 +1249,6 @@ function watchRoot(root) {
   }
 }
 
-function watchAllShadows(node) {
-  watchShadow(node);
-  forSubtree(node, function(e) {
-    watchShadow(node);
-  });
-}
-
 function filter(inNode) {
   switch (inNode.localName) {
     case 'style':
@@ -1290,11 +1284,6 @@ function handler(mutations) {
         if (filter(n)) {
           return;
         }
-        // watch shadow-roots on nodes that have had them attached manually
-        // TODO(sjmiles): remove if createShadowRoot is overridden
-        // TODO(sjmiles): removed as an optimization, manual shadow roots
-        // must be watched explicitly
-        //watchAllShadows(n);
         // nodes added may need lifecycle management
         addedNode(n);
       });
@@ -1338,8 +1327,6 @@ function upgradeDocument(document) {
 // exports
 
 scope.watchShadow = watchShadow;
-scope.watchAllShadows = watchAllShadows;
-
 scope.upgradeAll = addedNode;
 scope.upgradeSubtree = addedSubtree;
 
@@ -1990,14 +1977,16 @@ CustomElements.parser = parser;
 (function(){
 
 // bootstrap parsing
-
 function bootstrap() {
-  // go async so call stack can unwind
-  setTimeout(function() {
-    // parse document
-    CustomElements.parser.parse(document);
-    // one more pass before register is 'live'
-    CustomElements.upgradeDocument(document);  
+  // parse document
+  CustomElements.parser.parse(document);
+  // one more pass before register is 'live'
+  CustomElements.upgradeDocument(document);  
+  // choose async
+  var async = window.Platform && Platform.endOfMicrotask ? 
+    Platform.endOfMicrotask :
+    setTimeout;
+  async(function() {
     // set internal 'ready' flag, now document.register will trigger 
     // synchronous upgrades
     CustomElements.ready = true;
@@ -2010,7 +1999,7 @@ function bootstrap() {
     document.body.dispatchEvent(
       new CustomEvent('WebComponentsReady', {bubbles: true})
     );
-  }, 0);
+  });
 }
 
 // CustomEvent shim for IE
