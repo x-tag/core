@@ -441,8 +441,8 @@
                 xtag.removeEvents(custom.current , custom.move || {});
                 xtag.removeEvent(doc, custom.tapend || {});
                 delete custom.lastDrag;
-                delete custom.current
-                delete custom.tapend
+                delete custom.current;
+                delete custom.tapend;
                 delete custom.move;
               }
           }
@@ -666,14 +666,12 @@
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
       var condition = event.condition;
       event.condition = function(e){
-        e.touches;
-        e.targetTouches;
+        var t = e.touches, tt = e.targetTouches;
         return condition.apply(this, toArray(arguments));
       }; 
       var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
       event.stack = function(e){
-        e.touches;
-        e.targetTouches;
+        var t = e.touches, tt = e.targetTouches;
         var detail = e.detail || {};
         if (!detail.__stack__) return stack.apply(this, toArray(arguments));
         else if (detail.__stack__ == stack) {
@@ -833,7 +831,7 @@ var UIEventProto = {
   }
 };
 
-for (var z in UIEventProto){
+for (z in UIEventProto){
   UIEvent.prototype[z] = UIEventProto[z];
   Object.defineProperty(UIEvent.prototype, z, UIEventProto[z]);
 }
@@ -850,7 +848,7 @@ var touchReset = {
   };
 
 if (win.TouchEvent) {
-  for (var z in TouchEventProto) {
+  for (z in TouchEventProto) {
     win.TouchEvent.prototype[z] = TouchEventProto[z];
     Object.defineProperty(win.TouchEvent.prototype, z, TouchEventProto[z]);
   }
