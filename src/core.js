@@ -35,10 +35,26 @@
 
 // Utilities
 
-  var typeObj = {};
-  function typeOf(obj) {
-    return typeObj.toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
-  }
+  // a bit more prolix but ways faster and better suitable for mobile
+  // than the one used before: http://jsperf.com/generic-typeof
+  // also once minzipped ain't so bigger ;-)
+  var typeOf = (function(Object, RegExp){
+    // WTFPL License - http://en.wikipedia.org/wiki/WTFPL
+    var toString = Object.prototype.toString,
+      cache = (Object.create || Object)(null),
+      matchClass = /\w+(?=])/;
+    return function typeOf(Unknown) {
+      var asString = typeof Unknown;
+      return asString == 'object' ? (
+        Unknown === null ? 'null' : (
+          cache[asString = toString.call(Unknown)] || (
+            cache[asString] = matchClass.test(asString) &&
+                              RegExp.lastMatch.toLowerCase()
+          )
+        )
+      ) : asString;
+    };
+  }(Object, RegExp));
 
   function clone(item, type){
     var fn = clone[type || typeOf(item)];
