@@ -623,7 +623,7 @@
                     listener: last
                   };
               var output = pseudo.action.apply(this, [obj].concat(args));
-              if (!output) return output;
+              if (output === null || output === false) return output;
               return obj.listener.apply(this, args);
             };
             if (element && pseudo.onAdd) {
