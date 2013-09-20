@@ -936,8 +936,8 @@ if (win.TouchEvent) {
     }
   };
 
+  win.xtag = xtag
   if (typeof define == 'function' && define.amd) define(xtag);
-  else win.xtag = xtag;
 
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
