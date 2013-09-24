@@ -2949,10 +2949,7 @@ var touchReset = {
   };
 
 if (win.TouchEvent) {
-  for (z in TouchEventProto) {
-    win.TouchEvent.prototype[z] = TouchEventProto[z];
-    Object.defineProperty(win.TouchEvent.prototype, z, TouchEventProto[z]);
-  }
+  for (z in TouchEventProto) win.TouchEvent.prototype[z] = TouchEventProto[z];
 }
 
 /*** Custom Event Definitions ***/
