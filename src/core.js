@@ -123,7 +123,7 @@
   }
 
 // Events
-  
+
   function delegateAction(pseudo, event) {
     var target = query(this, pseudo.value).filter(function(node){
       return node == event.target || node.contains ? node.contains(event.target) : null;
@@ -164,7 +164,7 @@
       value: base[key]
     });
   }
-  
+
   var skipProps = {};
   for (var z in document.createEvent('CustomEvent')) skipProps[z] = 1;
   function inheritEvent(event, base){
@@ -316,7 +316,7 @@
         }
       };
 
-      if (tag.lifecycle.inserted) tag.prototype.enteredDocumentCallback = { value: tag.lifecycle.inserted, enumerable: true };
+      if (tag.lifecycle.inserted) tag.prototype.enteredViewCallback = { value: tag.lifecycle.inserted, enumerable: true };
       if (tag.lifecycle.removed) tag.prototype.leftDocumentCallback = { value: tag.lifecycle.removed, enumerable: true };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
@@ -649,7 +649,7 @@
     },
 
   /*** Events ***/
-    
+
     parseEvent: function(type, fn) {
       var pseudos = type.split(':'),
           key = pseudos.shift(),
@@ -671,7 +671,7 @@
       event.condition = function(e){
         var t = e.touches, tt = e.targetTouches;
         return condition.apply(this, toArray(arguments));
-      }; 
+      };
       var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
       event.stack = function(e){
         var t = e.touches, tt = e.targetTouches;
@@ -936,7 +936,7 @@ if (win.TouchEvent) {
     }
   };
 
-  win.xtag = xtag
+  win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
 
   doc.addEventListener('WebComponentsReady', function(){
