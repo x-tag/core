@@ -410,7 +410,7 @@
         readyEvent.fire();
       }
 
-      return registration; // This will be undefined if we spawned an event listener to invoke document.register
+      return registration;
     },
 
     /* Exposed Variables */
