@@ -292,6 +292,29 @@
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
+      // we need to fire an event once all the existing instances of this component have been upgraded
+      var readyEvent = {
+        on: null,
+        fired: false,
+        fire: function(el){
+          if (!readyEvent.fired && (!el || (readyEvent.on && readyEvent.on == el))){ // This is the last element, or there are no elements. Fire the event.
+            function doit(){
+              readyEvent.fired = true;
+              document.dispatchEvent(new CustomEvent("WebComponentReady", {'detail' : {'WebComponentType': _name}}));
+            }
+            if (CustomElements.ready) doit();
+            else { // The document isn't ready to fire the event.
+              el.addEventListener("WebComponentsReady", function handler(){
+                el.removeEventListener("WebComponentsReady", handler); // We don't need a listener dangling about anymore
+                if (!readyEvent.fired){ // Make sure it hasn't been fired in the meantime
+                  doit();
+                }
+              });
+            }
+          }
+        }
+      };
+
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
@@ -301,6 +324,9 @@
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
           });
+
+          readyEvent.fire(this);
+
           var output = ready ? ready.apply(this, toArray(arguments)) : null;
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
@@ -364,11 +390,27 @@
               .constructor).prototype :
           win.HTMLElement.prototype;
 
-      return doc.register(_name, {
+      var extProperties= {
         'extends': options['extends'],
         'prototype': Object.create(elementProto, tag.prototype)
-      });
+      };
 
+      var registration = doc.register(_name, extProperties);
+      var qsa = _name;
+      if (extProperties.is){
+        qsa = extProperties.tag + "[is='" + _name + "']";
+      }
+      var existingInstances = doc.body.querySelectorAll(qsa);
+
+      if (existingInstances.length){
+        readyEvent.on = existingInstances[existingInstances.length - 1];
+        readyEvent.fire(readyEvent.on);
+      }
+      else { // There are no instances in the document. We are ready now.
+        readyEvent.fire();
+      }
+
+      return registration; // This will be undefined if we spawned an event listener to invoke document.register
     },
 
     /* Exposed Variables */
