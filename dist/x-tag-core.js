@@ -2087,8 +2087,17 @@ if (typeof window.CustomEvent !== 'function') {
   };
 }
 
+// When loading at readyState complete time, boot custom elements immediately.
+// If relevant, HTMLImports must already be loaded.
 if (document.readyState === 'complete') {
   bootstrap();
+// When loading at readyState interactive time, bootstrap only if HTMLImports
+// are not pending. Also avoid IE as the semantics of this state are unreliable.
+} else if (document.readyState === 'interactive' && !window.attachEvent &&
+    (!window.HTMLImports || window.HTMLImports.ready)) {
+  bootstrap();
+// When loading at other readyStates, wait for the appropriate DOM event to 
+// bootstrap.
 } else {
   var loadEvent = window.HTMLImports ? 'HTMLImportsLoaded' : 'DOMContentLoaded';
   window.addEventListener(loadEvent, bootstrap);
@@ -2390,6 +2399,52 @@ if (document.readyState === 'complete') {
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
+      // we need to fire an event once all the existing instances of this component have been upgraded
+      var readyEvent = {
+        on: null,
+        fired: false,
+        fire: function(el){
+          if (!this.fired){
+            var doit = function (){
+              if (CustomElements.ready){
+                readyEvent.fired = true;
+                console.log("Dispatching WebComponentReady for " + _name);
+                document.dispatchEvent(new CustomEvent("WebComponentReady", {'detail' : {'WebComponentType': _name}}));
+                return true;
+              }
+              else return false;
+            };
+            var queueit = function (target){
+              if (!  doit()){
+                console.log(_name + " is waiting for WebComponentsReady");
+                document.addEventListener("WebComponentsReady", function handler(){
+                  if (!readyEvent.fired) // Make sure it hasn't been fired in the meantime
+                    doit();
+                  setTimeout(function(){document.removeEventListener("WebComponentsReady", handler);}); // We don't need a listener dangling about anymore
+                });
+              }
+            };
+            if (el) { // fire was invoked by createdCallback
+              if (this.on && this.on == el){ // el is the last instance
+                queueit(el);
+              }
+              else // Either this is not the last instance, or we don't know the last instance.
+                return; // Let somebody else deal with it
+            }
+            else // fire was invoked outside of createdCallback
+              if (this.on){
+                /***
+                * Either the last instance has not invoked createdCallback yet
+                *   or fire did not know el was the last instance when createdCallback invoked it
+                */
+                queueit(this.on);
+              }
+            else  // There are no instances in the document
+              queueit(document.body);
+          }
+        }
+      };
+
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
@@ -2399,6 +2454,9 @@ if (document.readyState === 'complete') {
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
           });
+
+          readyEvent.fire(this);
+
           var output = ready ? ready.apply(this, toArray(arguments)) : null;
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
@@ -2462,11 +2520,24 @@ if (document.readyState === 'complete') {
               .constructor).prototype :
           win.HTMLElement.prototype;
 
-      return doc.register(_name, {
+      var extProperties= {
         'extends': options['extends'],
         'prototype': Object.create(elementProto, tag.prototype)
-      });
+      };
 
+      var registration = doc.register(_name, extProperties);
+      var qsa = _name;
+      if (extProperties.is){
+        qsa = extProperties.tag + "[is='" + _name + "']";
+      }
+      var existingInstances = doc.body.querySelectorAll(qsa);
+
+      if (existingInstances.length){
+        readyEvent.on = existingInstances[existingInstances.length - 1];
+      }
+      readyEvent.fire();
+
+      return registration;
     },
 
     /* Exposed Variables */
