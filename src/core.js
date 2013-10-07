@@ -297,20 +297,43 @@
         on: null,
         fired: false,
         fire: function(el){
-          if (!readyEvent.fired && (!el || (readyEvent.on && readyEvent.on == el))){ // This is the last element, or there are no elements. Fire the event.
+          if (!this.fired){
             function doit(){
-              readyEvent.fired = true;
-              document.dispatchEvent(new CustomEvent("WebComponentReady", {'detail' : {'WebComponentType': _name}}));
+              if (CustomElements.ready){
+                readyEvent.fired = true;
+                console.log("Dispatching WebComponentReady for " + _name);
+                document.dispatchEvent(new CustomEvent("WebComponentReady", {'detail' : {'WebComponentType': _name}}));
+                return true;
+              }
+              else return false;
             }
-            if (CustomElements.ready) doit();
-            else { // The document isn't ready to fire the event.
-              el.addEventListener("WebComponentsReady", function handler(){
-                el.removeEventListener("WebComponentsReady", handler); // We don't need a listener dangling about anymore
-                if (!readyEvent.fired){ // Make sure it hasn't been fired in the meantime
-                  doit();
-                }
-              });
+            function queueit(target){
+              if (!  doit()){
+                console.log(_name + " is waiting for WebComponentsReady");
+                document.addEventListener("WebComponentsReady", function handler(){
+                  if (!readyEvent.fired) // Make sure it hasn't been fired in the meantime
+                    doit();
+                  setTimeout(function(){document.removeEventListener("WebComponentsReady", handler);}) // We don't need a listener dangling about anymore
+                });
+              }
             }
+            if (el) { // fire was invoked by createdCallback
+              if (this.on && this.on == el){ // el is the last instance
+                queueit(el);
+              }
+              else // Either this is not the last instance, or we don't know the last instance.
+                return; // Let somebody else deal with it
+            }
+            else // fire was invoked outside of createdCallback
+              if (this.on){
+                /***
+                * Either the last instance has not invoked createdCallback yet
+                *   or fire did not know el was the last instance when createdCallback invoked it
+                */
+                queueit(this.on);
+              }
+            else  // There are no instances in the document
+              queueit(document.body);
           }
         }
       };
@@ -404,11 +427,8 @@
 
       if (existingInstances.length){
         readyEvent.on = existingInstances[existingInstances.length - 1];
-        readyEvent.fire(readyEvent.on);
       }
-      else { // There are no instances in the document. We are ready now.
-        readyEvent.fire();
-      }
+      readyEvent.fire();
 
       return registration;
     },
