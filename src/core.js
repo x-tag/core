@@ -97,25 +97,44 @@
     return source;
   }
 
-  function mergeMixin(type, mixin, option) {
-    var original = {};
-    for (var o in option) original[o.split(':')[0]] = true;
-    for (var x in mixin) if (!original[x.split(':')[0]]) option[x] = mixin[x];
+  function wrapMixin(tag, key, pseudo, value, original){
+    if (typeof original[key] != 'function') original[key] = value;
+    else {
+      original[key] = xtag.wrap(original[key], xtag.applyPseudos(pseudo, value, tag.pseudos));
+    }
+  }
+  
+  var uniqueMixinCount = 0;
+  function mergeMixin(tag, mixin, original, mix) {
+    if (mix) {
+      var uniques = {};
+      for (var z in original) uniques[z.split(':')[0]] = z;
+      for (z in mixin) {
+        wrapMixin(tag, uniques[z.split(':')[0]] || z, z, mixin[z], original);
+      }
+    }
+    else {
+      for (z in mixin) wrapMixin(tag, z + ':__mixin__(' + (uniqueMixinCount++) + ')', z, mixin[z], original);
+    }
   }
 
-  function applyMixins(tag) {
+  function applyMixins(tag) { 
     tag.mixins.forEach(function (name) {
       var mixin = xtag.mixins[name];
       for (var type in mixin) {
-        switch (type) {
-          case 'lifecycle': case 'methods':
-            mergeMixin(type, mixin[type], tag[type]);
-            break;
-          case 'accessors': case 'prototype':
-            for (var z in mixin[type]) mergeMixin(z, mixin[type], tag.accessors);
-            break;
-          case 'events':
-            break;
+        var item = mixin[type],
+            original = tag[type];
+        if (!original) tag[type] = item;
+        else {
+          switch (type){
+            case 'accessors': case 'prototype':
+              for (var z in item) {
+                if (!original[z]) original[z] = item[z];
+                else mergeMixin(tag, item[z], original[z], true);
+              }
+              break;
+            default: mergeMixin(tag, item, original, type != 'events');
+          }
         }
       }
     });
@@ -455,6 +474,7 @@
       }
     },
     pseudos: {
+      __mixin__: {},
       keypass: keypseudo,
       keyfail: keypseudo,
       delegate: { action: delegateAction },
@@ -485,8 +505,9 @@
     wrap: function (original, fn) {
       return function(){
         var args = toArray(arguments),
-          returned = original.apply(this, args);
-        return returned === false ? false : fn.apply(this, typeof returned != 'undefined' ? toArray(returned) : args);
+            output = original.apply(this, args);
+        fn.apply(this, args);
+        return output;
       };
     },
 

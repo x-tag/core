@@ -509,8 +509,6 @@ describe("x-tag ", function () {
         mixins: ['test'],
         lifecycle: {
           created: function (){
-            // should this call be explicit
-            xtag.mixins.test.lifecycle.created.call(this);
             createdFired2 = true;
           }
         }
@@ -530,10 +528,16 @@ describe("x-tag ", function () {
     });
 
     it("should allow mixins to create getters", function (){
+      var count = 0,
+          getFoo = {
+            base: null,
+            mixin: null
+          };
       xtag.mixins.test = {
         accessors: {
           foo: {
             get: function (){
+              if (count < 2) getFoo.mixin = ++count;
               return "barr";
             }
           }
@@ -541,11 +545,21 @@ describe("x-tag ", function () {
       };
 
       xtag.register('x-foo', {
-        mixins: ['test']
+        mixins: ['test'],
+        accessors: {
+          foo: {
+            get: function (){
+              if (count < 2) getFoo.base = ++count;
+              return "barr";
+            }
+          }
+        }
       });
 
       var foo = document.createElement('x-foo');
-      expect('barr').toEqual(foo.foo);
+      var testing = foo.foo;
+      expect(getFoo.base).toEqual(1);
+      expect(getFoo.mixin).toEqual(2);
     });
 
     it("should allow mixins to create setters", function (){
@@ -570,18 +584,23 @@ describe("x-tag ", function () {
     });
 
     it("should allow mixins to handle events", function (){
-      var mixinEvent = false;
-
+      var mixinEvent1 = false,
+          mixinEvent2 = false;
       xtag.mixins.test = {
         events: {
           'click': function(e){
-            mixinEvent = true;
+            mixinEvent1 = true;
           }
         }
       };
 
       xtag.register('x-foo', {
-        mixins: ['test']
+        mixins: ['test'],
+        events: {
+          'click': function(e){
+            mixinEvent2 = true;
+          }
+        }
       });
 
       var foo = document.createElement('x-foo');
@@ -590,7 +609,8 @@ describe("x-tag ", function () {
       xtag.fireEvent(foo, 'click');
 
       runs(function (){
-        expect(mixinEvent).toEqual(true);
+        expect(mixinEvent1).toEqual(true);
+        expect(mixinEvent2).toEqual(true);
       });
     });
 
@@ -995,25 +1015,6 @@ describe("x-tag ", function () {
 
           expect(f1Called).toEqual(true);
           expect(f2Called).toEqual(true);
-        });
-
-        it('should not call second fn if false returned from first fn', function(){
-          var f1Called = false,
-            f1 = function(){
-              f1Called = true;
-              return false;
-            };
-
-          var f2Called = false,
-            f2 = function(){
-              f2Called = true;
-            };
-
-          var f3 = xtag.wrap(f1, f2);
-          f3();
-
-          expect(f1Called).toEqual(true);
-          expect(f2Called).toEqual(false);
         });
 
       });
