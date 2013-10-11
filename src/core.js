@@ -364,11 +364,13 @@
               .constructor).prototype :
           win.HTMLElement.prototype;
 
-      return doc.register(_name, {
-        'extends': options['extends'],
+      var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
-      });
-
+      };
+      if (options['extends']) {
+        definition['extends'] = options['extends'];
+      }
+      return doc.register(_name, definition);
     },
 
     /* Exposed Variables */
