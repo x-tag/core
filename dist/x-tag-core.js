@@ -2195,25 +2195,44 @@ if (document.readyState === 'complete') {
     return source;
   }
 
-  function mergeMixin(type, mixin, option) {
-    var original = {};
-    for (var o in option) original[o.split(':')[0]] = true;
-    for (var x in mixin) if (!original[x.split(':')[0]]) option[x] = mixin[x];
+  function wrapMixin(tag, key, pseudo, value, original){
+    if (typeof original[key] != 'function') original[key] = value;
+    else {
+      original[key] = xtag.wrap(original[key], xtag.applyPseudos(pseudo, value, tag.pseudos));
+    }
+  }
+  
+  var uniqueMixinCount = 0;
+  function mergeMixin(tag, mixin, original, mix) {
+    if (mix) {
+      var uniques = {};
+      for (var z in original) uniques[z.split(':')[0]] = z;
+      for (z in mixin) {
+        wrapMixin(tag, uniques[z.split(':')[0]] || z, z, mixin[z], original);
+      }
+    }
+    else {
+      for (var z in mixin) wrapMixin(tag, z + ':__mixin__(' + (uniqueMixinCount++) + ')', z, mixin[z], original);
+    }
   }
 
-  function applyMixins(tag) {
+  function applyMixins(tag) { 
     tag.mixins.forEach(function (name) {
       var mixin = xtag.mixins[name];
       for (var type in mixin) {
-        switch (type) {
-          case 'lifecycle': case 'methods':
-            mergeMixin(type, mixin[type], tag[type]);
-            break;
-          case 'accessors': case 'prototype':
-            for (var z in mixin[type]) mergeMixin(z, mixin[type], tag.accessors);
-            break;
-          case 'events':
-            break;
+        var item = mixin[type],
+            original = tag[type];
+        if (!original) tag[type] = item;
+        else {
+          switch (type){
+            case 'accessors': case 'prototype':
+              for (var z in item) {
+                if (!original[z]) original[z] = item[z];
+                else mergeMixin(tag, item[z], original[z], true);
+              }
+              break;
+            default: mergeMixin(tag, item, original, type != 'events');
+          }
         }
       }
     });
@@ -2479,7 +2498,7 @@ if (document.readyState === 'complete') {
       active: [],
       changed: []
     },
-    captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged'],
+    captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll'],
     customEvents: {
       overflow: createFlowEvent('over'),
       underflow: createFlowEvent('under'),
@@ -2503,6 +2522,13 @@ if (document.readyState === 'complete') {
       leave: {
         attach: ['mouseout', 'touchleave'],
         condition: touchFilter
+      },
+      scrollwheel: {
+        attach: ['DOMMouseScroll', 'mousewheel'],
+        condition: function(event){
+          event.delta = event.wheelDelta ? event.wheelDelta / 40 : Math.round(event.detail / 3.5 * -1);
+          return true;
+        }
       },
       tapstart: {
         observe: {
@@ -2528,7 +2554,6 @@ if (document.readyState === 'complete') {
               custom.lastDrag = event;
               return (last.pageX != event.pageX && last.pageY != event.pageY) || null;
             case 'tapstart':
-              custom.touches = custom.touches || 1;
               if (!custom.move) {
                 custom.current = this;
                 custom.move = xtag.addEvents(this, {
@@ -2539,10 +2564,9 @@ if (document.readyState === 'complete') {
               }
               break;
             case 'tapend': case 'dragend': case 'touchcancel':
-              custom.touches--;
-              if (!custom.touches) {
-                xtag.removeEvents(custom.current , custom.move || {});
-                xtag.removeEvent(doc, custom.tapend || {});
+              if (!event.touches.length) {
+                if (custom.move) xtag.removeEvents(custom.current , custom.move || {});
+                if (custom.tapend) xtag.removeEvent(doc, custom.tapend || {});
                 delete custom.lastDrag;
                 delete custom.current;
                 delete custom.tapend;
@@ -2553,6 +2577,7 @@ if (document.readyState === 'complete') {
       }
     },
     pseudos: {
+      __mixin__: {},
       keypass: keypseudo,
       keyfail: keypseudo,
       delegate: { action: delegateAction },
@@ -2583,8 +2608,9 @@ if (document.readyState === 'complete') {
     wrap: function (original, fn) {
       return function(){
         var args = toArray(arguments),
-          returned = original.apply(this, args);
-        return returned === false ? false : fn.apply(this, typeof returned != 'undefined' ? toArray(returned) : args);
+            output = original.apply(this, args);
+        fn.apply(this, args);
+        return output;
       };
     },
 
@@ -2605,12 +2631,11 @@ if (document.readyState === 'complete') {
 
     query: query,
 
-    skipTransition: function(element, fn, bind){
+    skipTransition: function(element, fn){
       var prop = prefix.js + 'TransitionProperty';
       element.style[prop] = element.style.transitionProperty = 'none';
+      var callback = fn();
       xtag.requestFrame(function(){
-        var callback;
-        if (fn) callback = fn.call(bind);
         xtag.requestFrame(function(){
           element.style[prop] = element.style.transitionProperty = '';
           if (callback) xtag.requestFrame(callback);
@@ -2787,7 +2812,12 @@ if (document.readyState === 'complete') {
         var args = toArray(arguments),
             output = event.condition.apply(this, args.concat([event]));
         if (!output) return output;
-        if (e.type != key) xtag.fireEvent(e.target, key, { baseEvent: e, detail: { __stack__: stack } });
+        if (e.type != key) {
+          xtag.fireEvent(e.target, key, {
+            baseEvent: e,
+            detail: output !== true && (output.__stack__ = stack) ? output : { __stack__: stack }
+          });
+        }
         else return event.stack.apply(this, args);
       };
       event.attach.forEach(function(name) {
@@ -2797,7 +2827,10 @@ if (document.readyState === 'complete') {
         custom.observer = function(e){
           var output = event.condition.apply(this, toArray(arguments).concat([custom]));
           if (!output) return output;
-          xtag.fireEvent(e.target, key, { baseEvent: e });
+          xtag.fireEvent(e.target, key, {
+            baseEvent: e,
+            detail: output !== true ? output : {}
+          });
         };
         for (var z in custom.observe) xtag.addEvent(custom.observe[z] || document, z, custom.observer, true);
         custom.__observing__ = true;
@@ -2896,17 +2929,23 @@ if (document.readyState === 'complete') {
 
 /*** Universal Touch ***/
 
-var touchCount = 0, touchTarget = null;
+var touching = false,
+    touchTarget = null;
 
 doc.addEventListener('mousedown', function(e){
-  touchCount++;
+  touching = true;
   touchTarget = e.target;
 }, true);
 
 doc.addEventListener('mouseup', function(){
-  touchCount--;
+  touching = false;
   touchTarget = null;
-}, false);
+}, true);
+
+doc.addEventListener('dragend', function(){
+  touching = false;
+  touchTarget = null;
+}, true);
 
 var UIEventProto = {
   touches: {
@@ -2914,16 +2953,16 @@ var UIEventProto = {
     get: function(){
       return this.__touches__ ||
         (this.identifier = 0) ||
-        (this.__touches__ = touchCount ? [this] : []);
+        (this.__touches__ = touching ? [this] : []);
     }
   },
   targetTouches: {
     configurable: true,
     get: function(){
       return this.__targetTouches__ || (this.__targetTouches__ =
-        (touchCount && this.currentTarget &&
+        (touching && this.currentTarget &&
         (this.currentTarget == touchTarget ||
-        (this.currentTarget.contains && this.currentTarget.contains(touchTarget)))) ? [this] : []);
+        (this.currentTarget.contains && this.currentTarget.contains(touchTarget)))) ? (this.identifier = 0) || [this] : []);
     }
   },
   changedTouches: {
@@ -2959,7 +2998,7 @@ if (win.TouchEvent) {
 }
 
 /*** Custom Event Definitions ***/
-
+  
   function addTap(el, tap, e){
     if (!el.__tap__) {
       el.__tap__ = { click: e.type == 'mousedown' };
@@ -2992,12 +3031,13 @@ if (win.TouchEvent) {
   }
 
   function checkTapPosition(el, tap, e){
-    var touch = e.changedTouches[0];
+    var touch = e.changedTouches[0],
+        tol = tap.gesture.tolerance;
     if (
-      touch.pageX < el.__tap__.x + tap.gesture.tolerance &&
-      touch.pageX > el.__tap__.x - tap.gesture.tolerance &&
-      touch.pageY < el.__tap__.y + tap.gesture.tolerance &&
-      touch.pageY > el.__tap__.y - tap.gesture.tolerance
+      touch.pageX < el.__tap__.x + tol &&
+      touch.pageX > el.__tap__.x - tol &&
+      touch.pageY < el.__tap__.y + tol &&
+      touch.pageY > el.__tap__.y - tol
     ) return true;
   }
 

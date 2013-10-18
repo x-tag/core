@@ -114,7 +114,7 @@
       }
     }
     else {
-      for (z in mixin) wrapMixin(tag, z + ':__mixin__(' + (uniqueMixinCount++) + ')', z, mixin[z], original);
+      for (var z in mixin) wrapMixin(tag, z + ':__mixin__(' + (uniqueMixinCount++) + ')', z, mixin[z], original);
     }
   }
 
@@ -400,7 +400,7 @@
       active: [],
       changed: []
     },
-    captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged'],
+    captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll'],
     customEvents: {
       overflow: createFlowEvent('over'),
       underflow: createFlowEvent('under'),
@@ -424,6 +424,13 @@
       leave: {
         attach: ['mouseout', 'touchleave'],
         condition: touchFilter
+      },
+      scrollwheel: {
+        attach: ['DOMMouseScroll', 'mousewheel'],
+        condition: function(event){
+          event.delta = event.wheelDelta ? event.wheelDelta / 40 : Math.round(event.detail / 3.5 * -1);
+          return true;
+        }
       },
       tapstart: {
         observe: {
@@ -449,7 +456,6 @@
               custom.lastDrag = event;
               return (last.pageX != event.pageX && last.pageY != event.pageY) || null;
             case 'tapstart':
-              custom.touches = custom.touches || 1;
               if (!custom.move) {
                 custom.current = this;
                 custom.move = xtag.addEvents(this, {
@@ -460,10 +466,9 @@
               }
               break;
             case 'tapend': case 'dragend': case 'touchcancel':
-              custom.touches--;
-              if (!custom.touches) {
-                xtag.removeEvents(custom.current , custom.move || {});
-                xtag.removeEvent(doc, custom.tapend || {});
+              if (!event.touches.length) {
+                if (custom.move) xtag.removeEvents(custom.current , custom.move || {});
+                if (custom.tapend) xtag.removeEvent(doc, custom.tapend || {});
                 delete custom.lastDrag;
                 delete custom.current;
                 delete custom.tapend;
@@ -528,12 +533,11 @@
 
     query: query,
 
-    skipTransition: function(element, fn, bind){
+    skipTransition: function(element, fn){
       var prop = prefix.js + 'TransitionProperty';
       element.style[prop] = element.style.transitionProperty = 'none';
+      var callback = fn();
       xtag.requestFrame(function(){
-        var callback;
-        if (fn) callback = fn.call(bind);
         xtag.requestFrame(function(){
           element.style[prop] = element.style.transitionProperty = '';
           if (callback) xtag.requestFrame(callback);
@@ -710,7 +714,12 @@
         var args = toArray(arguments),
             output = event.condition.apply(this, args.concat([event]));
         if (!output) return output;
-        if (e.type != key) xtag.fireEvent(e.target, key, { baseEvent: e, detail: { __stack__: stack } });
+        if (e.type != key) {
+          xtag.fireEvent(e.target, key, {
+            baseEvent: e,
+            detail: output !== true && (output.__stack__ = stack) ? output : { __stack__: stack }
+          });
+        }
         else return event.stack.apply(this, args);
       };
       event.attach.forEach(function(name) {
@@ -720,7 +729,10 @@
         custom.observer = function(e){
           var output = event.condition.apply(this, toArray(arguments).concat([custom]));
           if (!output) return output;
-          xtag.fireEvent(e.target, key, { baseEvent: e });
+          xtag.fireEvent(e.target, key, {
+            baseEvent: e,
+            detail: output !== true ? output : {}
+          });
         };
         for (var z in custom.observe) xtag.addEvent(custom.observe[z] || document, z, custom.observer, true);
         custom.__observing__ = true;
@@ -819,17 +831,23 @@
 
 /*** Universal Touch ***/
 
-var touchCount = 0, touchTarget = null;
+var touching = false,
+    touchTarget = null;
 
 doc.addEventListener('mousedown', function(e){
-  touchCount++;
+  touching = true;
   touchTarget = e.target;
 }, true);
 
 doc.addEventListener('mouseup', function(){
-  touchCount--;
+  touching = false;
   touchTarget = null;
-}, false);
+}, true);
+
+doc.addEventListener('dragend', function(){
+  touching = false;
+  touchTarget = null;
+}, true);
 
 var UIEventProto = {
   touches: {
@@ -837,16 +855,16 @@ var UIEventProto = {
     get: function(){
       return this.__touches__ ||
         (this.identifier = 0) ||
-        (this.__touches__ = touchCount ? [this] : []);
+        (this.__touches__ = touching ? [this] : []);
     }
   },
   targetTouches: {
     configurable: true,
     get: function(){
       return this.__targetTouches__ || (this.__targetTouches__ =
-        (touchCount && this.currentTarget &&
+        (touching && this.currentTarget &&
         (this.currentTarget == touchTarget ||
-        (this.currentTarget.contains && this.currentTarget.contains(touchTarget)))) ? [this] : []);
+        (this.currentTarget.contains && this.currentTarget.contains(touchTarget)))) ? (this.identifier = 0) || [this] : []);
     }
   },
   changedTouches: {
@@ -882,7 +900,7 @@ if (win.TouchEvent) {
 }
 
 /*** Custom Event Definitions ***/
-
+  
   function addTap(el, tap, e){
     if (!el.__tap__) {
       el.__tap__ = { click: e.type == 'mousedown' };
@@ -915,12 +933,13 @@ if (win.TouchEvent) {
   }
 
   function checkTapPosition(el, tap, e){
-    var touch = e.changedTouches[0];
+    var touch = e.changedTouches[0],
+        tol = tap.gesture.tolerance;
     if (
-      touch.pageX < el.__tap__.x + tap.gesture.tolerance &&
-      touch.pageX > el.__tap__.x - tap.gesture.tolerance &&
-      touch.pageY < el.__tap__.y + tap.gesture.tolerance &&
-      touch.pageY > el.__tap__.y - tap.gesture.tolerance
+      touch.pageX < el.__tap__.x + tol &&
+      touch.pageX > el.__tap__.x - tol &&
+      touch.pageY < el.__tap__.y + tol &&
+      touch.pageY > el.__tap__.y - tol
     ) return true;
   }
 
