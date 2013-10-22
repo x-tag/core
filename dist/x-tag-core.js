@@ -2635,21 +2635,26 @@ if (document.readyState === 'complete') {
       var prop = prefix.js + 'TransitionProperty';
       element.style[prop] = element.style.transitionProperty = 'none';
       var callback = fn();
-      xtag.requestFrame(function(){
+      return xtag.requestFrame(function(){
         xtag.requestFrame(function(){
           element.style[prop] = element.style.transitionProperty = '';
           if (callback) xtag.requestFrame(callback);
         });
       });
     },
-
+    
     requestFrame: (function(){
       var raf = win.requestAnimationFrame ||
-        win[prefix.lowercase + 'RequestAnimationFrame'] ||
-        function(fn){ return win.setTimeout(fn, 20); };
-      return function(fn){
-        return raf.call(win, fn);
-      };
+                win[prefix.lowercase + 'RequestAnimationFrame'] || 
+                function(fn){ return win.setTimeout(fn, 20) };
+      return function(fn){ return raf(fn) };
+    })(),
+    
+    cancelFrame: (function(){
+      var cancel = win.cancelAnimationFrame ||
+                   win[prefix.lowercase + 'CancelAnimationFrame'] || 
+                   win.clearTimeout;
+      return function(id){ return cancel(id) };
     })(),
 
     matchSelector: function (element, selector) {
@@ -2748,6 +2753,7 @@ if (document.readyState === 'complete') {
                     name: name,
                     value: value,
                     source: source,
+                    arguments: pseudo['arguments'],
                     listener: last
                   };
               var output = pseudo.action.apply(this, [obj].concat(args));
@@ -2968,7 +2974,7 @@ var UIEventProto = {
   changedTouches: {
     configurable: true,
     get: function(){
-      return this.touches;
+      return this.__changedTouches__ || (this.identifier = 0) || (this.__changedTouches__ = [this]);
     }
   }
 };
