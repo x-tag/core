@@ -544,14 +544,14 @@
         });
       });
     },
-    
+
     requestFrame: (function(){
       var raf = win.requestAnimationFrame ||
                 win[prefix.lowercase + 'RequestAnimationFrame'] || 
                 function(fn){ return win.setTimeout(fn, 20) };
       return function(fn){ return raf(fn) };
     })(),
-    
+
     cancelFrame: (function(){
       var cancel = win.cancelAnimationFrame ||
                    win[prefix.lowercase + 'CancelAnimationFrame'] || 
@@ -631,7 +631,7 @@
 
     /* PSEUDOS */
 
-    applyPseudos: function(key, fn, element, source) {
+    applyPseudos: function(key, fn, target, source) {
       var listener = fn,
           pseudos = {};
       if (key.match(':')) {
@@ -662,9 +662,9 @@
               if (output === null || output === false) return output;
               return obj.listener.apply(this, args);
             };
-            if (element && pseudo.onAdd) {
-              if (element.getAttribute) pseudo.onAdd.call(element, pseudo);
-              else element.push(pseudo);
+            if (target && pseudo.onAdd) {
+              if (target.nodeName) pseudo.onAdd.call(target, pseudo);
+              else target.push(pseudo);
             }
           });
         }
@@ -675,9 +675,9 @@
       return listener;
     },
 
-    removePseudos: function(element, event){
-      event._pseudos.forEach(function(obj){
-        if (obj.onRemove) obj.onRemove.call(element, obj);
+    removePseudos: function(target, pseudos){
+      pseudos.forEach(function(obj){
+        if (obj.onRemove) obj.onRemove.call(target, obj);
       });
     },
 
@@ -770,7 +770,7 @@
     removeEvent: function (element, type, event) {
       event = event || type;
       event.onRemove.call(element, event, event.listener);
-      xtag.removePseudos(element, event);
+      xtag.removePseudos(element, event._pseudos);
       event._attach.forEach(function(obj) {
         xtag.removeEvent(element, obj);
       });
@@ -784,7 +784,7 @@
     fireEvent: function(element, type, options, warn){
       var event = doc.createEvent('CustomEvent');
       options = options || {};
-      if (warn) console.warn('fireEvent has been modified, more info here: ');
+      if (warn) console.warn('fireEvent has been modified');
       event.initCustomEvent(type,
         options.bubbles !== false,
         options.cancelable !== false,
@@ -793,7 +793,7 @@
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
       try { element.dispatchEvent(event); }
       catch (e) {
-        console.warn('This error may have been caused by a change in the fireEvent method, more info here: ', e);
+        console.warn('This error may have been caused by a change in the fireEvent method', e);
       }
     },
 
@@ -831,9 +831,41 @@
       else{
         obj[type] = [];
       }
+    },
+      
+    publish: function(topic, obj){
+      obj = obj || {};
+      topic = getTopic(topic);
+      topic.published = true;
+      if (obj.record) topic.records.push(obj);
+      topic.actions.forEach(function(z){
+        if (z.target === obj.target) z.action(obj.content);
+      });
+    },
+    
+    subscribe: function(topic, obj){
+      topic = getTopic(topic);
+      topic.actions.push(obj);
+      if (obj.replay && topic.published) topic.records.forEach(function(z){
+        if (z.target === obj.target) obj.action(z.content);
+      });
+    },
+    
+    unsubscribe: function(topic, obj){
+      var actions = getTopic(topic).actions,
+          index = actions.indexOf(obj);
+      obj ? index > -1 && actions.slice(index, 1) : actions.length = 0;
     }
 
   };
+
+var topics = {};
+function getTopic(topic){
+  return topics[topic] = topics[topic] || {
+    records: [],
+    actions: []
+  };
+}
 
 /*** Universal Touch ***/
 
@@ -906,7 +938,7 @@ if (win.TouchEvent) {
 }
 
 /*** Custom Event Definitions ***/
-  
+
   function addTap(el, tap, e){
     if (!el.__tap__) {
       el.__tap__ = { click: e.type == 'mousedown' };
