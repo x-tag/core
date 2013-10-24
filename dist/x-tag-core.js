@@ -2201,7 +2201,7 @@ if (document.readyState === 'complete') {
       original[key] = xtag.wrap(original[key], xtag.applyPseudos(pseudo, value, tag.pseudos));
     }
   }
-  
+
   var uniqueMixinCount = 0;
   function mergeMixin(tag, mixin, original, mix) {
     if (mix) {
@@ -2212,11 +2212,13 @@ if (document.readyState === 'complete') {
       }
     }
     else {
-      for (var z in mixin) wrapMixin(tag, z + ':__mixin__(' + (uniqueMixinCount++) + ')', z, mixin[z], original);
+      for (var zee in mixin){
+        wrapMixin(tag, zee + ':__mixin__(' + (uniqueMixinCount++) + ')', zee, mixin[zee], original);
+      }
     }
   }
 
-  function applyMixins(tag) { 
+  function applyMixins(tag) {
     tag.mixins.forEach(function (name) {
       var mixin = xtag.mixins[name];
       for (var type in mixin) {
@@ -2642,19 +2644,19 @@ if (document.readyState === 'complete') {
         });
       });
     },
-    
+
     requestFrame: (function(){
       var raf = win.requestAnimationFrame ||
-                win[prefix.lowercase + 'RequestAnimationFrame'] || 
-                function(fn){ return win.setTimeout(fn, 20) };
-      return function(fn){ return raf(fn) };
+                win[prefix.lowercase + 'RequestAnimationFrame'] ||
+                function(fn){ return win.setTimeout(fn, 20); };
+      return function(fn){ return raf(fn); };
     })(),
-    
+
     cancelFrame: (function(){
       var cancel = win.cancelAnimationFrame ||
-                   win[prefix.lowercase + 'CancelAnimationFrame'] || 
+                   win[prefix.lowercase + 'CancelAnimationFrame'] ||
                    win.clearTimeout;
-      return function(id){ return cancel(id) };
+      return function(id){ return cancel(id); };
     })(),
 
     matchSelector: function (element, selector) {
@@ -2753,7 +2755,7 @@ if (document.readyState === 'complete') {
                     name: name,
                     value: value,
                     source: source,
-                    arguments: pseudo['arguments'],
+                    'arguments': pseudo['arguments'],
                     listener: last
                   };
               var output = pseudo.action.apply(this, [obj].concat(args));
@@ -3004,7 +3006,7 @@ if (win.TouchEvent) {
 }
 
 /*** Custom Event Definitions ***/
-  
+
   function addTap(el, tap, e){
     if (!el.__tap__) {
       el.__tap__ = { click: e.type == 'mousedown' };

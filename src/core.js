@@ -103,7 +103,7 @@
       original[key] = xtag.wrap(original[key], xtag.applyPseudos(pseudo, value, tag.pseudos));
     }
   }
-  
+
   var uniqueMixinCount = 0;
   function mergeMixin(tag, mixin, original, mix) {
     if (mix) {
@@ -114,11 +114,13 @@
       }
     }
     else {
-      for (var z in mixin) wrapMixin(tag, z + ':__mixin__(' + (uniqueMixinCount++) + ')', z, mixin[z], original);
+      for (var zz in mixin){
+        wrapMixin(tag, zz + ':__mixin__(' + (uniqueMixinCount++) + ')', zz, mixin[zz], original);
+      }
     }
   }
 
-  function applyMixins(tag) { 
+  function applyMixins(tag) {
     tag.mixins.forEach(function (name) {
       var mixin = xtag.mixins[name];
       for (var type in mixin) {
@@ -547,16 +549,16 @@
 
     requestFrame: (function(){
       var raf = win.requestAnimationFrame ||
-                win[prefix.lowercase + 'RequestAnimationFrame'] || 
-                function(fn){ return win.setTimeout(fn, 20) };
-      return function(fn){ return raf(fn) };
+                win[prefix.lowercase + 'RequestAnimationFrame'] ||
+                function(fn){ return win.setTimeout(fn, 20); };
+      return function(fn){ return raf(fn); };
     })(),
 
     cancelFrame: (function(){
       var cancel = win.cancelAnimationFrame ||
-                   win[prefix.lowercase + 'CancelAnimationFrame'] || 
+                   win[prefix.lowercase + 'CancelAnimationFrame'] ||
                    win.clearTimeout;
-      return function(id){ return cancel(id) };
+      return function(id){ return cancel(id); };
     })(),
 
     matchSelector: function (element, selector) {
@@ -655,7 +657,7 @@
                     name: name,
                     value: value,
                     source: source,
-                    arguments: pseudo['arguments'],
+                    'arguments': pseudo['arguments'],
                     listener: last
                   };
               var output = pseudo.action.apply(this, [obj].concat(args));
