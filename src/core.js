@@ -1018,7 +1018,6 @@ if (win.TouchEvent) {
   //else doc.addEventListener(doc.readyState == 'interactive' ? 'readystatechange' : 'DOMContentLoaded', tagLoad); 
   
   doc.addEventListener('WebComponentsReady', function(){
-    console.log('foo');
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
   });
 
