@@ -273,8 +273,8 @@
       };
     }
   }
-  
-  readyTags = {};
+
+  var readyTags = {}; //, tagReady = false;
   function fireReady(name){
     readyTags[name] = (readyTags[name] || []).filter(function(obj){
       return (obj.tags = obj.tags.filter(function(z){
@@ -282,9 +282,14 @@
       })).length || obj.fn();
     });
   }
+  
+  // function tagLoad(){
+  //   for (var z in xtag.tags) fireReady(z);
+  //   tagReady = true;
+  // }
 
 /*** X-Tag Object Definition ***/
-  
+
   var xtag = {
     tags: {},
     defaultOptions: {
@@ -400,6 +405,7 @@
         definition['extends'] = options['extends'];
       }
       var reg = doc.register(_name, definition);
+      //if (tagReady)
       fireReady(_name);
       return reg;
     },
@@ -1007,7 +1013,10 @@ if (win.TouchEvent) {
 
   win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
-
+  
+  //if (doc.readyState == 'complete') tagLoad();
+  //else doc.addEventListener(doc.readyState == 'interactive' ? 'readystatechange' : 'DOMContentLoaded', tagLoad); 
+  
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
   });
