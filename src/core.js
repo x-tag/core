@@ -273,9 +273,18 @@
       };
     }
   }
+  
+  readyTags = {};
+  function fireReady(name){
+    readyTags[name] = (readyTags[name] || []).filter(function(obj){
+      return (obj.tags = obj.tags.filter(function(z){
+        return z != name && !xtag.tags[z];
+      })).length || obj.fn();
+    });
+  }
 
 /*** X-Tag Object Definition ***/
-
+  
   var xtag = {
     tags: {},
     defaultOptions: {
@@ -379,11 +388,10 @@
       };
 
       var elementProto = basePrototype ?
-        basePrototype :
-          options['extends'] ?
-            Object.create(doc.createElement(options['extends'])
-              .constructor).prototype :
-          win.HTMLElement.prototype;
+            basePrototype :
+            options['extends'] ?
+            Object.create(doc.createElement(options['extends']).constructor).prototype :
+            win.HTMLElement.prototype;
 
       var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
@@ -391,9 +399,19 @@
       if (options['extends']) {
         definition['extends'] = options['extends'];
       }
-      return doc.register(_name, definition);
+      var reg = doc.register(_name, definition);
+      fireReady(_name);
+      return reg;
     },
-
+    
+    ready: function(names, fn){
+      var obj = { tags: toArray(names), fn: fn };
+      if (obj.tags.reduce(function(last, name){
+        if (xtag.tags[name]) return last;
+        (readyTags[name] = readyTags[name] || []).push(obj);
+      }, true)) fn();
+    },
+    
     /* Exposed Variables */
 
     mixins: {},
@@ -833,41 +851,9 @@
       else{
         obj[type] = [];
       }
-    },
-      
-    publish: function(topic, obj){
-      obj = obj || {};
-      topic = getTopic(topic);
-      topic.published = true;
-      if (obj.record) topic.records.push(obj);
-      topic.actions.forEach(function(z){
-        if (z.target === obj.target) z.action(obj.content);
-      });
-    },
-    
-    subscribe: function(topic, obj){
-      topic = getTopic(topic);
-      topic.actions.push(obj);
-      if (obj.replay && topic.published) topic.records.forEach(function(z){
-        if (z.target === obj.target) obj.action(z.content);
-      });
-    },
-    
-    unsubscribe: function(topic, obj){
-      var actions = getTopic(topic).actions,
-          index = actions.indexOf(obj);
-      obj ? index > -1 && actions.slice(index, 1) : actions.length = 0;
     }
-
+    
   };
-
-var topics = {};
-function getTopic(topic){
-  return topics[topic] = topics[topic] || {
-    records: [],
-    actions: []
-  };
-}
 
 /*** Universal Touch ***/
 
