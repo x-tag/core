@@ -2212,8 +2212,8 @@ if (document.readyState === 'complete') {
       }
     }
     else {
-      for (var zee in mixin){
-        wrapMixin(tag, zee + ':__mixin__(' + (uniqueMixinCount++) + ')', zee, mixin[zee], original);
+      for (var zz in mixin){
+        wrapMixin(tag, zz + ':__mixin__(' + (uniqueMixinCount++) + ')', zz, mixin[zz], original);
       }
     }
   }
@@ -2371,9 +2371,18 @@ if (document.readyState === 'complete') {
       };
     }
   }
+  
+  readyTags = {};
+  function fireReady(name){
+    readyTags[name] = (readyTags[name] || []).filter(function(obj){
+      return (obj.tags = obj.tags.filter(function(z){
+        return z != name && !xtag.tags[z];
+      })).length || obj.fn();
+    });
+  }
 
 /*** X-Tag Object Definition ***/
-
+  
   var xtag = {
     tags: {},
     defaultOptions: {
@@ -2477,11 +2486,10 @@ if (document.readyState === 'complete') {
       };
 
       var elementProto = basePrototype ?
-        basePrototype :
-          options['extends'] ?
-            Object.create(doc.createElement(options['extends'])
-              .constructor).prototype :
-          win.HTMLElement.prototype;
+            basePrototype :
+            options['extends'] ?
+            Object.create(doc.createElement(options['extends']).constructor).prototype :
+            win.HTMLElement.prototype;
 
       var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
@@ -2489,9 +2497,19 @@ if (document.readyState === 'complete') {
       if (options['extends']) {
         definition['extends'] = options['extends'];
       }
-      return doc.register(_name, definition);
+      var reg = doc.register(_name, definition);
+      fireReady(_name);
+      return reg;
     },
-
+    
+    ready: function(names, fn){
+      var obj = { tags: toArray(names), fn: fn };
+      if (obj.tags.reduce(function(last, name){
+        if (xtag.tags[name]) return last;
+        (readyTags[name] = readyTags[name] || []).push(obj);
+      }, true)) fn();
+    },
+    
     /* Exposed Variables */
 
     mixins: {},
@@ -2731,7 +2749,7 @@ if (document.readyState === 'complete') {
 
     /* PSEUDOS */
 
-    applyPseudos: function(key, fn, element, source) {
+    applyPseudos: function(key, fn, target, source) {
       var listener = fn,
           pseudos = {};
       if (key.match(':')) {
@@ -2762,9 +2780,9 @@ if (document.readyState === 'complete') {
               if (output === null || output === false) return output;
               return obj.listener.apply(this, args);
             };
-            if (element && pseudo.onAdd) {
-              if (element.getAttribute) pseudo.onAdd.call(element, pseudo);
-              else element.push(pseudo);
+            if (target && pseudo.onAdd) {
+              if (target.nodeName) pseudo.onAdd.call(target, pseudo);
+              else target.push(pseudo);
             }
           });
         }
@@ -2775,9 +2793,9 @@ if (document.readyState === 'complete') {
       return listener;
     },
 
-    removePseudos: function(element, event){
-      event._pseudos.forEach(function(obj){
-        if (obj.onRemove) obj.onRemove.call(element, obj);
+    removePseudos: function(target, pseudos){
+      pseudos.forEach(function(obj){
+        if (obj.onRemove) obj.onRemove.call(target, obj);
       });
     },
 
@@ -2870,7 +2888,7 @@ if (document.readyState === 'complete') {
     removeEvent: function (element, type, event) {
       event = event || type;
       event.onRemove.call(element, event, event.listener);
-      xtag.removePseudos(element, event);
+      xtag.removePseudos(element, event._pseudos);
       event._attach.forEach(function(obj) {
         xtag.removeEvent(element, obj);
       });
@@ -2884,7 +2902,7 @@ if (document.readyState === 'complete') {
     fireEvent: function(element, type, options, warn){
       var event = doc.createEvent('CustomEvent');
       options = options || {};
-      if (warn) console.warn('fireEvent has been modified, more info here: ');
+      if (warn) console.warn('fireEvent has been modified');
       event.initCustomEvent(type,
         options.bubbles !== false,
         options.cancelable !== false,
@@ -2893,7 +2911,7 @@ if (document.readyState === 'complete') {
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
       try { element.dispatchEvent(event); }
       catch (e) {
-        console.warn('This error may have been caused by a change in the fireEvent method, more info here: ', e);
+        console.warn('This error may have been caused by a change in the fireEvent method', e);
       }
     },
 
@@ -2932,7 +2950,7 @@ if (document.readyState === 'complete') {
         obj[type] = [];
       }
     }
-
+    
   };
 
 /*** Universal Touch ***/
