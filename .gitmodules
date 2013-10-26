@@ -7,3 +7,6 @@
 [submodule "lib/MutationObservers"]
 	path = lib/MutationObservers
 	url = https://github.com/Polymer/MutationObservers.git
+[submodule "lib/WeakMap"]
+	path = lib/WeakMap
+	url = https://github.com/Polymer/WeakMap.git

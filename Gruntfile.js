@@ -5,7 +5,7 @@ module.exports = function (grunt) {
   var polyfillFiles = [
    'lib/platform-bootstrap.js',
    'lib/DOMTokenList.js',
-   'lib/WeakMap.js',
+   'lib/WeakMap/weakmap.js',
    'lib/CustomElements/src/sidetable.js',
    'lib/MutationObservers/MutationObserver.js',
    'lib/CustomElements/src/MutationObserver.js',
