@@ -67,8 +67,9 @@
 
 // DOM
 
+  var str = '';
   function query(element, selector){
-    return toArray(element.querySelectorAll(selector));
+    return (selector || str).length ? toArray(element.querySelectorAll(selector)) : [];
   }
 
   function parseMutations(element, mutations) {
