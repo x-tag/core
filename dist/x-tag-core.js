@@ -2201,9 +2201,9 @@ if (document.readyState === 'complete') {
   }
 
 // DOM
-  var str = '';
+
   function query(element, selector){
-    return (selector || str).length ? toArray(element.querySelectorAll(selector)) : [];
+    return toArray(element.querySelectorAll(selector));
   }
 
   function parseMutations(element, mutations) {
@@ -2281,10 +2281,16 @@ if (document.readyState === 'complete') {
 // Events
 
   function delegateAction(pseudo, event) {
-    var target = query(this, pseudo.value).filter(function(node){
-      return node == event.target || node.contains ? node.contains(event.target) : null;
-    })[0];
-    return target ? pseudo.listener = pseudo.listener.bind(target) : null;
+    var match, target = event.target;
+    if (xtag.matchSelector(target, pseudo.value)) match = target;
+    else if (xtag.matchSelector(target, pseudo.value + ' *')) {
+      var parent = target.parentNode;
+      while (!match) {
+        if (xtag.matchSelector(parent, pseudo.value)) match = parent;
+        parent = parent.parentNode;
+      }
+    }
+    return match ? pseudo.listener = pseudo.listener.bind(match) : null;
   }
 
   function touchFilter(event) {
@@ -2409,7 +2415,7 @@ if (document.readyState === 'complete') {
     }
   }
 
-  var readyTags = {}; //, tagReady = false;
+  var readyTags = {};
   function fireReady(name){
     readyTags[name] = (readyTags[name] || []).filter(function(obj){
       return (obj.tags = obj.tags.filter(function(z){
@@ -2417,11 +2423,6 @@ if (document.readyState === 'complete') {
       })).length || obj.fn();
     });
   }
-  
-  // function tagLoad(){
-  //   for (var z in xtag.tags) fireReady(z);
-  //   tagReady = true;
-  // }
 
 /*** X-Tag Object Definition ***/
 
@@ -2540,7 +2541,6 @@ if (document.readyState === 'complete') {
         definition['extends'] = options['extends'];
       }
       var reg = doc.register(_name, definition);
-      //if (tagReady)
       fireReady(_name);
       return reg;
     },
@@ -2557,10 +2557,6 @@ if (document.readyState === 'complete') {
 
     mixins: {},
     prefix: prefix,
-    touches: {
-      active: [],
-      changed: []
-    },
     captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll'],
     customEvents: {
       overflow: createFlowEvent('over'),
@@ -3148,9 +3144,6 @@ if (win.TouchEvent) {
 
   win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
-  
-  //if (doc.readyState == 'complete') tagLoad();
-  //else doc.addEventListener(doc.readyState == 'interactive' ? 'readystatechange' : 'DOMContentLoaded', tagLoad); 
   
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
