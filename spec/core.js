@@ -70,18 +70,18 @@ describe("x-tag ", function () {
       expect(existing.foo).toEqual('bar');
     });
   });
-  
+
   it('fires the correct ready listeners when a tag is parsed', function (){
     var readySingle = false,
         readyMany = 0,
         readyOrder = [];
-        
+
     xtag.ready('x-ready-one', function(){
       readySingle = true;
       readyOrder[0] = 'x-ready-one';
       readyMany++;
     });
-    
+
     xtag.ready(['x-ready-one', 'x-ready-two'], function(){
       readyOrder[1] = 'x-ready-two';
       readyMany++;
@@ -642,6 +642,32 @@ describe("x-tag ", function () {
         expect(mixinEvent2).toEqual(true);
       });
     });
+
+    it('fires mouse event to verify properties', function(){
+      var clickTouch = false;
+
+      var clickHandler = function(e){
+        clickTouch = e.touches;
+      }
+
+      document.addEventListener('mousedown', clickHandler);
+
+      waitsFor(function(){
+        return clickTouch !== false;
+      });
+
+      var me = document.createEvent('MouseEvent');
+      me.initMouseEvent('mousedown', true, true, window, {}, 0,0,0,0,false, false, false, false, 0, null);
+      document.dispatchEvent(me);
+
+      runs(function(){
+        expect(clickTouch instanceof Array).toEqual(true);
+      });
+
+      document.removeEventListener('mousedown', clickHandler);
+
+    });
+
 
     it('delegate event pseudo should pass the custom element as second param', function (){
 
