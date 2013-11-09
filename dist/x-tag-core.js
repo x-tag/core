@@ -1952,7 +1952,7 @@ if (document.readyState === 'complete') {
       fireReady(_name);
       return reg;
     },
-    
+
     ready: function(names, fn){
       var obj = { tags: toArray(names), fn: fn };
       if (obj.tags.reduce(function(last, name){
@@ -1960,7 +1960,7 @@ if (document.readyState === 'complete') {
         (readyTags[name] = readyTags[name] || []).push(obj);
       }, true)) fn();
     },
-    
+
     /* Exposed Variables */
 
     mixins: {},
@@ -2397,7 +2397,7 @@ if (document.readyState === 'complete') {
         obj[type] = [];
       }
     }
-    
+
   };
 
 /*** Universal Touch ***/
@@ -2451,24 +2451,6 @@ for (z in UIEventProto){
   Object.defineProperty(UIEvent.prototype, z, UIEventProto[z]);
 }
 
-var touchReset = {
-    value: null,
-    writable: true,
-    configurable: true
-  },
-  TouchEventProto = {
-    touches: touchReset,
-    targetTouches: touchReset,
-    changedTouches: touchReset
-  };
-
-if (win.TouchEvent) {
-  for (z in TouchEventProto) {
-    var desc = Object.getOwnPropertyDescriptor(win.TouchEvent.prototype, z);
-    if (desc) win.TouchEvent.prototype[z] = TouchEventProto[z];
-    else Object.defineProperty(win.TouchEvent.prototype, z, TouchEventProto[z]);
-  }
-}
 
 /*** Custom Event Definitions ***/
 
@@ -2552,7 +2534,7 @@ if (win.TouchEvent) {
 
   win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
-  
+
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
   });
