@@ -648,7 +648,7 @@ describe("x-tag ", function () {
 
       var clickHandler = function(e){
         clickTouch = e.touches;
-      }
+      };
 
       document.addEventListener('mousedown', clickHandler);
 
