@@ -8,7 +8,6 @@ module.exports = function (grunt) {
    'lib/WeakMap/weakmap.js',
    'lib/CustomElements/src/sidetable.js',
    'lib/MutationObservers/MutationObserver.js',
-   'lib/CustomElements/src/MutationObserver.js',
    'lib/CustomElements/src/CustomElements.js',
    'lib/CustomElements/src/Observer.js',
    'lib/CustomElements/src/Parser.js',
