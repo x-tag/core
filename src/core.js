@@ -99,9 +99,11 @@
   }
 
   function wrapMixin(tag, key, pseudo, value, original){
-    if (typeof original[key] != 'function') original[key] = value;
-    else {
-      original[key] = xtag.wrap(original[key], xtag.applyPseudos(pseudo, value, tag.pseudos));
+    var fn = original[key];
+    if (!(key in original)) original[key] = value;
+    else if (typeof original[key] == 'function') {
+      if (!fn.__mixins__) fn.__mixins__ = [];
+      fn.__mixins__.push(xtag.applyPseudos(pseudo, value, tag.pseudos));
     }
   }
 
@@ -116,7 +118,7 @@
     }
     else {
       for (var zz in mixin){
-        wrapMixin(tag, zz + ':__mixin__(' + (uniqueMixinCount++) + ')', zz, mixin[zz], original);
+        original[zz + ':__mixin__(' + (uniqueMixinCount++) + ')'] = xtag.applyPseudos(zz, mixin[zz], tag.pseudos);
       }
     }
   }
@@ -148,6 +150,7 @@
 
   function delegateAction(pseudo, event) {
     var match, target = event.target;
+    if (!target.tagName) return null;
     if (xtag.matchSelector(target, pseudo.value)) match = target;
     else if (xtag.matchSelector(target, pseudo.value + ' *')) {
       var parent = target.parentNode;
@@ -233,7 +236,7 @@
     var key = z.split(':'), type = key[0];
     if (type == 'get') {
       key[0] = prop;
-      tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos);
+      tag.prototype[prop].get = xtag.applyPseudos(key.join(':'), accessor[z], tag.pseudos, accessor[z]);
     }
     else if (type == 'set') {
       key[0] = prop;
@@ -247,7 +250,7 @@
       } : accessor[z] ? function(value){
         accessor[z].call(this, value);
         updateView(this, name, value);
-      } : null, tag.pseudos);
+      } : null, tag.pseudos, accessor[z]);
 
       if (attr) attr.setter = setter;
     }
@@ -325,8 +328,8 @@
       var tag = xtag.tags[_name] = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
 
       for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
-      for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos);
-      for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos), enumerable: true };
+      for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
+      for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
@@ -354,7 +357,7 @@
       };
 
       if (tag.lifecycle.inserted) tag.prototype.enteredViewCallback = { value: tag.lifecycle.inserted, enumerable: true };
-      if (tag.lifecycle.removed) tag.prototype.leftDocumentCallback = { value: tag.lifecycle.removed, enumerable: true };
+      if (tag.lifecycle.removed) tag.prototype.leftViewCallback = { value: tag.lifecycle.removed, enumerable: true };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
       var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;
@@ -410,7 +413,7 @@
       fireReady(_name);
       return reg;
     },
-    
+
     ready: function(names, fn){
       var obj = { tags: toArray(names), fn: fn };
       if (obj.tags.reduce(function(last, name){
@@ -418,7 +421,7 @@
         (readyTags[name] = readyTags[name] || []).push(obj);
       }, true)) fn();
     },
-    
+
     /* Exposed Variables */
 
     mixins: {},
@@ -503,6 +506,28 @@
     },
     pseudos: {
       __mixin__: {},
+      mixins: {
+        onCompiled: function(fn, pseudo){
+          var mixins = pseudo.source.__mixins__;
+          if (mixins) switch (pseudo.value) {
+            case 'before': return function(){
+              var self = this;
+              mixins.forEach(function(m){
+                m.apply(self, arguments);
+              });
+              return fn.apply(self, arguments);
+            }
+            case 'after': case '': return function(){
+              var self = this,
+                  returns = fn.apply(self, arguments);
+              mixins.forEach(function(m){
+                m.apply(self, arguments);
+              });
+              return returns;
+            }
+          }
+        }
+      },
       keypass: keypseudo,
       keyfail: keypseudo,
       delegate: { action: delegateAction },
@@ -855,7 +880,7 @@
         obj[type] = [];
       }
     }
-    
+
   };
 
 /*** Universal Touch ***/
@@ -909,24 +934,6 @@ for (z in UIEventProto){
   Object.defineProperty(UIEvent.prototype, z, UIEventProto[z]);
 }
 
-var touchReset = {
-    value: null,
-    writable: true,
-    configurable: true
-  },
-  TouchEventProto = {
-    touches: touchReset,
-    targetTouches: touchReset,
-    changedTouches: touchReset
-  };
-
-if (win.TouchEvent) {
-  for (z in TouchEventProto) {
-    var desc = Object.getOwnPropertyDescriptor(win.TouchEvent.prototype, z);
-    if (desc) win.TouchEvent.prototype[z] = TouchEventProto[z];
-    else Object.defineProperty(win.TouchEvent.prototype, z, TouchEventProto[z]);
-  }
-}
 
 /*** Custom Event Definitions ***/
 
@@ -1010,7 +1017,7 @@ if (win.TouchEvent) {
 
   win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
-  
+
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
   });
