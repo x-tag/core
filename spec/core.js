@@ -477,7 +477,31 @@ describe("x-tag ", function () {
         expect(inserted).toEqual(true);
       });
     });
+    
+    it("mixins should not override existing properties", function (){
+      var onCreateFired;
+      xtag.mixins.test = {
+        lifecycle: {
+          created: function (){
+            onCreateFired = 1;
+          }
+        }
+      };
 
+      xtag.register('x-foo', {
+        mixins: ['test'],
+        lifecycle: {
+          created: function (){
+            onCreateFired = 2;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      
+      expect(2).toEqual(onCreateFired);
+    });
+    
     it("should create a mixin, fire CREATED", function (){
       var onCreateFired = false;
       xtag.mixins.test = {
