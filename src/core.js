@@ -516,7 +516,7 @@
                 m.apply(self, arguments);
               });
               return fn.apply(self, arguments);
-            }
+            };
             case 'after': case '': return function(){
               var self = this,
                   returns = fn.apply(self, arguments);
@@ -524,7 +524,7 @@
                 m.apply(self, arguments);
               });
               return returns;
-            }
+            };
           }
         }
       },
