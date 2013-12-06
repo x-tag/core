@@ -341,7 +341,7 @@
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
           });
-          var output = ready ? ready.apply(this, toArray(arguments)) : null;
+          var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
                 hasAttr = this.hasAttribute(name);
@@ -559,7 +559,7 @@
 
     wrap: function (original, fn) {
       return function(){
-        var args = toArray(arguments),
+        var args = arguments,
             output = original.apply(this, args);
         fn.apply(this, args);
         return output;
@@ -753,17 +753,17 @@
       var condition = event.condition;
       event.condition = function(e){
         var t = e.touches, tt = e.targetTouches;
-        return condition.apply(this, toArray(arguments));
+        return condition.apply(this, arguments);
       };
       var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
       event.stack = function(e){
         var t = e.touches, tt = e.targetTouches;
         var detail = e.detail || {};
-        if (!detail.__stack__) return stack.apply(this, toArray(arguments));
+        if (!detail.__stack__) return stack.apply(this, arguments);
         else if (detail.__stack__ == stack) {
           e.stopPropagation();
           e.cancelBubble = true;
-          return stack.apply(this, toArray(arguments));
+          return stack.apply(this, arguments);
         }
       };
       event.listener = function(e){
