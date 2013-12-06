@@ -511,17 +511,19 @@
           var mixins = pseudo.source.__mixins__;
           if (mixins) switch (pseudo.value) {
             case 'before': return function(){
-              var self = this;
+              var self = this,
+                  args = arguments;
               mixins.forEach(function(m){
-                m.apply(self, arguments);
+                m.apply(self, args);
               });
-              return fn.apply(self, arguments);
+              return fn.apply(self, args);
             };
             case 'after': case '': return function(){
               var self = this,
-                  returns = fn.apply(self, arguments);
+                  args = arguments;
+                  returns = fn.apply(self, args);
               mixins.forEach(function(m){
-                m.apply(self, arguments);
+                m.apply(self, args);
               });
               return returns;
             };

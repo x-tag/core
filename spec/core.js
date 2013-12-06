@@ -546,14 +546,15 @@ describe("x-tag ", function () {
       });
     });
 
-    it("should fire created on mixin and element", function (){
-      var createdFired1 = false,
-        createdFired2 = false;
+    it("it should fire the mixin created function BEFORE the element's", function (){
+      var count = 0,
+          createdFired1,
+          createdFired2;
 
       xtag.mixins.test = {
         lifecycle: {
           'created': function (){
-            createdFired1 = true;
+            createdFired1 = ++count;
           }
         }
       };
@@ -562,7 +563,7 @@ describe("x-tag ", function () {
         mixins: ['test'],
         lifecycle: {
           'created:mixins(before)': function (){
-            createdFired2 = true;
+            createdFired2 = ++count;
           }
         }
       });
@@ -575,8 +576,78 @@ describe("x-tag ", function () {
       }, "new tag mixin created should fire", 1000);
 
       runs(function (){
-        expect(true).toEqual(createdFired1);
-        expect(true).toEqual(createdFired2);
+        expect(1).toEqual(createdFired1);
+        expect(2).toEqual(createdFired2);
+      });
+    });
+    
+    it("it should fire the mixin created function AFTER the element's", function (){
+      var count = 0,
+          createdFired1,
+          createdFired2;
+
+      xtag.mixins.test = {
+        lifecycle: {
+          'created': function (){
+            createdFired2 = ++count;
+          }
+        }
+      };
+
+      xtag.register('x-foo', {
+        mixins: ['test'],
+        lifecycle: {
+          'created:mixins(after)': function (){
+            createdFired1 = ++count;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      waitsFor(function (){
+        return createdFired1 && createdFired2;
+      }, "new tag mixin created should fire", 1000);
+
+      runs(function (){
+        expect(1).toEqual(createdFired1);
+        expect(2).toEqual(createdFired2);
+      });
+    });
+    
+    it("it should fire the mixin created function AFTER, WHEN NO OPTION IS PASSED the element's", function (){
+      var count = 0,
+          createdFired1,
+          createdFired2;
+
+      xtag.mixins.test = {
+        lifecycle: {
+          'created': function (){
+            createdFired2 = ++count;
+          }
+        }
+      };
+
+      xtag.register('x-foo', {
+        mixins: ['test'],
+        lifecycle: {
+          'created:mixins': function (){
+            createdFired1 = ++count;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo');
+      testbox.appendChild(foo);
+
+      waitsFor(function (){
+        return createdFired1 && createdFired2;
+      }, "new tag mixin created should fire", 1000);
+
+      runs(function (){
+        expect(1).toEqual(createdFired1);
+        expect(2).toEqual(createdFired2);
       });
     });
 
