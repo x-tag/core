@@ -251,7 +251,7 @@ describe("x-tag ", function () {
 
   it('should fire lifecycle event CREATED when a new tag is created', function (){
     var createdFired = false;
-    xtag.register('x-foo', {
+    xtag.register('x-foo2', {
       lifecycle: {
         created: function (){
           createdFired = true;
@@ -259,7 +259,7 @@ describe("x-tag ", function () {
       }
     });
 
-    var foo = document.createElement('x-foo');
+    var foo = document.createElement('x-foo2');
 
     waitsFor(function (){
       return createdFired;
@@ -287,7 +287,7 @@ describe("x-tag ", function () {
 
     it('should fire CREATED when tag is added to innerHTML', function (){
       var created = false;
-      xtag.register('x-foo', {
+      xtag.register('x-foo3', {
         lifecycle: {
           created: function (){
             created = true;
@@ -300,7 +300,7 @@ describe("x-tag ", function () {
         }
       });
 
-      xtag.set(testbox, 'innerHTML', '<x-foo id="foo"></x-foo>');
+      xtag.set(testbox, 'innerHTML', '<x-foo3 id="foo"></x-foo3>');
 
       waitsFor(function (){
         return created;
@@ -317,7 +317,7 @@ describe("x-tag ", function () {
     it('should fire CREATED when custom element is added within a parent to innerHTML', function (){
       var created = false;
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo4', {
         lifecycle: {
           created: function(){
             created = true;
@@ -333,7 +333,7 @@ describe("x-tag ", function () {
         }
       });
 
-      xtag.set(testbox, 'innerHTML', '<div><x-foo id="foo" class="zoo"></x-foo></div>');
+      xtag.set(testbox, 'innerHTML', '<div><x-foo4 id="foo" class="zoo"></x-foo4></div>');
 
       waitsFor(function (){
         return created;
@@ -348,7 +348,7 @@ describe("x-tag ", function () {
 
     it('should fire INSERTED when injected into the DOM', function (){
       var inserted = false;
-      xtag.register('x-foo', {
+      xtag.register('x-foo5', {
         lifecycle: {
           inserted: function (){
             inserted = true;
@@ -356,7 +356,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo5');
       testbox.appendChild(foo);
       waitsFor(function (){
         return inserted;
@@ -368,11 +368,11 @@ describe("x-tag ", function () {
     });
 
     it('should parse new tag as soon as it is registered', function (){
-      var foo = document.createElement('x-foo2');
+      var foo = document.createElement('x-foo6');
 
       testbox.appendChild(foo);
 
-      xtag.register('x-foo2', {
+      xtag.register('x-foo6', {
         methods: {
           bar: function(){ return 'baz'; }
         }
@@ -385,13 +385,13 @@ describe("x-tag ", function () {
 
     it('should register methods for element', function (){
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo7', {
         methods: {
           baz: function (){ }
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo7');
       testbox.appendChild(foo);
 
       expect(foo.baz).toBeDefined();
@@ -400,7 +400,7 @@ describe("x-tag ", function () {
 
     it('should register getters for element', function (){
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo8', {
         accessors: {
           name: {
             get: function (){
@@ -410,16 +410,16 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo8');
       testbox.appendChild(foo);
 
-      expect(foo.name).toEqual('X-FOO');
+      expect(foo.name).toEqual('X-FOO8');
 
     });
 
     it('should register setters for element', function (){
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo9', {
         accessors: {
           name: {
             set: function (value){
@@ -429,7 +429,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo9');
       testbox.appendChild(foo);
       foo.name = 'pizza';
 
@@ -438,7 +438,7 @@ describe("x-tag ", function () {
     });
 
     it('xtag.innerHTML should instantiate x-tags in innerHTML', function (){
-      xtag.register('x-foo', {
+      xtag.register('x-foo10', {
         accessors: {
           name: {
             set: function (value){
@@ -447,7 +447,7 @@ describe("x-tag ", function () {
           }
         }
       });
-      xtag.innerHTML(testbox, '<x-foo id="foo"></x-foo>');
+      xtag.innerHTML(testbox, '<x-foo10 id="foo"></x-foo10>');
       var foo = document.getElementById('foo');
       foo.name = "Bob";
       expect(foo.getAttribute('name')).toEqual('Bob');
@@ -455,7 +455,7 @@ describe("x-tag ", function () {
 
     it('should only fire INSERT when inserted into the DOM', function (){
       var inserted = false;
-      xtag.register('x-foo', {
+      xtag.register('x-foo11', {
         lifecycle: {
           inserted: function (){
             inserted = true;
@@ -464,7 +464,7 @@ describe("x-tag ", function () {
       });
       var temp = document.createElement('div');
       temp.id = 'ZZZZZZZZZZZZZZZZZZZZZ';
-      temp.appendChild(document.createElement('x-foo'));
+      temp.appendChild(document.createElement('x-foo11'));
       expect(inserted).toEqual(false);
 
       testbox.appendChild(temp);
@@ -477,7 +477,7 @@ describe("x-tag ", function () {
         expect(inserted).toEqual(true);
       });
     });
-    
+
     it("mixins should not override existing properties", function (){
       var onCreateFired;
       xtag.mixins.test = {
@@ -488,7 +488,7 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo12', {
         mixins: ['test'],
         lifecycle: {
           created: function (){
@@ -497,11 +497,11 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
-      
+      var foo = document.createElement('x-foo12');
+
       expect(2).toEqual(onCreateFired);
     });
-    
+
     it("should create a mixin, fire CREATED", function (){
       var onCreateFired = false;
       xtag.mixins.test = {
@@ -512,11 +512,11 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo13', {
         mixins: ['test']
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo13');
       expect(true).toEqual(onCreateFired);
     });
 
@@ -530,11 +530,11 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo14', {
         mixins: ['test']
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo14');
       testbox.appendChild(foo);
 
       waitsFor(function (){
@@ -559,7 +559,7 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo15', {
         mixins: ['test'],
         lifecycle: {
           'created:mixins(before)': function (){
@@ -568,7 +568,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo15');
       testbox.appendChild(foo);
 
       waitsFor(function (){
@@ -580,7 +580,7 @@ describe("x-tag ", function () {
         expect(2).toEqual(createdFired2);
       });
     });
-    
+
     it("it should fire the mixin created function AFTER the element's", function (){
       var count = 0,
           createdFired1,
@@ -594,7 +594,7 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo16', {
         mixins: ['test'],
         lifecycle: {
           'created:mixins(after)': function (){
@@ -603,7 +603,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo16');
       testbox.appendChild(foo);
 
       waitsFor(function (){
@@ -615,7 +615,7 @@ describe("x-tag ", function () {
         expect(2).toEqual(createdFired2);
       });
     });
-    
+
     it("it should fire the mixin created function AFTER, WHEN NO OPTION IS PASSED the element's", function (){
       var count = 0,
           createdFired1,
@@ -629,7 +629,7 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo17', {
         mixins: ['test'],
         lifecycle: {
           'created:mixins': function (){
@@ -638,7 +638,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo17');
       testbox.appendChild(foo);
 
       waitsFor(function (){
@@ -657,7 +657,7 @@ describe("x-tag ", function () {
             base: null,
             mixin: null
           };
-          
+
       xtag.mixins.test = {
         accessors: {
           foo: {
@@ -669,7 +669,7 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo18', {
         mixins: ['test'],
         accessors: {
           foo: {
@@ -681,7 +681,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo18');
       var testing = foo.foo;
       expect(getFoo.base).toEqual(1);
       expect(getFoo.mixin).toEqual(2);
@@ -698,11 +698,11 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo19', {
         mixins: ['test']
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo19');
       foo.foo = 'barr';
 
       expect('barr').toEqual(foo.getAttribute('foo'));
@@ -711,7 +711,7 @@ describe("x-tag ", function () {
     it("should allow mixins to handle events", function (){
       var mixinEvent1 = false,
           mixinEvent2 = false;
-          
+
       xtag.mixins.test = {
         events: {
           'click': function(e){
@@ -720,7 +720,7 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo20', {
         mixins: ['test'],
         events: {
           'click': function(e){
@@ -729,7 +729,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo20');
       testbox.appendChild(foo);
 
       xtag.fireEvent(foo, 'click');
@@ -770,7 +770,7 @@ describe("x-tag ", function () {
 
       var customElement, currentTarget;
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo21', {
         lifecycle: {
           created: function (){
             customElement = this;
@@ -784,7 +784,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo21');
       testbox.appendChild(foo);
 
       waitsFor(function (){
@@ -802,7 +802,7 @@ describe("x-tag ", function () {
 
       var clicked = false;
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo22', {
         lifecycle: {
           created: function (){
             customElement = this;
@@ -816,7 +816,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo22');
       testbox.appendChild(foo);
 
       waitsFor(function (){
@@ -834,7 +834,7 @@ describe("x-tag ", function () {
 
       var customElement, delegateElement;
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo23', {
         lifecycle: {
           created: function (){
             customElement = this;
@@ -848,7 +848,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo23');
       testbox.appendChild(foo);
 
       waitsFor(function (){
@@ -866,7 +866,7 @@ describe("x-tag ", function () {
 
       var clickThis = null;
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo24', {
         lifecycle: {
           created: function (){
             this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
@@ -880,7 +880,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo24');
       testbox.appendChild(foo);
 
       var innerDiv = xtag.query(foo,'bazz')[0];
@@ -892,13 +892,13 @@ describe("x-tag ", function () {
 
     it('setter foo should setAttribute foo on target', function (){
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo25', {
         accessors:{
           foo: { attribute: {} }
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo25');
       testbox.appendChild(foo);
       foo.foo = 'bar';
 
@@ -908,7 +908,7 @@ describe("x-tag ", function () {
 
     it('setter foo should setAttribute bar on target', function (){
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo26', {
         accessors:{
           foo: {
             attribute: { name: 'bar' }
@@ -916,7 +916,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo26');
       testbox.appendChild(foo);
 
       foo.foo = 'bar';
@@ -929,7 +929,7 @@ describe("x-tag ", function () {
 
       var clickThis = null;
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo27', {
         lifecycle: {
           created: function (){
             this.innerHTML = '<div><foo><bazz><button></button></bazz></foo></div>';
@@ -942,7 +942,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo27');
       testbox.appendChild(foo);
 
       var button = xtag.query(foo,'button')[0];
@@ -1001,7 +1001,7 @@ describe("x-tag ", function () {
         }
       };
 
-      xtag.register('x-foo', {
+      xtag.register('x-foo28', {
         lifecycle: {
           created: function (){
             this.innerHTML = '<div><foo><bazz></bazz></foo></div>';
@@ -1014,7 +1014,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo28');
       testbox.appendChild(foo);
 
       var innerDiv = xtag.query(foo,'bazz')[0];
@@ -1027,7 +1027,7 @@ describe("x-tag ", function () {
     });
 
     it('extends should allow elements to use other elements base functionality', function(){
-      xtag.register("x-foo", {
+      xtag.register("x-foo29", {
         extends: 'div',
         lifecycle: {
           created: function() {
@@ -1036,7 +1036,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo');
+      var foo = document.createElement('x-foo29');
       testbox.appendChild(foo);
 
       expect(foo.innerHTML).toBeDefined();
