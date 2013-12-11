@@ -952,6 +952,41 @@ describe("x-tag ", function () {
 
     });
 
+    it('the currentTarget property should always be populated with the attached element', function (){
+
+      var foo, count = 0;
+
+      xtag.register('x-foo30', {
+        events: {
+          bar: function (e, elem){
+            if (e.currentTarget == foo) count++;
+          },
+          click: function (e, elem){
+            if (e.currentTarget == foo) count++;
+          }
+        }
+      });
+
+      foo = document.createElement('x-foo30');
+      var foo2 = document.createElement('x-foo30');
+      testbox.appendChild(foo); 
+      testbox.appendChild(foo2);
+      
+      var event = document.createEvent('MouseEvent');
+      event.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 1, null);
+      foo.dispatchEvent(event);
+      
+      xtag.fireEvent(foo, 'bar');
+      
+      waitsFor(function(){
+        return count == 2;
+      }, 'both clicks to bubble', 1000);
+      
+      runs(function (){
+        expect(count).toEqual(2);
+      });
+
+    });
 
     it('custom event pseudo should fire', function (){
 

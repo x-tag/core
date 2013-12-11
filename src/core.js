@@ -518,7 +518,7 @@
               });
               return fn.apply(self, args);
             };
-            case 'after': case '': return function(){
+            case 'after': case null: return function(){
               var self = this,
                   args = arguments;
                   returns = fn.apply(self, args);
@@ -690,7 +690,8 @@
         while (--i) {
           split[i].replace(regexPseudoReplace, function (match, name, value) {
             if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + split;
-            var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
+            var value = (value === '' || typeof value == 'undefined') ? null : value,
+                pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
                 pseudo.key = key;
                 pseudo.name = name;
                 pseudo.value = value;
@@ -757,6 +758,7 @@
       };
       var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
       event.stack = function(e){
+        e.currentTarget = e.currentTarget || this;
         var t = e.touches, tt = e.targetTouches;
         var detail = e.detail || {};
         if (!detail.__stack__) return stack.apply(this, arguments);
@@ -797,7 +799,7 @@
     },
 
     addEvent: function (element, type, fn, capture) {
-      var event = (typeof fn == 'function') ? xtag.parseEvent(type, fn) : fn;
+      var event = typeof fn == 'function' ? xtag.parseEvent(type, fn) : fn;
       event._pseudos.forEach(function(obj){
         obj.onAdd.call(element, obj);
       });
