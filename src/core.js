@@ -583,10 +583,10 @@
 
     query: query,
 
-    skipTransition: function(element, fn){
+    skipTransition: function(element, fn, bind){
       var prop = prefix.js + 'TransitionProperty';
       element.style[prop] = element.style.transitionProperty = 'none';
-      var callback = fn();
+      var callback = fn ? fn.call(bind) : null;
       return xtag.requestFrame(function(){
         xtag.requestFrame(function(){
           element.style[prop] = element.style.transitionProperty = '';
