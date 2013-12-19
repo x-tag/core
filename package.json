@@ -18,5 +18,8 @@
     "grunt-tagrelease": "~0.2.0",
     "grunt-bumpup": "~0.2.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "browserstack-webdriver": "~2.37.1",
+    "yeti": "~0.2.24"
+  }
 }

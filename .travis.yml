@@ -1,0 +1,11 @@
+before_script:
+- yeti test/index.html
+- sleep 3
+- java -jar test/tools/BrowserStackTunnel.jar DEV_KEY localhost,9000,0
+- sleep 3
+node_js:
+- "0.10"
+env:
+  global:
+  - secure: el1KTyBdyspsSRGPYt9QU+ZV8elIpTU2j/6z2v7aUgAQ0OWU4wZVFXtJdFisOSqWvqzzFyPcAB33ZudiSfRrQIS3OV+gXU7kheTiNMzr10e3UArjRzOyefBE0YUcj5j5+tbXoGzCMdyGtMpJx0laIXAy0fRk1ZL8q1Y3QMijgYU=
+language: node_js
