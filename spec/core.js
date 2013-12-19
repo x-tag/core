@@ -969,19 +969,19 @@ describe("x-tag ", function () {
 
       foo = document.createElement('x-foo30');
       var foo2 = document.createElement('x-foo30');
-      testbox.appendChild(foo); 
+      testbox.appendChild(foo);
       testbox.appendChild(foo2);
-      
+
       var event = document.createEvent('MouseEvent');
       event.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 1, null);
       foo.dispatchEvent(event);
-      
+
       xtag.fireEvent(foo, 'bar');
-      
+
       waitsFor(function(){
         return count == 2;
       }, 'both clicks to bubble', 1000);
-      
+
       runs(function (){
         expect(count).toEqual(2);
       });

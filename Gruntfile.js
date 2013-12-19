@@ -55,9 +55,19 @@ module.exports = function (grunt) {
       file: 'package.json',
       prefix: '',
       commit: true
+    },
+    connect: {
+      test:{
+        options:{
+          port: 9000,
+          base: '.',
+          keepalive: true
+        }
+      }
     }
   });
 
+  grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-bumpup');
   grunt.loadNpmTasks('grunt-tagrelease');
   grunt.loadNpmTasks('grunt-contrib-concat');
