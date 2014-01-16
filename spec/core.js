@@ -367,6 +367,56 @@ describe("x-tag ", function () {
       });
     });
 
+    it('should fire REMOVED when removed into the DOM (w/inserted)', function (){
+      var removed = false;
+      xtag.register('x-foo5-removed', {
+        lifecycle: {
+          inserted: function (){},
+          removed: function (){
+            removed = true;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo5-removed');
+      testbox.appendChild(foo);
+      setTimeout(function(){
+        testbox.removeChild(foo);
+      },100);
+
+      waitsFor(function (){
+        return removed;
+      }, "new tag removed should fire", 1000);
+
+      runs(function (){
+        expect(removed).toEqual(true);
+      });
+    });
+
+    it('should fire REMOVED when removed into the DOM', function (){
+      var removed = false;
+      xtag.register('x-foo5-removed-1', {
+        lifecycle: {
+          removed: function (){
+            removed = true;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo5-removed-1');
+      testbox.appendChild(foo);
+      setTimeout(function(){
+        testbox.removeChild(foo);
+      },100);
+      waitsFor(function (){
+        return removed;
+      }, "new tag removed should fire", 1000);
+
+      runs(function (){
+        expect(removed).toEqual(true);
+      });
+    });
+
     it('should parse new tag as soon as it is registered', function (){
       var foo = document.createElement('x-foo6');
 
@@ -969,19 +1019,19 @@ describe("x-tag ", function () {
 
       foo = document.createElement('x-foo30');
       var foo2 = document.createElement('x-foo30');
-      testbox.appendChild(foo); 
+      testbox.appendChild(foo);
       testbox.appendChild(foo2);
-      
+
       var event = document.createEvent('MouseEvent');
       event.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 1, null);
       foo.dispatchEvent(event);
-      
+
       xtag.fireEvent(foo, 'bar');
-      
+
       waitsFor(function(){
         return count == 2;
       }, 'both clicks to bubble', 1000);
-      
+
       runs(function (){
         expect(count).toEqual(2);
       });
