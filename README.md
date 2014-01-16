@@ -1,5 +1,7 @@
 # X-Tag - Custom Elements for Modern Browsers
 
+[![Build Status](https://travis-ci.org/x-tag/core.png)](https://travis-ci.org/x-tag/core)
+
 **This is the repository for the core [X-Tag](http://x-tags.org) library.**
 
 Based on the current W3 Web Components [draft][1], X-Tag enables the custom element portion of the proposal.
@@ -23,7 +25,7 @@ To get started hacking on X-Tag core:
     $ git submodule update --init --recursive
 
     $ npm install   # for devDependencies
-    
+
     $ grunt polyfill  # rebuilds polyfill file
 
     $ grunt build    # output to ./dist
