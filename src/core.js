@@ -356,8 +356,8 @@
         }
       };
 
-      if (tag.lifecycle.inserted) tag.prototype.enteredViewCallback = { value: tag.lifecycle.inserted, enumerable: true };
-      if (tag.lifecycle.removed) tag.prototype.leftViewCallback = { value: tag.lifecycle.removed, enumerable: true };
+      if (tag.lifecycle.inserted) tag.prototype.attachedCallback = { value: tag.lifecycle.inserted, enumerable: true };
+      if (tag.lifecycle.removed) tag.prototype.detachedCallback = { value: tag.lifecycle.removed, enumerable: true };
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
       var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;
@@ -409,7 +409,7 @@
       if (options['extends']) {
         definition['extends'] = options['extends'];
       }
-      var reg = doc.register(_name, definition);
+      var reg = doc.registerElement(_name, definition);
       fireReady(_name);
       return reg;
     },
@@ -690,14 +690,14 @@
         while (--i) {
           split[i].replace(regexPseudoReplace, function (match, name, value) {
             if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + split;
-            var value = (value === '' || typeof value == 'undefined') ? null : value,
-                pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
-                pseudo.key = key;
-                pseudo.name = name;
-                pseudo.value = value;
-                pseudo['arguments'] = (value || '').split(',');
-                pseudo.action = pseudo.action || trueop;
-                pseudo.source = source;
+            value = (value === '' || typeof value == 'undefined') ? null : value;
+            var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
+            pseudo.key = key;
+            pseudo.name = name;
+            pseudo.value = value;
+            pseudo['arguments'] = (value || '').split(',');
+            pseudo.action = pseudo.action || trueop;
+            pseudo.source = source;
             var last = listener;
             listener = function(){
               var args = toArray(arguments),
