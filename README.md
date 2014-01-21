@@ -1,5 +1,7 @@
 # X-Tag - Custom Elements for Modern Browsers
 
+**Current version: 0.9.2**
+
 [![Build Status](https://travis-ci.org/x-tag/core.png)](https://travis-ci.org/x-tag/core)
 
 **This is the repository for the core [X-Tag](http://x-tags.org) library.**
@@ -14,38 +16,54 @@ X-Tag (excluding third-party icons or images) is subject to the terms of the Moz
 
   [1]: https://dvcs.w3.org/hg/webcomponents/raw-file/tip/explainer/index.html       "W3 Web Components Spec (Draft)"
 
-## Developers
+## Getting started
 
 To get started hacking on X-Tag core:
 
-    $ git clone https://github.com/x-tag/core x-tag-core
-
-    $ cd x-tag-core
-
-    $ git submodule update --init --recursive
-
-    $ npm install   # for devDependencies
-
-    $ grunt polyfill  # rebuilds polyfill file
-
-    $ grunt build    # output to ./dist
+````bash
+git clone https://github.com/x-tag/core x-tag-core --recursive
+cd x-tag-core
+npm install     # installs all the required dependencies using package.json
+grunt polyfill  # rebuilds polyfill file
+grunt build     # outputs x-tag-core.js and x-tag-core.min.js to ./dist
+````
 
 If you are interested in building your own custom elements, you can use our [web-component-stub](https://github.com/x-tag/web-component-stub) as a starting point.
+
+## Updating
+
+If you already have cloned the library and want to update to the latest changes, do:
+
+````bash
+cd x-tag-core
+git pull origin master
+git submodule update
+npm install
+grunt polyfill
+grunt build
+````
+
+This assumes you just cloned the library and its remote repository is labelled `origin`. Suppose you had your own fork where your own remote is `origin`; you should add another remote origin and label it as `upstream`. Then your `git pull` line would need to be `git pull upstream master` instead.
 
 ## Tests
 
 Jasmine tests via grunt are not working yet, please open [test/index.html](test/index.html) in your browser to see if everything passes.
 
 
-### Distributable Build
+## Regenerating the distributable build
 
-	$ grunt build
+In the interest of not reinventing the wheel, X-Tag core uses a few existing libraries which get pulled into the project. But distributing a bunch of separate files is not efficient, so we need to generate a single file that contains all this code.
 
-	// See ./dist/ directory for the js files that can be used in your project
+If you make changes on the library and want to regenerate the build, just run
+
+````bash
+grunt build
+````
+
+and both `x-tag-core.js` and `x-tag-core.min.js` will be rebuilt and placed in the `./dist` directory.
 
 
-
-### Create your own web components
+## Creating your own web components
 
 To learn more about X-Tags visit [x-tags.org](http://x-tags.org).
 
