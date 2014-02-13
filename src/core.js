@@ -4,6 +4,7 @@
 
   var win = window,
     doc = document,
+    container = doc.createElement('div'),
     noop = function(){},
     trueop = function(){ return true; },
     regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
@@ -197,7 +198,7 @@
   }
 
   var skipProps = {};
-  for (var z in document.createEvent('CustomEvent')) skipProps[z] = 1;
+  for (var z in doc.createEvent('CustomEvent')) skipProps[z] = 1;
   function inheritEvent(event, base){
     var desc = Object.getOwnPropertyDescriptor(event, 'target');
     for (var z in base) {
@@ -650,10 +651,18 @@
     queryChildren: function (element, selector) {
       var id = element.id,
         guid = element.id = id || 'x_' + xtag.uid(),
-        attr = '#' + guid + ' > ';
+        attr = '#' + guid + ' > ',
+        noParent = false;
+      if (!element.parentNode){
+        noParent = true;
+        container.appendChild(element);
+      }
       selector = attr + (selector + '').replace(',', ',' + attr, 'g');
       var result = element.parentNode.querySelectorAll(selector);
       if (!id) element.removeAttribute('id');
+      if (noParent){
+        container.removeChild(element);
+      }
       return toArray(result);
     },
 
