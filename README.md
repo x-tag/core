@@ -1,6 +1,6 @@
 # X-Tag - Custom Elements for Modern Browsers
 
-**Current version: 0.9.2**
+**Current version: 0.9.3**
 
 [![Build Status](https://travis-ci.org/x-tag/core.png)](https://travis-ci.org/x-tag/core)
 
