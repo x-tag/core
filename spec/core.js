@@ -1013,11 +1013,19 @@ describe("x-tag ", function () {
           },
           click: function (e, elem){
             if (e.currentTarget == foo) count++;
-          }
+          },
+          barf: function(e, elem){
+            if (e.currentTarget == foo) count++;
+          },
+          'barf:delegate(div)': function(e, elem){
+            if (e.currentTarget == foo) count++;
+          },
         }
       });
 
       foo = document.createElement('x-foo30');
+      var d1 = document.createElement('div');
+      foo.appendChild(d1);
       var foo2 = document.createElement('x-foo30');
       testbox.appendChild(foo);
       testbox.appendChild(foo2);
@@ -1027,13 +1035,14 @@ describe("x-tag ", function () {
       foo.dispatchEvent(event);
 
       xtag.fireEvent(foo, 'bar');
+      xtag.fireEvent(d1, 'barf');
 
       waitsFor(function(){
-        return count == 2;
+        return count == 4;
       }, 'both clicks to bubble', 1000);
 
       runs(function (){
-        expect(count).toEqual(2);
+        expect(count).toEqual(4);
       });
 
     });
@@ -1256,15 +1265,22 @@ describe("x-tag ", function () {
 
       });
 
-
       it('queryChildren', function(){
         testbox.appendChild(document.createElement('a'));
         testbox.appendChild(document.createElement('a'));
         var div = document.createElement('div');
         div.appendChild(document.createElement('a'));
         testbox.appendChild(div);
-
         expect(2).toEqual(xtag.queryChildren(testbox, 'a').length);
+        expect(div.parentElement).toBeDefined();
+      });
+
+      it('queryChildren no parent', function(){
+        var div = document.createElement('div');
+        div.appendChild(document.createElement('a'));
+        div.appendChild(document.createElement('a'));
+        expect(2).toEqual(xtag.queryChildren(div, 'a').length);
+        expect(div.parentElement).toBeNull();
       });
 
     });
