@@ -1521,6 +1521,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
 
   var win = window,
     doc = document,
+    container = doc.createElement('div'),
     noop = function(){},
     trueop = function(){ return true; },
     regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
@@ -1714,7 +1715,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
   }
 
   var skipProps = {};
-  for (var z in document.createEvent('CustomEvent')) skipProps[z] = 1;
+  for (var z in doc.createEvent('CustomEvent')) skipProps[z] = 1;
   function inheritEvent(event, base){
     var desc = Object.getOwnPropertyDescriptor(event, 'target');
     for (var z in base) {
@@ -1872,9 +1873,24 @@ if (document.readyState === 'complete' || scope.flags.eager) {
           return output;
         }
       };
-
-      if (tag.lifecycle.inserted) tag.prototype.attachedCallback = { value: tag.lifecycle.inserted, enumerable: true };
-      if (tag.lifecycle.removed) tag.prototype.detachedCallback = { value: tag.lifecycle.removed, enumerable: true };
+			
+      var inserted = tag.lifecycle.inserted,
+          removed = tag.lifecycle.removed;
+      if (inserted || removed) {
+        tag.prototype.attachedCallback = { value: function(){
+          if (removed) this.xtag.__parentNode__ = this.parentNode;
+          if (inserted) return inserted.apply(this, arguments);
+        }, enumerable: true };
+      }
+      if (removed) {
+        tag.prototype.detachedCallback = { value: function(){
+          var args = toArray(arguments);
+          args.unshift(this.xtag.__parentNode__);
+          var output = removed.apply(this, args);
+          delete this.xtag.__parentNode__;
+          return output;
+        }, enumerable: true };
+      }
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
       var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;
@@ -2167,10 +2183,18 @@ if (document.readyState === 'complete' || scope.flags.eager) {
     queryChildren: function (element, selector) {
       var id = element.id,
         guid = element.id = id || 'x_' + xtag.uid(),
-        attr = '#' + guid + ' > ';
+        attr = '#' + guid + ' > ',
+        noParent = false;
+      if (!element.parentNode){
+        noParent = true;
+        container.appendChild(element);
+      }
       selector = attr + (selector + '').replace(',', ',' + attr, 'g');
       var result = element.parentNode.querySelectorAll(selector);
       if (!id) element.removeAttribute('id');
+      if (noParent){
+        container.removeChild(element);
+      }
       return toArray(result);
     },
 

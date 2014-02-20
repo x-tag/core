@@ -356,9 +356,24 @@
           return output;
         }
       };
-
-      if (tag.lifecycle.inserted) tag.prototype.attachedCallback = { value: tag.lifecycle.inserted, enumerable: true };
-      if (tag.lifecycle.removed) tag.prototype.detachedCallback = { value: tag.lifecycle.removed, enumerable: true };
+			
+      var inserted = tag.lifecycle.inserted,
+          removed = tag.lifecycle.removed;
+      if (inserted || removed) {
+        tag.prototype.attachedCallback = { value: function(){
+          if (removed) this.xtag.__parentNode__ = this.parentNode;
+          if (inserted) return inserted.apply(this, arguments);
+        }, enumerable: true };
+      }
+      if (removed) {
+        tag.prototype.detachedCallback = { value: function(){
+          var args = toArray(arguments);
+          args.unshift(this.xtag.__parentNode__);
+          var output = removed.apply(this, args);
+          delete this.xtag.__parentNode__;
+          return output;
+        }, enumerable: true };
+      }
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
       var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;
