@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/x-tag/core.png)](https://travis-ci.org/x-tag/core)
 
+[![Selenium Test Status](https://saucelabs.com/browser-matrix/aschaar.svg)](https://saucelabs.com/u/aschaar)
+
 **This is the repository for the core [X-Tag](http://x-tags.org) library.**
 
 Based on the current W3 Web Components [draft][1], X-Tag enables the custom element portion of the proposal.
