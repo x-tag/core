@@ -1874,12 +1874,11 @@ if (document.readyState === 'complete' || scope.flags.eager) {
         }
       };
 
-      if (tag.lifecycle.inserted) {
-        tag.prototype.attachedCallback = { value: function(){
-          this.xtag.__parentNode__ = this.parentNode;
-					return tag.lifecycle.inserted.apply(this, arguments);
-        }, enumerable: true };
-      }
+      tag.prototype.attachedCallback = { value: function(){
+        this.xtag.__parentNode__ = this.parentNode;
+				if (tag.lifecycle.inserted) return tag.lifecycle.inserted.apply(this, arguments);
+      }, enumerable: true };
+      
       if (tag.lifecycle.removed) {
         tag.prototype.detachedCallback = { value: function(){
           var args = toArray(arguments);
