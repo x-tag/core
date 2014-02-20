@@ -357,8 +357,20 @@
         }
       };
 
-      if (tag.lifecycle.inserted) tag.prototype.attachedCallback = { value: tag.lifecycle.inserted, enumerable: true };
-      if (tag.lifecycle.removed) tag.prototype.detachedCallback = { value: tag.lifecycle.removed, enumerable: true };
+      tag.prototype.attachedCallback = { value: function(){
+        this.xtag.__parentNode__ = this.parentNode;
+				if (tag.lifecycle.inserted) return tag.lifecycle.inserted.apply(this, arguments);
+      }, enumerable: true };
+      
+      if (tag.lifecycle.removed) {
+        tag.prototype.detachedCallback = { value: function(){
+          var args = toArray(arguments);
+          args.unshift(this.xtag.__parentNode__);
+					var output = tag.lifecycle.removed.apply(this, args);
+					delete this.xtag.__parentNode__;
+					return output;
+        }, enumerable: true };
+      }
       if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
       var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;

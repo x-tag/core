@@ -1019,7 +1019,7 @@ describe("x-tag ", function () {
           },
           'barf:delegate(div)': function(e, elem){
             if (e.currentTarget == foo) count++;
-          },
+          }
         }
       });
 
@@ -1127,6 +1127,44 @@ describe("x-tag ", function () {
 
       expect(foo.click).toBeDefined();
 
+    });
+    
+    it('should pass the previous parentNode as the first parameter in the lifecycle removed callback', function(){
+      var inserted = 0, parentPassed = 0, parentMatches = 0;
+      xtag.register("x-foo31", {
+        lifecycle: {
+          inserted: function() {
+            inserted++;
+          },
+          removed: function(parent) {
+            parentMatches += (parent == testbox ? 1 : 0);
+            if (parent) parentPassed++;
+          }
+        }
+      });
+      
+      var foo = document.createElement('x-foo31');
+      testbox.appendChild(foo);
+      testbox.removeChild(foo);
+      document.body.appendChild(foo);
+      testbox.appendChild(foo);
+      setTimeout(function(){ 
+        testbox.removeChild(foo);
+        setTimeout(function(){
+          document.body.appendChild(foo);
+          setTimeout(function(){ document.body.removeChild(foo); }, 1);
+        }, 1);
+      }, 1); 
+      
+      waitsFor(function(){
+        return parentPassed == 2;
+      }, 'element to be removed twice', 1000);
+
+      runs(function (){
+        expect(inserted).toEqual(2);
+        expect(parentPassed).toEqual(2);
+        expect(parentMatches).toEqual(1);
+      });
     });
   });
 
