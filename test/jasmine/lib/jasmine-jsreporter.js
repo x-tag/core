@@ -29,8 +29,8 @@
 
 (function () {
     // Ensure that Jasmine library is loaded first
-    if (typeof jasmine === "undefined") {
-        throw new Error("[Jasmine JSReporter] 'Jasmine' library not found");
+    if (!jasmine) {
+        throw new Exception("[Jasmine JSReporter] 'Jasmine' library not found");
     }
 
     /**
@@ -51,21 +51,6 @@
     function round (amount, numOfDecDigits) {
         numOfDecDigits = numOfDecDigits || 2;
         return Math.round(amount * Math.pow(10, numOfDecDigits)) / Math.pow(10, numOfDecDigits);
-    }
-
-    /**
-     * Create a new array which contains only the failed items.
-     * @param items Items which will be filtered
-     * @returns {Array} of failed items */
-    function failures (items) {
-        var fs = [], i, v;
-        for (i = 0; i < items.length; i += 1) {
-            v = items[i];
-            if (!v.passed_) {
-                fs.push(v);
-            }
-        }
-        return fs;
     }
 
     /**
@@ -93,8 +78,7 @@
                 skipped : specs[i].results().skipped,
                 passedCount : specs[i].results().passedCount,
                 failedCount : specs[i].results().failedCount,
-                totalCount : specs[i].results().totalCount,
-                failures: failures(specs[i].results().getItems())
+                totalCount : specs[i].results().totalCount
             };
             suiteData.passed = !suiteData.specs[i].passed ? false : suiteData.passed;
             suiteData.durationSec += suiteData.specs[i].durationSec;
@@ -129,8 +113,7 @@
         reportSpecResults: function (spec) {
             // Finish timing this spec and calculate duration/delta (in sec)
             spec.finishedAt = new Date();
-            // If the spec was skipped, reportSpecStarting is never called and spec.startedAt is undefined
-            spec.durationSec = spec.startedAt ? elapsedSec(spec.startedAt.getTime(), spec.finishedAt.getTime()) : 0;
+            spec.durationSec = elapsedSec(spec.startedAt.getTime(), spec.finishedAt.getTime());
         },
 
         reportSuiteResults: function (suite) {
@@ -139,7 +122,7 @@
 
         reportRunnerResults: function (runner) {
             var suites = runner.suites(),
-                i, j, ilen;
+                i, ilen;
 
             // Attach results to the "jasmine" object to make those results easy to scrap/find
             jasmine.runnerResults = {
@@ -149,14 +132,13 @@
             };
 
             // Loop over all the Suites
-            for (i = 0, ilen = suites.length, j = 0; i < ilen; ++i) {
+            for (i = 0, ilen = suites.length; i < ilen; ++i) {
                 if (suites[i].parentSuite === null) {
-                    jasmine.runnerResults.suites[j] = getSuiteData(suites[i]);
+                    jasmine.runnerResults.suites[i] = getSuiteData(suites[i]);
                     // If 1 suite fails, the whole runner fails
-                    jasmine.runnerResults.passed = !jasmine.runnerResults.suites[j].passed ? false : jasmine.runnerResults.passed;
+                    jasmine.runnerResults.passed = !jasmine.runnerResults.suites[i].passed ? false : jasmine.runnerResults.passed;
                     // Add up all the durations
-                    jasmine.runnerResults.durationSec += jasmine.runnerResults.suites[j].durationSec;
-                    j++;
+                    jasmine.runnerResults.durationSec += jasmine.runnerResults.suites[i].durationSec;
                 }
             }
 
