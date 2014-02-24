@@ -16,9 +16,23 @@ module.exports = function (grunt) {
 
   var browsers = [{
     browserName: "firefox",
-    version: "19",
+    version: "14",
     platform: "XP"
-  }];
+  },
+  {
+    browserName: "firefox",
+    version: "26",
+    platform: "XP"
+  },{
+    browserName: "chrome",
+    version: "26",
+    platform: "XP"
+  },{
+    browserName: "chrome",
+    version: "32",
+    platform: "Windows 8.1"
+  }
+  ];
 
   // Project configuration.
   grunt.initConfig({
