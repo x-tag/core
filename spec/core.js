@@ -417,6 +417,29 @@ describe("x-tag ", function () {
       });
     });
 
+    it('previous parent should be available on lifcycle.removed', function (){
+      var parent_available = false;
+      xtag.register('x-foo5-removed-previous-parent', {
+        lifecycle: {
+          removed: function() {
+              parent_available = !!(this.xtag.previousParentNode && (this.xtag.previousParentElement || !document.body.parentElement));
+          }
+        } 
+      });
+      var foo = document.createElement('x-foo5-removed-previous-parent');
+      testbox.appendChild(foo);
+      setTimeout(function(){
+        testbox.removeChild(foo);
+      },100);
+      waitsFor(function (){
+        return parent_available;
+      }, "new tag removed should fire providing the previous parent", 1000);
+
+      runs(function (){
+        expect(parent_available).toEqual(true);
+      });
+    });
+      
     it('should parse new tag as soon as it is registered', function (){
       var foo = document.createElement('x-foo6');
 
