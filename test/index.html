@@ -4,10 +4,11 @@
 	<head>
 	  <title>X-Tag: Jasmine Spec Runner</title>
 	  <meta charset="UTF-8">
-	  <link rel="shortcut icon" type="image/png" href="jasmine/lib/jasmine-1.2.0/jasmine_favicon.png">
-	  <link rel="stylesheet" type="text/css" href="jasmine/lib/jasmine-1.2.0/jasmine.css">
-	  <script type="text/javascript" src="jasmine/lib/jasmine-1.2.0/jasmine.js"></script>
-	  <script type="text/javascript" src="jasmine/lib/jasmine-1.2.0/jasmine-html.js"></script>
+	  <link rel="shortcut icon" type="image/png" href="jasmine/lib/jasmine-1.3.1/jasmine_favicon.png">
+	  <link rel="stylesheet" type="text/css" href="jasmine/lib/jasmine-1.3.1/jasmine.css">
+	  <script type="text/javascript" src="jasmine/lib/jasmine-1.3.1/jasmine.js"></script>
+	  <script type="text/javascript" src="jasmine/lib/jasmine-1.3.1/jasmine-html.js"></script>
+	  <script type="text/javascript" src="jasmine/lib/jasmine-jsreporter.js"></script>
 	  <script type="text/javascript" src="../lib/web-components-polyfills.js"></script>
 	  <!-- Specs -->
 	  <script type="text/javascript" src="../spec/core.js"></script>
@@ -17,24 +18,24 @@
 		  var jasmineEnv = jasmine.getEnv();
 		  jasmineEnv.updateInterval = 1000;
 
-		  var htmlReporter = new jasmine.HtmlReporter();
+      var jsReporter = new jasmine.JSReporter();
 
+			jasmineEnv.addReporter(jsReporter);
+
+      var htmlReporter = new jasmine.HtmlReporter();
 		  jasmineEnv.addReporter(htmlReporter);
 
 		  jasmineEnv.specFilter = function(spec) {
-			return htmlReporter.specFilter(spec);
+  			return htmlReporter.specFilter(spec);
 		  };
 
 		  var currentWindowOnload = window.onload;
-
 		  window.onload = function() {
-			if (currentWindowOnload) {
-			  currentWindowOnload();
-			}
-			jasmineEnv.execute();
+  			if (currentWindowOnload) {
+  			  currentWindowOnload();
+  			}
+  			jasmineEnv.execute();
 		  };
-
-
 		})();
 	  </script>
 	</head>

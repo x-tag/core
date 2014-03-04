@@ -14,6 +14,26 @@ module.exports = function (grunt) {
    'lib/CustomElements/src/boot.js'
   ];
 
+  var browsers = [{
+    browserName: "firefox",
+    version: "14",
+    platform: "XP"
+  },
+  {
+    browserName: "firefox",
+    version: "26",
+    platform: "XP"
+  },{
+    browserName: "chrome",
+    version: "26",
+    platform: "XP"
+  },{
+    browserName: "chrome",
+    version: "32",
+    platform: "Windows 8.1"
+  }
+  ];
+
   // Project configuration.
   grunt.initConfig({
     meta : {
@@ -59,9 +79,31 @@ module.exports = function (grunt) {
     connect: {
       test:{
         options:{
+          port: 9999,
+          base: '.'
+        }
+      },
+      dev:{
+        options:{
           port: 9000,
           base: '.',
           keepalive: true
+        }
+      }
+    },
+    'saucelabs-jasmine': {
+      all: {
+        options: {
+          urls: ["http://127.0.0.1:9999/test/index.html"],
+          tunnelTimeout: 5,
+          build: process.env.TRAVIS_JOB_ID,
+          concurrency: 3,
+          browsers: browsers,
+          testname: "x-tag-core tests",
+          tags: ["master"],
+          onTestComplete: function(result){
+            return JSON.stringify(result);
+          }
         }
       }
     }
@@ -73,12 +115,15 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-saucelabs');
 
-  grunt.registerTask('test', ['jshint']);
+  grunt.registerTask('test', ['']);
 
   // Default task.
   grunt.registerTask('default', ['test']);
   grunt.registerTask('polyfill', ['concat:polyfill']);
   grunt.registerTask('build', ['test','concat:core','uglify']);
+
+  grunt.registerTask('test', ['jshint','connect:test', 'saucelabs-jasmine']);
 
 };
