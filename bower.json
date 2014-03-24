@@ -4,9 +4,8 @@
   "version": "0.9.4",
   "keywords": [
     "web-components",
-    "element",
-    "custom",
     "core",
+    "library",
     "x-tag"
   ],
   "main": [
