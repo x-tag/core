@@ -1,19 +1,6 @@
 module.exports = function (grunt) {
   'use strict';
 
-  // Polymer Platform custom biuld
-  var polyfillFiles = [
-   'lib/platform-bootstrap.js',
-   'lib/DOMTokenList.js',
-   'lib/WeakMap/weakmap.js',
-   'lib/CustomElements/src/sidetable.js',
-   'lib/MutationObservers/MutationObserver.js',
-   'lib/CustomElements/src/CustomElements.js',
-   'lib/CustomElements/src/Observer.js',
-   'lib/CustomElements/src/Parser.js',
-   'lib/CustomElements/src/boot.js'
-  ];
-
   var browsers = [{
     browserName: "firefox",
     version: "14",

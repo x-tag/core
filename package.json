@@ -1,7 +1,7 @@
 {
   "name": "x-tag-core",
-  "description": "X-Tags core library",
-  "version": "0.9.5",
+  "description": "X-Tag core library for creating Custom Elements.",
+  "version": "1.0.0-beta",
   "homepage": "http://www.x-tags.org",
   "repository": {
     "type": "git",
