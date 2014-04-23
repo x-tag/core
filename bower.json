@@ -9,7 +9,9 @@
     "x-tag"
   ],
   "main": [
-    "lib/web-components-polyfills.js",
     "src/core.js"
-  ]
+  ],
+  "dependencies": {
+    "customelements-polyfill": "~0.0.1"
+  }
 }

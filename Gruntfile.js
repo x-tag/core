@@ -53,14 +53,16 @@ module.exports = function (grunt) {
     concat: {
       core:{
         src:[
-          'lib/web-components-polyfills.js',
+          'dist/polyfills.js',
           'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'
       },
-      polyfill: {
-        src: polyfillFiles,
-        dest: 'lib/web-components-polyfills.js'
+      copy:{
+        src:[
+          'src/core.js'
+        ],
+        dest: 'dist/x-tag-core-no-polyfill.js'
       }
     },
     uglify: {
@@ -106,6 +108,13 @@ module.exports = function (grunt) {
           }
         }
       }
+    },
+    'smush-components': {
+      options: {
+        fileMap: {
+          js: 'dist/polyfills.js'
+        }
+      }
     }
   });
 
@@ -116,13 +125,12 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-saucelabs');
-
-  grunt.registerTask('test', ['']);
+  grunt.loadNpmTasks('grunt-smush-components');
 
   // Default task.
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('polyfill', ['concat:polyfill']);
-  grunt.registerTask('build', ['test','concat:core','uglify']);
+  grunt.registerTask('polyfill', ['smush-components']);
+  grunt.registerTask('build', ['polyfill','concat:core','concat:copy','uglify']);
 
   grunt.registerTask('test', ['jshint','connect:test', 'saucelabs-jasmine']);
 
