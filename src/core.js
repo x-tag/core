@@ -15,6 +15,15 @@
         return pseudo.value.match(regexDigits).indexOf(String(event.keyCode)) > -1 == (pseudo.name == 'keypass') || null;
       }
     },
+    /*
+      - The prefix object generated here is added to the xtag object as xtag.prefix later in the code
+      - Prefix provides a variety of prefix variations for the browser in which your code is running
+      - The 4 variations of prefix are as follows:
+        * prefix.dom: the correct prefix case and form when used on DOM elements/style properties
+        * prefix.lowercase: a lowercase version of the prefix for use in various user-code situations
+        * prefix.css: the lowercase, dashed version of the prefix 
+        * prefix.js: addresses prefixed APIs present in global and non-Element contexts
+    */
     prefix = (function () {
       var styles = win.getComputedStyle(doc.documentElement, ''),
           pre = (Array.prototype.slice
@@ -35,7 +44,12 @@
 /*** Functions ***/
 
 // Utilities
-
+  
+  /*
+    This is an enhanced typeof check for all types of objects. Where typeof would normaly return
+    'object' for many common DOM objects (like NodeLists and HTMLCollections).
+    - For example: typeOf(document.children) will correctly return 'htmlcollection'
+  */
   var typeCache = {},
       typeString = typeCache.toString,
       typeRegexp = /\s([a-zA-Z]+)/;
@@ -43,7 +57,7 @@
     var type = typeString.call(obj);
     return typeCache[type] || (typeCache[type] = type.match(typeRegexp)[1].toLowerCase());
   }
-
+  
   function clone(item, type){
     var fn = clone[type || typeOf(item)];
     return fn ? fn(item) : item;
@@ -58,7 +72,11 @@
       while (i--) array[i] = clone(src[i]);
       return array;
     };
-
+  
+  /*
+    The toArray() method allows for conversion of any object to a true array. For types that
+    cannot be converted to an array, the method returns a 1 item array containing the passed-in object.
+  */
   var unsliceable = ['undefined', 'null', 'number', 'boolean', 'string', 'function'];
   function toArray(obj){
     return unsliceable.indexOf(typeOf(obj)) == -1 ?
@@ -429,7 +447,13 @@
       fireReady(_name);
       return reg;
     },
-
+    
+    /*
+      NEEDS MORE TESTING!
+      
+      Allows for async dependency resolution, fires when all passed-in elements are 
+      registered and parsed
+    */
     ready: function(names, fn){
       var obj = { tags: toArray(names), fn: fn };
       if (obj.tags.reduce(function(last, name){
@@ -522,6 +546,10 @@
     },
     pseudos: {
       __mixin__: {},
+      /*
+        
+        
+      */
       mixins: {
         onCompiled: function(fn, pseudo){
           var mixins = pseudo.source.__mixins__;
@@ -572,7 +600,7 @@
     clone: clone,
     typeOf: typeOf,
     toArray: toArray,
-
+    
     wrap: function (original, fn) {
       return function(){
         var args = arguments,
@@ -581,7 +609,10 @@
         return output;
       };
     },
-
+    /*
+      Recursively merges one object with another. The first argument is the destination object,
+      all other objects passed in as arguments are merged from right to left, conflicts are overwritten
+    */
     merge: function(source, k, v){
       if (typeOf(k) == 'string') return mergeOne(source, k, v);
       for (var i = 1, l = arguments.length; i < l; i++){
@@ -590,7 +621,11 @@
       }
       return source;
     },
-
+    
+    /*
+      ----- This should be simplified! -----
+      Generates a random ID string
+    */ 
     uid: function(){
       return Math.random().toString(36).substr(2,10);
     },
@@ -610,20 +645,14 @@
         });
       });
     },
+    
+    requestFrame: win.requestAnimationFrame ||
+                  win[prefix.lowercase + 'RequestAnimationFrame'] ||
+                  function(fn){ return win.setTimeout(fn, 20); },
 
-    requestFrame: (function(){
-      var raf = win.requestAnimationFrame ||
-                win[prefix.lowercase + 'RequestAnimationFrame'] ||
-                function(fn){ return win.setTimeout(fn, 20); };
-      return function(fn){ return raf(fn); };
-    })(),
-
-    cancelFrame: (function(){
-      var cancel = win.cancelAnimationFrame ||
-                   win[prefix.lowercase + 'CancelAnimationFrame'] ||
-                   win.clearTimeout;
-      return function(id){ return cancel(id); };
-    })(),
+    cancelFrame: win.cancelAnimationFrame ||
+                 win[prefix.lowercase + 'CancelAnimationFrame'] ||
+                 win.clearTimeout,
 
     matchSelector: function (element, selector) {
       return matchSelector.call(element, selector);
@@ -662,7 +691,10 @@
     toggleClass: function (element, klass) {
       return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
     },
-
+    
+    /*
+      Runs a query on only the children of an element
+    */
     queryChildren: function (element, selector) {
       var id = element.id,
         guid = element.id = id || 'x_' + xtag.uid(),
@@ -680,7 +712,10 @@
       }
       return toArray(result);
     },
-
+    /*
+      Creates a document fragment with the content passed in - content can be
+      a string of HTML, an element, or an array/collection of elements
+    */
     createFragment: function(content) {
       var frag = doc.createDocumentFragment();
       if (content) {
@@ -693,7 +728,11 @@
       }
       return frag;
     },
-
+    
+    /*
+      Removes an element from the DOM for more performant node manipulation. The element
+      is placed back into the DOM at the place it was taken from.
+    */
     manipulate: function(element, fn){
       var next = element.nextSibling,
         parent = element.parentNode,
@@ -872,7 +911,11 @@
         console.warn('This error may have been caused by a change in the fireEvent method', e);
       }
     },
-
+    
+    /*
+      Listens for insertion or removal of nodes from a given element using 
+      Mutation Observers, or Mutation Events as a fallback
+    */
     addObserver: function(element, type, fn){
       if (!element._records) {
         element._records = { inserted: [], removed: [] };
