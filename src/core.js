@@ -835,7 +835,9 @@
         var args = toArray(arguments),
             output = event.condition.apply(this, args.concat([event]));
         if (!output) return output;
-        if (e.type != key) {
+        // The second condition in this IF is to address the following Blink regression: https://code.google.com/p/chromium/issues/detail?id=367537
+        // Remove this when affected browser builds with this regression fall below 5% marketshare
+        if (e.type != key && (e.baseEvent && e.type != e.baseEvent.type)) {
           xtag.fireEvent(e.target, key, {
             baseEvent: e,
             detail: output !== true && (output.__stack__ = stack) ? output : { __stack__: stack }
