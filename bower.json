@@ -12,6 +12,6 @@
     "src/core.js"
   ],
   "dependencies": {
-    "customelements-polyfill": "~0.0.1"
+    "CustomElements": "0.2.3"
   }
 }
