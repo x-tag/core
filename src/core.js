@@ -380,7 +380,6 @@
       
       if (inserted || removed) {
         tag.prototype.attachedCallback = { value: function(){
-          if (this.tagName == 'X-FOO31') console.log(this.parentNode);
           if (removed) this.xtag.__parentNode__ = this.parentNode;
           if (inserted) return inserted.apply(this, arguments);
         }, enumerable: true };
