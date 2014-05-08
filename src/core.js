@@ -351,11 +351,14 @@
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
-      var ready = tag.lifecycle.created || tag.lifecycle.ready;
+      var ready = tag.lifecycle.created || tag.lifecycle.ready,
+          inserted = tag.lifecycle.inserted,
+          removed = tag.lifecycle.removed;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
+          if (removed) this.xtag.__parentNode__ = this.parentNode;
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
@@ -374,11 +377,10 @@
           return output;
         }
       };
-			
-      var inserted = tag.lifecycle.inserted,
-          removed = tag.lifecycle.removed;
+      
       if (inserted || removed) {
         tag.prototype.attachedCallback = { value: function(){
+          if (this.tagName == 'X-FOO31') console.log(this.parentNode);
           if (removed) this.xtag.__parentNode__ = this.parentNode;
           if (inserted) return inserted.apply(this, arguments);
         }, enumerable: true };
