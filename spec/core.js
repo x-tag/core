@@ -596,7 +596,7 @@ describe("x-tag ", function () {
       });
     });
 
-    it("it should fire the mixin created function BEFORE the element's", function (){
+    it("should fire the mixin created function BEFORE the element's", function (){
       var count = 0,
           createdFired1,
           createdFired2;
@@ -631,7 +631,7 @@ describe("x-tag ", function () {
       });
     });
 
-    it("it should fire the mixin created function AFTER the element's", function (){
+    it("should fire the mixin created function AFTER the element's", function (){
       var count = 0,
           createdFired1,
           createdFired2;
@@ -666,7 +666,7 @@ describe("x-tag ", function () {
       });
     });
 
-    it("it should fire the mixin created function AFTER, WHEN NO OPTION IS PASSED the element's", function (){
+    it("should fire the mixin created function AFTER, WHEN NO OPTION IS PASSED the element's", function (){
       var count = 0,
           createdFired1,
           createdFired2;
@@ -699,6 +699,38 @@ describe("x-tag ", function () {
         expect(1).toEqual(createdFired1);
         expect(2).toEqual(createdFired2);
       });
+    });
+
+    it("should fire mixin lifecycle.compile, before created", function(){
+      var array = [];
+      xtag.mixins.test = {
+        lifecycle: {
+          compile: function(elemPrototype){
+            var fn = elemPrototype.lifecycle.created;
+            elemPrototype.lifecycle.created = function(){
+              array.push('test.created');
+              fn.call(elemPrototype);
+            }
+          }
+        }
+      }
+      xtag.register('x-foo-mixin-1', {
+        mixins: ['test'],
+        lifecycle:{
+          created: function(){
+            array.push('foo.created');
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo-mixin-1');
+      testbox.appendChild(foo);
+
+      runs(function(){
+        expect(array[0]).toEqual('test.created');
+        expect(array[1]).toEqual('foo.created');
+      });
+
     });
 
     it("should allow mixins to create getters", function (){
@@ -1128,7 +1160,7 @@ describe("x-tag ", function () {
       expect(foo.click).toBeDefined();
 
     });
-    
+
     it('should pass the previous parentNode as the first parameter in the lifecycle removed callback', function(){
       var inserted = 0, parentPassed = 0, parentMatches = 0;
       xtag.register("x-foo31", {
@@ -1142,20 +1174,20 @@ describe("x-tag ", function () {
           }
         }
       });
-      
+
       var foo = document.createElement('x-foo31');
       testbox.appendChild(foo);
       testbox.removeChild(foo);
       document.body.appendChild(foo);
       testbox.appendChild(foo);
-      setTimeout(function(){ 
+      setTimeout(function(){
         testbox.removeChild(foo);
         setTimeout(function(){
           document.body.appendChild(foo);
           setTimeout(function(){ document.body.removeChild(foo); }, 1);
         }, 1);
-      }, 1); 
-      
+      }, 1);
+
       waitsFor(function(){
         return parentPassed == 2;
       }, 'element to be removed twice', 1000);
