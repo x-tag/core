@@ -646,13 +646,19 @@
       });
     },
     
-    requestFrame: win.requestAnimationFrame ||
-                  win[prefix.lowercase + 'RequestAnimationFrame'] ||
-                  function(fn){ return win.setTimeout(fn, 20); },
-
-    cancelFrame: win.cancelAnimationFrame ||
-                 win[prefix.lowercase + 'CancelAnimationFrame'] ||
-                 win.clearTimeout,
+    requestFrame: (function(){
+      var raf = win.requestAnimationFrame ||
+                win[prefix.lowercase + 'RequestAnimationFrame'] ||
+                function(fn){ return win.setTimeout(fn, 20); };
+      return function(fn){ return raf(fn); };
+    })(),
+    
+    cancelFrame: (function(){
+      var cancel = win.cancelAnimationFrame ||
+                   win[prefix.lowercase + 'CancelAnimationFrame'] ||
+                   win.clearTimeout;
+      return function(id){ return cancel(id); };  
+    })(),
 
     matchSelector: function (element, selector) {
       return matchSelector.call(element, selector);
