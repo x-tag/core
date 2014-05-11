@@ -1130,40 +1130,30 @@ describe("x-tag ", function () {
     });
     
     it('should pass the previous parentNode as the first parameter in the lifecycle removed callback', function(){
-      var inserted = 0, parentPassed = 0, parentMatches = 0;
+      var insertParent, removedParent, removed;
       xtag.register("x-foo31", {
         lifecycle: {
           inserted: function() {
-            inserted++;
+            insertParent = this.parentNode;
           },
           removed: function(parent) {
-            parentMatches += (parent == testbox ? 1 : 0);
-            if (parent) parentPassed++;
+            if(!removed) {
+              removedParent = parent;
+              removed = true;
+            }
           }
         }
       });
       
       var foo = document.createElement('x-foo31');
       testbox.appendChild(foo);
-      testbox.removeChild(foo);
-      document.body.appendChild(foo);
-      testbox.appendChild(foo);
-      setTimeout(function(){ 
-        testbox.removeChild(foo);
-        setTimeout(function(){
-          document.body.appendChild(foo);
-          setTimeout(function(){ document.body.removeChild(foo); }, 1);
-        }, 1);
-      }, 1); 
-      
+      setTimeout(function(){ testbox.removeChild(foo); }, 500);     
       waitsFor(function(){
-        return parentPassed == 2;
-      }, 'element to be removed twice', 1000);
+        return removed;
+      }, 'removed to be passed the last parentNode', 600);
 
       runs(function (){
-        expect(inserted).toEqual(2);
-        expect(parentPassed).toEqual(2);
-        expect(parentMatches).toEqual(1);
+        expect(insertParent == removedParent).toEqual(true);
       });
     });
   });
