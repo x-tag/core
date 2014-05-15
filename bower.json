@@ -12,6 +12,6 @@
     "src/core.js"
   ],
   "dependencies": {
-    "CustomElements": "0.2.3"
+    "polymer-platform": "~0.2.4"
   }
 }
