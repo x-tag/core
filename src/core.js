@@ -302,7 +302,12 @@
       };
     }
   }
-
+  
+  var unwrapComment = /\/\*!?(?:\@preserve)?[ \t]*(?:\r\n|\n)([\s\S]*?)(?:\r\n|\n)\s*\*\//;
+  function parseMultiline(fn){
+    return unwrapComment.exec(fn.toString())[1];
+  }
+  
   var readyTags = {};
   function fireReady(name){
     readyTags[name] = (readyTags[name] || []).filter(function(obj){
@@ -350,12 +355,18 @@
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
-
+      
+      var shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
+      
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
+          if (shadow && this.createShadowRoot) {
+            var root = this.createShadowRoot();
+            root.appendChild(shadow.cloneNode(true));
+          }
           xtag.addEvents(this, tag.events);
           tag.mixins.forEach(function(mixin){
             if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
@@ -726,7 +737,7 @@
       var frag = doc.createDocumentFragment();
       if (content) {
         var div = frag.appendChild(doc.createElement('div')),
-          nodes = toArray(content.nodeName ? arguments : !(div.innerHTML = content) || div.children),
+          nodes = toArray(content.nodeName ? arguments : !(div.innerHTML = typeof content == 'function' ? parseMultiline(content) : content) || div.children),
           length = nodes.length,
           index = 0;
         while (index < length) frag.insertBefore(nodes[index++], div);
@@ -1096,7 +1107,7 @@ for (z in UIEventProto){
 
   win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
-
+  
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
   });
