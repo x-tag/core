@@ -84,7 +84,7 @@ describe("x-tag ", function () {
     
     waitsFor(function (){
       return shadowRootPopulated;
-    }, "new tag lifecycle event CREATED should fire", 1000);
+    }, "new tag lifecycle event CREATED should fire", 1);
 
     runs(function (){
       expect(shadowRootPopulated).toEqual(true);

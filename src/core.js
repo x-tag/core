@@ -119,7 +119,9 @@
 
   function wrapMixin(tag, key, pseudo, value, original){
     var fn = original[key];
-    if (!(key in original)) original[key] = value;
+    if (!(key in original)) {
+      original[key + (pseudo.match(':mixins') ? '' : ':mixins')] = value;
+    }
     else if (typeof original[key] == 'function') {
       if (!fn.__mixins__) fn.__mixins__ = [];
       fn.__mixins__.push(xtag.applyPseudos(pseudo, value, tag.pseudos));
@@ -344,12 +346,11 @@
       } else {
         return;
       }
-
+      xtag.tags[_name] = options || {};
       // save prototype for actual object creation below
       var basePrototype = options.prototype;
       delete options.prototype;
-
-      var tag = xtag.tags[_name] = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
+      var tag = xtag.tags[_name].compiled = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
 
       for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
@@ -368,9 +369,6 @@
             root.appendChild(shadow.cloneNode(true));
           }
           xtag.addEvents(this, tag.events);
-          tag.mixins.forEach(function(mixin){
-            if (xtag.mixins[mixin].events) xtag.addEvents(element, xtag.mixins[mixin].events);
-          });
           var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
@@ -573,7 +571,7 @@
               });
               return fn.apply(self, args);
             };
-            case 'after': case null: return function(){
+            case null: case '': case 'after': return function(){
               var self = this,
                   args = arguments;
                   returns = fn.apply(self, args);
