@@ -1,6 +1,6 @@
 # X-Tag - Custom Elements for Modern Browsers
 
-**Current version: 0.9.4**
+[![Bower version](https://badge.fury.io/bo/x-tag-core.svg)](http://badge.fury.io/bo/x-tag-core)
 
 [![Build Status](https://travis-ci.org/x-tag/core.png)](https://travis-ci.org/x-tag/core)
 
