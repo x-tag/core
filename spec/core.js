@@ -521,7 +521,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return inserted;
-      }, "new tag onInsert should fire", 1000);
+      }, "new tag onInsert should fire", 500);
 
       runs(function (){
         expect(inserted).toEqual(true);
@@ -589,13 +589,84 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return onInsertFired;
-      }, "new tag mixin inserted should fire", 1000);
+      }, "new tag mixin inserted should fire", 500);
 
       runs(function (){
         expect(true).toEqual(onInsertFired);
       });
     });
+    
+    it("mixins should wrap functions by default", function (){
+      var count = 0,
+          mixinFired,
+          originalFired;
+          
+      xtag.mixins.wrapFn = {
+        lifecycle: {
+          created: function (){
+            mixinFired = ++count;
+          }
+        }
+      };
 
+      xtag.register('x-foo-mixin-fn', {
+        mixins: ['wrapFn'],
+        lifecycle: {
+          'created:mixins': function (){
+            originalFired = ++count;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo-mixin-fn');
+      
+      waitsFor(function (){
+        return mixinFired && originalFired;
+      }, "new tag mixin created should fire", 500);
+      
+      runs(function (){
+        expect(2).toEqual(mixinFired);
+        expect(1).toEqual(originalFired);
+      });
+    });
+    
+    it("should fire all mixins, even when there is no base function", function (){
+      var count = 0,
+          mixinOne,
+          mixinTwo;
+          
+      xtag.mixins.mixinOne = {
+        lifecycle: {
+          created: function (){
+            mixinOne = ++count;
+          }
+        }
+      };
+      
+      xtag.mixins.mixinTwo = {
+        lifecycle: {
+          created: function (){
+            mixinTwo = ++count;
+          }
+        }
+      };
+
+      xtag.register('x-foo-multi-mixin', {
+        mixins: ['mixinOne', 'mixinTwo']
+      });
+
+      var foo = document.createElement('x-foo-multi-mixin');
+      
+      waitsFor(function (){
+        return count == 2;
+      }, "new tag mixin created should fire", 500);
+      
+      runs(function (){
+        expect(1).toEqual(mixinOne);
+        expect(2).toEqual(mixinTwo);
+      });
+    });
+    
     it("it should fire the mixin created function BEFORE the element's", function (){
       var count = 0,
           createdFired1,
@@ -623,7 +694,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return createdFired1 && createdFired2;
-      }, "new tag mixin created should fire", 1000);
+      }, "new tag mixin created should fire", 500);
 
       runs(function (){
         expect(1).toEqual(createdFired1);
@@ -658,7 +729,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return createdFired1 && createdFired2;
-      }, "new tag mixin created should fire", 1000);
+      }, "new tag mixin created should fire", 500);
 
       runs(function (){
         expect(1).toEqual(createdFired1);
@@ -693,7 +764,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return createdFired1 && createdFired2;
-      }, "new tag mixin created should fire", 1000);
+      }, "new tag mixin created should fire", 500);
 
       runs(function (){
         expect(1).toEqual(createdFired1);
@@ -1119,13 +1190,13 @@ describe("x-tag ", function () {
 
     it('should be able to extend existing elements', function(){
       xtag.register("x-foo-extend", {
-        extends: 'div'
+        extends: 'input'
       });
 
       var foo = document.createElement('x-foo-extend');
       testbox.appendChild(foo);
 
-      expect(foo.click).toBeDefined();
+      expect(foo.value).toBeDefined();
 
     });
     
@@ -1147,10 +1218,10 @@ describe("x-tag ", function () {
       
       var foo = document.createElement('x-foo31');
       testbox.appendChild(foo);
-      setTimeout(function(){ testbox.removeChild(foo); }, 500);     
+      setTimeout(function(){ testbox.removeChild(foo); }, 200);     
       waitsFor(function(){
         return removed;
-      }, 'removed to be passed the last parentNode', 600);
+      }, 'removed to be passed the last parentNode', 300);
 
       runs(function (){
         expect(insertParent == removedParent).toEqual(true);
