@@ -3,7 +3,7 @@
 	url = https://github.com/Polymer/HTMLImports.git
 [submodule "lib/CustomElements"]
 	path = lib/CustomElements
-	url = https://github.com/Polymer/CustomElements.git
+	url = https://github.com/Katochimoto/CustomElements.git
 [submodule "lib/MutationObservers"]
 	path = lib/MutationObservers
 	url = https://github.com/Polymer/MutationObservers.git
