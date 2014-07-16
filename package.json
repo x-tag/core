@@ -1,11 +1,11 @@
 {
   "name": "x-tag-core",
   "description": "X-Tags core library",
-  "version": "0.9.8",
+  "version": "0.9.9",
   "homepage": "http://www.x-tags.org",
   "repository": {
     "type": "git",
-    "url": "git://github.com/x-tag/core.git"
+    "url": "git://github.com/Katochimoto/core.git"
   },
   "scripts": {
     "test": "grunt test"
