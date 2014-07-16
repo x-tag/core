@@ -702,27 +702,23 @@ var flags = scope.flags;
 var hasNative = Boolean(document.registerElement);
 // For consistent timing, use native custom elements only when not polyfilling
 // other key related web components features.
-var useNative = !flags.register &&
-    hasNative &&
-    !window.ShadowDOMPolyfill &&
-    (!window.HTMLImports || HTMLImports.useNative);
+var useNative = !flags.register && hasNative && !window.ShadowDOMPolyfill && (!window.HTMLImports || HTMLImports.useNative);
 
 if (useNative) {
-    (function() {
-        var TestClonePrototype = Object.create(HTMLElement.prototype);
-        TestClonePrototype.test = 1;
+  // FF no stores methods and properties after cloning
+  document.registerElement('check-cloning-element', {
+    prototype: Object.create(HTMLElement.prototype, {
+      test: 1
+    })
+  });
 
-        document.registerElement('test-clone', {
-            prototype: TestClonePrototype
-        });
-
-        if (!document.createElement('test-clone').cloneNode(true).test) {
-            useNative = false;
-        }
-    }());
+  if (!document.createElement('check-cloning-element').cloneNode(true).test) {
+    useNative = false;
+  }
 }
 
 if (useNative) {
+
   // stub
   var nop = function() {};
 
@@ -1589,11 +1585,11 @@ function bootstrap() {
   // one more pass before register is 'live'
   CustomElements.upgradeDocument(document);
   // choose async
-  var async = window.Platform && Platform.endOfMicrotask ?
+  var async = window.Platform && Platform.endOfMicrotask ? 
     Platform.endOfMicrotask :
     setTimeout;
   async(function() {
-    // set internal 'ready' flag, now document.registerElement will trigger
+    // set internal 'ready' flag, now document.registerElement will trigger 
     // synchronous upgrades
     CustomElements.ready = true;
     // capture blunt profiling data
@@ -1634,7 +1630,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
 } else if (document.readyState === 'interactive' && !window.attachEvent &&
     (!window.HTMLImports || window.HTMLImports.ready)) {
   bootstrap();
-// When loading at other readyStates, wait for the appropriate DOM event to
+// When loading at other readyStates, wait for the appropriate DOM event to 
 // bootstrap.
 } else {
   var loadEvent = window.HTMLImports && !HTMLImports.ready ?
@@ -1667,7 +1663,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
       - The 4 variations of prefix are as follows:
         * prefix.dom: the correct prefix case and form when used on DOM elements/style properties
         * prefix.lowercase: a lowercase version of the prefix for use in various user-code situations
-        * prefix.css: the lowercase, dashed version of the prefix
+        * prefix.css: the lowercase, dashed version of the prefix 
         * prefix.js: addresses prefixed APIs present in global and non-Element contexts
     */
     prefix = (function () {
@@ -1690,7 +1686,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
 /*** Functions ***/
 
 // Utilities
-
+  
   /*
     This is an enhanced typeof check for all types of objects. Where typeof would normaly return
     'object' for many common DOM objects (like NodeLists and HTMLCollections).
@@ -1703,7 +1699,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
     var type = typeString.call(obj);
     return typeCache[type] || (typeCache[type] = type.match(typeRegexp)[1].toLowerCase());
   }
-
+  
   function clone(item, type){
     var fn = clone[type || typeOf(item)];
     return fn ? fn(item) : item;
@@ -1718,7 +1714,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
       while (i--) array[i] = clone(src[i]);
       return array;
     };
-
+  
   /*
     The toArray() method allows for conversion of any object to a true array. For types that
     cannot be converted to an array, the method returns a 1 item array containing the passed-in object.
@@ -1950,12 +1946,12 @@ if (document.readyState === 'complete' || scope.flags.eager) {
       };
     }
   }
-
+  
   var unwrapComment = /\/\*!?(?:\@preserve)?[ \t]*(?:\r\n|\n)([\s\S]*?)(?:\r\n|\n)\s*\*\//;
   function parseMultiline(fn){
     return unwrapComment.exec(fn.toString())[1];
   }
-
+  
   var readyTags = {};
   function fireReady(name){
     readyTags[name] = (readyTags[name] || []).filter(function(obj){
@@ -2002,9 +1998,9 @@ if (document.readyState === 'complete' || scope.flags.eager) {
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
-
+      
       var shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
-
+      
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
@@ -2029,7 +2025,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
           return output;
         }
       };
-
+			
       var inserted = tag.lifecycle.inserted,
           removed = tag.lifecycle.removed;
       if (inserted || removed) {
@@ -2102,11 +2098,11 @@ if (document.readyState === 'complete' || scope.flags.eager) {
       fireReady(_name);
       return reg;
     },
-
+    
     /*
       NEEDS MORE TESTING!
-
-      Allows for async dependency resolution, fires when all passed-in elements are
+      
+      Allows for async dependency resolution, fires when all passed-in elements are 
       registered and parsed
     */
     ready: function(names, fn){
@@ -2202,8 +2198,8 @@ if (document.readyState === 'complete' || scope.flags.eager) {
     pseudos: {
       __mixin__: {},
       /*
-
-
+        
+        
       */
       mixins: {
         onCompiled: function(fn, pseudo){
@@ -2255,7 +2251,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
     clone: clone,
     typeOf: typeOf,
     toArray: toArray,
-
+    
     wrap: function (original, fn) {
       return function(){
         var args = arguments,
@@ -2276,11 +2272,11 @@ if (document.readyState === 'complete' || scope.flags.eager) {
       }
       return source;
     },
-
+    
     /*
       ----- This should be simplified! -----
       Generates a random ID string
-    */
+    */ 
     uid: function(){
       return Math.random().toString(36).substr(2,10);
     },
@@ -2300,19 +2296,19 @@ if (document.readyState === 'complete' || scope.flags.eager) {
         });
       });
     },
-
+    
     requestFrame: (function(){
       var raf = win.requestAnimationFrame ||
                 win[prefix.lowercase + 'RequestAnimationFrame'] ||
                 function(fn){ return win.setTimeout(fn, 20); };
       return function(fn){ return raf(fn); };
     })(),
-
+    
     cancelFrame: (function(){
       var cancel = win.cancelAnimationFrame ||
                    win[prefix.lowercase + 'CancelAnimationFrame'] ||
                    win.clearTimeout;
-      return function(id){ return cancel(id); };
+      return function(id){ return cancel(id); };  
     })(),
 
     matchSelector: function (element, selector) {
@@ -2352,7 +2348,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
     toggleClass: function (element, klass) {
       return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
     },
-
+    
     /*
       Runs a query on only the children of an element
     */
@@ -2389,7 +2385,7 @@ if (document.readyState === 'complete' || scope.flags.eager) {
       }
       return frag;
     },
-
+    
     /*
       Removes an element from the DOM for more performant node manipulation. The element
       is placed back into the DOM at the place it was taken from.
@@ -2574,9 +2570,9 @@ if (document.readyState === 'complete' || scope.flags.eager) {
         console.warn('This error may have been caused by a change in the fireEvent method', e);
       }
     },
-
+    
     /*
-      Listens for insertion or removal of nodes from a given element using
+      Listens for insertion or removal of nodes from a given element using 
       Mutation Observers, or Mutation Events as a fallback
     */
     addObserver: function(element, type, fn){
@@ -2751,7 +2747,7 @@ for (z in UIEventProto){
 
   win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
-
+  
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
   });
