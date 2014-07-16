@@ -708,7 +708,7 @@ if (useNative) {
   // FF no stores methods and properties after cloning
   document.registerElement('check-cloning-element', {
     prototype: Object.create(HTMLElement.prototype, {
-      test: 1
+      test: { get: function() { return 1; } }
     })
   });
 
