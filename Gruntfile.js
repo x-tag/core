@@ -124,5 +124,5 @@ module.exports = function (grunt) {
   grunt.registerTask('polyfill', ['concat:polyfill']);
   grunt.registerTask('test', ['jshint','connect:test', 'saucelabs-jasmine']);
   grunt.registerTask('compress', ['concat:core','uglify']);
-  grunt.registerTask('build', ['test', 'concat:core','uglify']);
+  grunt.registerTask('build', ['test','concat:core','uglify']);
 };
