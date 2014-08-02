@@ -1,0 +1,12 @@
+[submodule "lib/HTMLImports"]
+	path = lib/HTMLImports
+	url = https://github.com/Polymer/HTMLImports.git
+[submodule "lib/CustomElements"]
+	path = lib/CustomElements
+	url = https://github.com/Polymer/CustomElements.git
+[submodule "lib/MutationObservers"]
+	path = lib/MutationObservers
+	url = https://github.com/Polymer/MutationObservers.git
+[submodule "lib/WeakMap"]
+	path = lib/WeakMap
+	url = https://github.com/Polymer/WeakMap.git
