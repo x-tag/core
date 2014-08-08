@@ -1013,11 +1013,13 @@ describe("x-tag ", function () {
 
     it('it should allow element pseudoes to be created', function(){
       var hiset = false,
-        beep = false;
+        beep = false,
+        order = '';
       xtag.register('x-foo-el-pseudo', {
         accessors:{
           'hi':{
-            'set:beep()': function(val){
+            'set:beep': function(val){
+              order += "set";
               hiset = true;
             }
           }
@@ -1025,6 +1027,7 @@ describe("x-tag ", function () {
         pseudos:{
           beep: {
             action: function(pseudo, event){
+              order += "beep";
               beep = true;
             }
           }
@@ -1035,6 +1038,7 @@ describe("x-tag ", function () {
       foo.hi = 'foo';
       expect(hiset).toEqual(true);
       expect(beep).toEqual(true);
+      expect(order).toEqual("beepset");
 
     });
 
