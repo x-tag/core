@@ -1042,6 +1042,70 @@ describe("x-tag ", function () {
 
     });
 
+    it('it should allow pseudoe execution reordering', function(){
+      var order = '';
+      xtag.register('x-foo-el-pseudo2', {
+        accessors:{
+          'hi':{
+            'set:beep': function(val){
+              console.log('set:this', this);
+              order += "set"+val;
+            }
+          }
+        },
+        pseudos:{
+          beep: {
+            reverseFn: true, //  reverse the order that this pseudo gets applied.
+            onCompiled: function(fn, pseudo){
+              // it's pretty difficult to pull off reordering here,
+              // what if we had an option on this pseudo object
+              // that told applyPseudos to swap the functions ?
+              return fn;
+            },
+            action: function(pseudo, event){
+              console.log('action', this);
+              order += "beep";
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo-el-pseudo2');
+      foo.hi = 'foo';
+      expect(order).toEqual("compilesetfoobeep");
+
+    });
+
+    it('it should allow pseudoe onAdd hook for various disco tasks', function(){
+      var order = '';
+      xtag.register('x-foo-el-pseudo3', {
+        accessors:{
+          'hi':{
+            'set:beep': function(val){
+              order += "set";
+            }
+          }
+        },
+        pseudos:{
+          beep: {
+            onAdd: function(pseudo){
+              console.log('onAdd', pseudo)
+              order += "onAdd";
+              return null;
+            },
+            action: function(pseudo, event){
+              order += "action";
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo-el-pseudo3');
+      foo.hi = 'foo';
+      expect(order).toEqual("onAddactionset");
+
+    });
+
     it('setter foo should setAttribute foo on target', function (){
 
       xtag.register('x-foo25', {

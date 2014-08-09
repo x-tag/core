@@ -377,8 +377,8 @@
               this[attr.key] = attr.boolean ? hasAttr : this.getAttribute(name);
             }
           }
-          tag.pseudos.forEach(function(obj){
-            obj.onAdd.call(element, obj);
+          Object.keys(tag.pseudos).forEach(function(key){
+            if(tag.pseudos[key] && tag.pseudos[key].onAdd) tag.pseudos[key].onAdd.call(element, tag.pseudos[key]);
           });
           return output;
         }
@@ -794,7 +794,7 @@
             };
             if (target && pseudo.onAdd) {
               if (target.nodeName) pseudo.onAdd.call(target, pseudo);
-              else target.push(pseudo);
+              else target[name] = pseudo;
             }
           });
         }
