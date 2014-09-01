@@ -1,14 +1,14 @@
 {
     "name": "x-tag-core",
     "description": "X-Tag core library for creating custom elements as defined by the w3c Web Components spec.",
-    "version": "0.9.9",
+    "version": "0.10.0",
     "keywords": [
         "web-components",
         "core",
         "library",
         "x-tag"
     ],
-    "main": "dist/x-tag-core.js",
+    "main": "xblocks-core-tag.js",
     "ignore": [
         "**/.*",
         "node_modules",
@@ -18,5 +18,13 @@
         "src",
         "package.json",
         "karma.conf.js"
-    ]
+    ],
+    "homepage": "https://github.com/Katochimoto/xblocks-core-tag",
+    "authors": [
+        "rikishi <bufpost@yandex.ru>"
+    ],
+    "moduleType": [
+        "globals"
+    ],
+    "license": "Apache-2.0"
 }

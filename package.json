@@ -1,14 +1,21 @@
 {
     "name": "x-tag-core",
     "description": "X-Tags core library",
-    "version": "0.9.8",
-    "homepage": "http://www.x-tags.org",
+    "version": "0.10.0",
+    "homepage": "https://github.com/Katochimoto/xblocks-core-tag",
+    "author": {
+        "name": "Rikishi",
+        "email": "bufpost@yandex.ru",
+        "url": "https://github.com/Katochimoto"
+    },
+    "license": "Apache-2.0",
     "repository": {
         "type": "git",
-        "url": "git://github.com/x-tag/core.git"
+        "url": "git://github.com/Katochimoto/xblocks-core-tag.git"
     },
-    "scripts": {
-        "test": "make test"
+    "bugs": {
+        "url": "https://github.com/Katochimoto/xblocks-core-tag/issues",
+        "email": "bufpost@yandex.ru"
     },
     "devDependencies": {
         "CustomElements": "Polymer/CustomElements.git#0.4.0",
@@ -17,6 +24,30 @@
         "HTMLImports": "Polymer/HTMLImports.git#0.4.0",
         "dom-token-list-polyfill": "pennyfx/dom-token-list.git#0.0.2",
 
-        "borschik": "1.0.5"
+        "borschik": "1.0.5",
+
+        "jshint": "2.5.5",
+        "jscs": "1.6.0",
+
+        "mocha": "1.20.1",
+        "expect.js": "0.3.1",
+        "sinon": "1.10.2",
+
+        "karma": "~0.12.x",
+        "karma-mocha": "~0.1.x",
+        "karma-sinon-expect": "~0.1.x",
+        "karma-borschik-preprocessor": "~0.1.x",
+        "karma-react-jsx-preprocessor": "~0.1.x",
+        "karma-phantomjs-launcher": "~0.1.x"
+    },
+    "engines": {
+        "node": ">=0.6.0"
+    },
+    "main": "xblocks-core-tag.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "test": "make test"
     }
 }
