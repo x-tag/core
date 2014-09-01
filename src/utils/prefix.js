@@ -10,8 +10,9 @@
 
 xtag.prefix = (function() {
 
-    var styles = win.getComputedStyle(doc.documentElement, '');
-    var pre = (Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o']))[1];
+    var styles = global.getComputedStyle(global.document.documentElement, '');
+    var pre = Array.prototype.slice.call(styles).join('').match(/-(moz|webkit|ms)-/);
+    pre = ( pre || (styles.OLink === '' && [ '', 'o' ]) )[1];
 
     return {
         'dom': (pre === 'ms' ? 'MS' : pre),

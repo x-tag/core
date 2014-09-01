@@ -35,8 +35,6 @@ var logFlags = {};
 (function(global, undefined) {
     'use strict';
 
-    
-
     /**
      * @namespace xtag
      */
@@ -64,21 +62,6 @@ var logFlags = {};
 
         'captureEvents': [ 'focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll' ]
     };
-
-
-
-
-    /*! borschik:include:utils/uid.js */
-    /*! borschik:include:utils/prefix.js */
-    /*! borschik:include:utils/typeOf.js */
-    /*! borschik:include:utils/clone.js */
-    /*! borschik:include:utils/toArray.js */
-
-    /*! borschik:include:utils/dom/query.js */
-    /*! borschik:include:utils/dom/parseMutations.js */
-
-    /*! borschik:include:core.js */
-
 
     global.document.addEventListener('WebComponentsReady', function() {
         xtag.fireEvent(global.document.body, 'DOMComponentsLoaded');

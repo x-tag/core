@@ -21,12 +21,7 @@ var trueop = function() {
 
 // Mixins
 
-  function mergeOne(source, key, current){
-    var type = typeOf(current);
-    if (type == 'object' && typeOf(source[key]) == 'object') xtag.merge(source[key], current);
-    else source[key] = clone(current, type);
-    return source;
-  }
+  
 
   function wrapMixin(tag, key, pseudo, value, original){
     var fn = original[key];
