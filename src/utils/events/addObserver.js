@@ -1,3 +1,5 @@
+mutation = win.MutationObserver || win[xtag.prefix.js + 'MutationObserver'];
+
 /*
   Listens for insertion or removal of nodes from a given element using
   Mutation Observers, or Mutation Events as a fallback

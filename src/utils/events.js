@@ -75,3 +75,137 @@ customEvents: {
     }
   }
 },
+
+
+
+/*** Universal Touch ***/
+
+var touching = false,
+    touchTarget = null;
+
+doc.addEventListener('mousedown', function(e){
+  touching = true;
+  touchTarget = e.target;
+}, true);
+
+doc.addEventListener('mouseup', function(){
+  touching = false;
+  touchTarget = null;
+}, true);
+
+doc.addEventListener('dragend', function(){
+  touching = false;
+  touchTarget = null;
+}, true);
+
+var UIEventProto = {
+  touches: {
+    configurable: true,
+    get: function(){
+      return this.__touches__ ||
+        (this.identifier = 0) ||
+        (this.__touches__ = touching ? [this] : []);
+    }
+  },
+  targetTouches: {
+    configurable: true,
+    get: function(){
+      return this.__targetTouches__ || (this.__targetTouches__ =
+        (touching && this.currentTarget &&
+        (this.currentTarget == touchTarget ||
+        (this.currentTarget.contains && this.currentTarget.contains(touchTarget)))) ? (this.identifier = 0) || [this] : []);
+    }
+  },
+  changedTouches: {
+    configurable: true,
+    get: function(){
+      return this.__changedTouches__ || (this.identifier = 0) || (this.__changedTouches__ = [this]);
+    }
+  }
+};
+
+for (z in UIEventProto){
+  UIEvent.prototype[z] = UIEventProto[z];
+  Object.defineProperty(UIEvent.prototype, z, UIEventProto[z]);
+}
+
+
+/*** Custom Event Definitions ***/
+
+  function addTap(el, tap, e){
+    if (!el.__tap__) {
+      el.__tap__ = { click: e.type == 'mousedown' };
+      if (el.__tap__.click) el.addEventListener('click', tap.observer);
+      else {
+        el.__tap__.scroll = tap.observer.bind(el);
+        window.addEventListener('scroll', el.__tap__.scroll, true);
+        el.addEventListener('touchmove', tap.observer);
+        el.addEventListener('touchcancel', tap.observer);
+        el.addEventListener('touchend', tap.observer);
+      }
+    }
+    if (!el.__tap__.click) {
+      el.__tap__.x = e.touches[0].pageX;
+      el.__tap__.y = e.touches[0].pageY;
+    }
+  }
+
+  function removeTap(el, tap){
+    if (el.__tap__) {
+      if (el.__tap__.click) el.removeEventListener('click', tap.observer);
+      else {
+        window.removeEventListener('scroll', el.__tap__.scroll, true);
+        el.removeEventListener('touchmove', tap.observer);
+        el.removeEventListener('touchcancel', tap.observer);
+        el.removeEventListener('touchend', tap.observer);
+      }
+      delete el.__tap__;
+    }
+  }
+
+  function checkTapPosition(el, tap, e){
+    var touch = e.changedTouches[0],
+        tol = tap.gesture.tolerance;
+    if (
+      touch.pageX < el.__tap__.x + tol &&
+      touch.pageX > el.__tap__.x - tol &&
+      touch.pageY < el.__tap__.y + tol &&
+      touch.pageY > el.__tap__.y - tol
+    ) return true;
+  }
+
+  xtag.customEvents.tap = {
+    observe: {
+      mousedown: document,
+      touchstart: document
+    },
+    gesture: {
+      tolerance: 8
+    },
+    condition: function(e, tap){
+      var el = e.target;
+      switch (e.type) {
+        case 'touchstart':
+          if (el.__tap__ && el.__tap__.click) removeTap(el, tap);
+          addTap(el, tap, e);
+          return;
+        case 'mousedown':
+          if (!el.__tap__) addTap(el, tap, e);
+          return;
+        case 'scroll':
+        case 'touchcancel':
+          removeTap(this, tap);
+          return;
+        case 'touchmove':
+        case 'touchend':
+          if (this.__tap__ && !checkTapPosition(this, tap, e)) {
+            removeTap(this, tap);
+            return;
+          }
+          return e.type == 'touchend' || null;
+        case 'click':
+          removeTap(this, tap);
+          return true;
+      }
+    }
+  };
