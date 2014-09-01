@@ -24,9 +24,17 @@ var logFlags = {};
 (function(global, undefined) {
     'use strict';
 
+    /**
+     * @namespace xtag
+     */
+    var xtag = global.xtag = {};
+
     /*! borschik:include:utils/type.js */
     /*! borschik:include:utils/clone.js */
     /*! borschik:include:utils/toArray.js */
+
+    /*! borschik:include:utils/dom/query.js */
+    /*! borschik:include:utils/dom/parseMutations.js */
 
     /*! borschik:include:core.js */
 

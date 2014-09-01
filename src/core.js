@@ -42,29 +42,6 @@
     mutation = win.MutationObserver || win[prefix.js + 'MutationObserver'];
 
 /*** Functions ***/
-// DOM
-
-  var str = '';
-  function query(element, selector){
-    return (selector || str).length ? toArray(element.querySelectorAll(selector)) : [];
-  }
-
-  function parseMutations(element, mutations) {
-    var diff = { added: [], removed: [] };
-    mutations.forEach(function(record){
-      record._mutation = true;
-      for (var z in diff) {
-        var type = element._records[(z == 'added') ? 'inserted' : 'removed'],
-          nodes = record[z + 'Nodes'], length = nodes.length;
-        for (var i = 0; i < length && diff[z].indexOf(nodes[i]) == -1; i++){
-          diff[z].push(nodes[i]);
-          type.forEach(function(fn){
-            fn(nodes[i], record);
-          });
-        }
-      }
-    });
-  }
 
 // Mixins
 
@@ -279,7 +256,7 @@
 
 /*** X-Tag Object Definition ***/
 
-  var xtag = {
+  xtag = {
     tags: {},
     defaultOptions: {
       pseudos: [],
@@ -1060,9 +1037,6 @@ for (z in UIEventProto){
       }
     }
   };
-
-  win.xtag = xtag;
-  if (typeof define == 'function' && define.amd) define(xtag);
 
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
