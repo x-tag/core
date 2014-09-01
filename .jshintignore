@@ -1,0 +1,5 @@
+node_modules
+bower_components
+test
+x-tag-core.js
+x-tag-core.min.js

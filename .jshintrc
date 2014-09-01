@@ -1,8 +1,34 @@
 {
-  "browser": true,
-  "proto": true,
-  "loopfunc": true,
-  "trailing": false,
-  "latedef": true,
-  "curly": false
+    "browser": true,
+    "devel": true,
+    "jquery": true,
+    "globals": {
+        "console": false,
+        "require": false,
+        "xblocks": false,
+        "module": false,
+        "expect": false,
+        "it": false,
+        "describe": false,
+        "xtag": false,
+        "React": false,
+        "CustomElements": false
+    },
+
+    "bitwise": true,
+    "curly": true,
+    "eqnull": true,
+    "indent": 4,
+    "latedef": "nofunc",
+    "multistr": false,
+    "newcap": true,
+    "noarg": true,
+    "noempty": true,
+    "nonew": false,
+    "onevar": false,
+    "sub": true,
+    "trailing": true,
+    "undef": true,
+    "unused": true,
+    "white": false
 }

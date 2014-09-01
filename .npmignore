@@ -1,0 +1,15 @@
+.npmignore
+.idea
+.git
+.npm-debug.log
+.gitignore
+.jscs.json
+.jshintignore
+.jshintrc
+.travis.yml
+node_modules
+bower_components
+build
+test
+Makefile
+bower.json

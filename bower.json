@@ -1,15 +1,22 @@
 {
-  "name": "x-tag-core",
-  "description": "X-Tag core library for creating custom elements as defined by the w3c Web Components spec.",
-  "version": "0.9.9",
-  "keywords": [
-    "web-components",
-    "core",
-    "library",
-    "x-tag"
-  ],
-  "main": [
-    "lib/web-components-polyfills.js",
-    "src/core.js"
-  ]
+    "name": "x-tag-core",
+    "description": "X-Tag core library for creating custom elements as defined by the w3c Web Components spec.",
+    "version": "0.9.9",
+    "keywords": [
+        "web-components",
+        "core",
+        "library",
+        "x-tag"
+    ],
+    "main": "dist/x-tag-core.js",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "Makefile",
+        "src",
+        "package.json",
+        "karma.conf.js"
+    ]
 }
