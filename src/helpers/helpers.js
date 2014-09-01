@@ -21,7 +21,7 @@ var trueop = function() {
 
 // Mixins
 
-  
+
 
   function wrapMixin(tag, key, pseudo, value, original){
     var fn = original[key];
@@ -114,24 +114,7 @@ var trueop = function() {
     };
   }
 
-  function writeProperty(key, event, base, desc){
-    if (desc) event[key] = base[key];
-    else Object.defineProperty(event, key, {
-      writable: true,
-      enumerable: true,
-      value: base[key]
-    });
-  }
-
-  var skipProps = {};
-  for (var z in doc.createEvent('CustomEvent')) skipProps[z] = 1;
-  function inheritEvent(event, base){
-    var desc = Object.getOwnPropertyDescriptor(event, 'target');
-    for (var z in base) {
-      if (!skipProps[z]) writeProperty(z, event, base, desc);
-    }
-    event.baseEvent = base;
-  }
+  
 
 // Accessors
 

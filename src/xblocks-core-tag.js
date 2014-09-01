@@ -36,9 +36,9 @@ var logFlags = {};
     'use strict';
 
     /**
-     * @namespace xtag
+     * @namespace xblocks.tag
      */
-    var xtag = global.xtag = {
+    var xtag = global.xtag = xblocks.tag = {
         'tags': {},
 
         'defaultOptions': {
