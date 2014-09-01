@@ -6,7 +6,8 @@
 var typeCache = {},
     typeString = typeCache.toString,
     typeRegexp = /\s([a-zA-Z]+)/;
-function typeOf(obj) {
-  var type = typeString.call(obj);
-  return typeCache[type] || (typeCache[type] = type.match(typeRegexp)[1].toLowerCase());
-}
+
+xtag.typeOf = function typeOf(obj) {
+    var type = typeString.call(obj);
+    return typeCache[type] || (typeCache[type] = type.match(typeRegexp)[1].toLowerCase());
+};

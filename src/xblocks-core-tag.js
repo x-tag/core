@@ -24,12 +24,45 @@ var logFlags = {};
 (function(global, undefined) {
     'use strict';
 
+    var noop = function() {};
+    var trueop = function() {
+        return true;
+    };
+
     /**
      * @namespace xtag
      */
-    var xtag = global.xtag = {};
+    var xtag = global.xtag = {
+        'tags': {},
 
-    /*! borschik:include:utils/type.js */
+        'defaultOptions': {
+            'pseudos': [],
+            'mixins': [],
+            'events': {},
+            'methods': {},
+            'accessors': {},
+            'lifecycle': {},
+            'attributes': {},
+            'prototype': {
+                'xtag': {
+                    get: function() {
+                        return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {} });
+                    }
+                }
+            }
+        },
+
+        'mixins': {},
+
+        'captureEvents': [ 'focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll' ]
+    };
+
+
+
+
+    /*! borschik:include:utils/uid.js */
+    /*! borschik:include:utils/prefix.js */
+    /*! borschik:include:utils/typeOf.js */
     /*! borschik:include:utils/clone.js */
     /*! borschik:include:utils/toArray.js */
 

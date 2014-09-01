@@ -5,8 +5,6 @@
   var win = window,
     doc = document,
     container = doc.createElement('div'),
-    noop = function(){},
-    trueop = function(){ return true; },
     regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
     regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
     regexDigits = /(\d+)/g,
@@ -15,31 +13,9 @@
         return pseudo.value.match(regexDigits).indexOf(String(event.keyCode)) > -1 == (pseudo.name == 'keypass') || null;
       }
     },
-    /*
-      - The prefix object generated here is added to the xtag object as xtag.prefix later in the code
-      - Prefix provides a variety of prefix variations for the browser in which your code is running
-      - The 4 variations of prefix are as follows:
-        * prefix.dom: the correct prefix case and form when used on DOM elements/style properties
-        * prefix.lowercase: a lowercase version of the prefix for use in various user-code situations
-        * prefix.css: the lowercase, dashed version of the prefix
-        * prefix.js: addresses prefixed APIs present in global and non-Element contexts
-    */
-    prefix = (function () {
-      var styles = win.getComputedStyle(doc.documentElement, ''),
-          pre = (Array.prototype.slice
-            .call(styles)
-            .join('')
-            .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
-          )[1];
-      return {
-        dom: pre == 'ms' ? 'MS' : pre,
-        lowercase: pre,
-        css: '-' + pre + '-',
-        js: pre == 'ms' ? pre : pre[0].toUpperCase() + pre.substr(1)
-      };
-    })(),
-    matchSelector = Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'],
-    mutation = win.MutationObserver || win[prefix.js + 'MutationObserver'];
+
+    matchSelector = Element.prototype.matchesSelector || Element.prototype[xtag.prefix.lowercase + 'MatchesSelector'],
+    mutation = win.MutationObserver || win[xtag.prefix.js + 'MutationObserver'];
 
 /*** Functions ***/
 
@@ -257,171 +233,30 @@
 /*** X-Tag Object Definition ***/
 
   xtag = {
-    tags: {},
-    defaultOptions: {
-      pseudos: [],
-      mixins: [],
-      events: {},
-      methods: {},
-      accessors: {},
-      lifecycle: {},
-      attributes: {},
-      'prototype': {
-        xtag: {
-          get: function(){
-            return this.__xtag__ ? this.__xtag__ : (this.__xtag__ = { data: {} });
-          }
-        }
-      }
-    },
-    register: function (name, options) {
-      var _name;
-      if (typeof name == 'string') {
-        _name = name.toLowerCase();
-      } else {
-        return;
-      }
-      xtag.tags[_name] = options || {};
-      // save prototype for actual object creation below
-      var basePrototype = options.prototype;
-      delete options.prototype;
-      var tag = xtag.tags[_name].compiled = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
 
-      for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
-      for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
-      for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
-      for (z in tag.accessors) parseAccessor(tag, z);
 
-      var shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
 
-      var ready = tag.lifecycle.created || tag.lifecycle.ready;
-      tag.prototype.createdCallback = {
-        enumerable: true,
-        value: function(){
-          var element = this;
-          if (shadow && this.createShadowRoot) {
-            var root = this.createShadowRoot();
-            root.appendChild(shadow.cloneNode(true));
-          }
-          xtag.addEvents(this, tag.events);
-          var output = ready ? ready.apply(this, arguments) : null;
-          for (var name in tag.attributes) {
-            var attr = tag.attributes[name],
-                hasAttr = this.hasAttribute(name);
-            if (hasAttr || attr.boolean) {
-              this[attr.key] = attr.boolean ? hasAttr : this.getAttribute(name);
-            }
-          }
-          tag.pseudos.forEach(function(obj){
-            obj.onAdd.call(element, obj);
-          });
-          return output;
-        }
-      };
 
-      var inserted = tag.lifecycle.inserted,
-          removed = tag.lifecycle.removed;
-      if (inserted || removed) {
-        tag.prototype.attachedCallback = { value: function(){
-          if (removed) this.xtag.__parentNode__ = this.parentNode;
-          if (inserted) return inserted.apply(this, arguments);
-        }, enumerable: true };
-      }
-      if (removed) {
-        tag.prototype.detachedCallback = { value: function(){
-          var args = toArray(arguments);
-          args.unshift(this.xtag.__parentNode__);
-          var output = removed.apply(this, args);
-          delete this.xtag.__parentNode__;
-          return output;
-        }, enumerable: true };
-      }
-      if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
 
-      var setAttribute = tag.prototype.setAttribute || HTMLElement.prototype.setAttribute;
-      tag.prototype.setAttribute = {
-        writable: true,
-        enumberable: true,
-        value: function (name, value){
-          var attr = tag.attributes[name.toLowerCase()];
-          if (!this.xtag._skipAttr) setAttribute.call(this, name, attr && attr.boolean ? '' : value);
-          if (attr) {
-            if (attr.setter && !this.xtag._skipSet) {
-              this.xtag._skipAttr = true;
-              attr.setter.call(this, attr.boolean ? true : value);
-            }
-            value = attr.skip ? attr.boolean ? this.hasAttribute(name) : this.getAttribute(name) : value;
-            syncAttr(this, attr, name, attr.boolean ? '' : value, 'setAttribute');
-          }
-          delete this.xtag._skipAttr;
-        }
-      };
 
-      var removeAttribute = tag.prototype.removeAttribute || HTMLElement.prototype.removeAttribute;
-      tag.prototype.removeAttribute = {
-        writable: true,
-        enumberable: true,
-        value: function (name){
-          var attr = tag.attributes[name.toLowerCase()];
-          if (!this.xtag._skipAttr) removeAttribute.call(this, name);
-          if (attr) {
-            if (attr.setter && !this.xtag._skipSet) {
-              this.xtag._skipAttr = true;
-              attr.setter.call(this, attr.boolean ? false : undefined);
-            }
-            syncAttr(this, attr, name, undefined, 'removeAttribute');
-          }
-          delete this.xtag._skipAttr;
-        }
-      };
 
-      var elementProto = basePrototype ?
-            basePrototype :
-            options['extends'] ?
-            Object.create(doc.createElement(options['extends']).constructor).prototype :
-            win.HTMLElement.prototype;
 
-      var definition = {
-        'prototype': Object.create(elementProto, tag.prototype)
-      };
-      if (options['extends']) {
-        definition['extends'] = options['extends'];
-      }
-      var reg = doc.registerElement(_name, definition);
-      fireReady(_name);
-      return reg;
-    },
-
-    /*
-      NEEDS MORE TESTING!
-
-      Allows for async dependency resolution, fires when all passed-in elements are
-      registered and parsed
-    */
-    ready: function(names, fn){
-      var obj = { tags: toArray(names), fn: fn };
-      if (obj.tags.reduce(function(last, name){
-        if (xtag.tags[name]) return last;
-        (readyTags[name] = readyTags[name] || []).push(obj);
-      }, true)) fn();
-    },
 
     /* Exposed Variables */
 
-    mixins: {},
-    prefix: prefix,
-    captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll'],
+
+
     customEvents: {
       overflow: createFlowEvent('over'),
       underflow: createFlowEvent('under'),
       animationstart: {
-        attach: [prefix.dom + 'AnimationStart']
+        attach: [xtag.prefix.dom + 'AnimationStart']
       },
       animationend: {
-        attach: [prefix.dom + 'AnimationEnd']
+        attach: [xtag.prefix.dom + 'AnimationEnd']
       },
       transitionend: {
-        attach: [prefix.dom + 'TransitionEnd']
+        attach: [xtag.prefix.dom + 'TransitionEnd']
       },
       move: {
         attach: ['mousemove', 'touchmove'],
@@ -539,74 +374,15 @@
       }
     },
 
-    /* UTILITIES */
-
-    clone: clone,
-    typeOf: typeOf,
-    toArray: toArray,
-
-    wrap: function (original, fn) {
-      return function(){
-        var args = arguments,
-            output = original.apply(this, args);
-        fn.apply(this, args);
-        return output;
-      };
-    },
-    /*
-      Recursively merges one object with another. The first argument is the destination object,
-      all other objects passed in as arguments are merged from right to left, conflicts are overwritten
-    */
-    merge: function(source, k, v){
-      if (typeOf(k) == 'string') return mergeOne(source, k, v);
-      for (var i = 1, l = arguments.length; i < l; i++){
-        var object = arguments[i];
-        for (var key in object) mergeOne(source, key, object[key]);
-      }
-      return source;
-    },
-
-    /*
-      ----- This should be simplified! -----
-      Generates a random ID string
-    */
-    uid: function(){
-      return Math.random().toString(36).substr(2,10);
-    },
-
     /* DOM */
 
-    query: query,
 
-    skipTransition: function(element, fn, bind){
-      var prop = prefix.js + 'TransitionProperty';
-      element.style[prop] = element.style.transitionProperty = 'none';
-      var callback = fn ? fn.call(bind) : null;
-      return xtag.requestFrame(function(){
-        xtag.requestFrame(function(){
-          element.style[prop] = element.style.transitionProperty = '';
-          if (callback) xtag.requestFrame(callback);
-        });
-      });
-    },
 
-    requestFrame: (function(){
-      var raf = win.requestAnimationFrame ||
-                win[prefix.lowercase + 'RequestAnimationFrame'] ||
-                function(fn){ return win.setTimeout(fn, 20); };
-      return function(fn){ return raf(fn); };
-    })(),
 
-    cancelFrame: (function(){
-      var cancel = win.cancelAnimationFrame ||
-                   win[prefix.lowercase + 'CancelAnimationFrame'] ||
-                   win.clearTimeout;
-      return function(id){ return cancel(id); };
-    })(),
 
-    matchSelector: function (element, selector) {
-      return matchSelector.call(element, selector);
-    },
+
+
+
 
     set: function (element, method, value) {
       element[method] = value;
@@ -692,219 +468,13 @@
       else parent.appendChild(returned);
     },
 
-    /* PSEUDOS */
-
-    applyPseudos: function(key, fn, target, source) {
-      var listener = fn,
-          pseudos = {};
-      if (key.match(':')) {
-        var split = key.match(regexPseudoSplit),
-            i = split.length;
-        while (--i) {
-          split[i].replace(regexPseudoReplace, function (match, name, value) {
-            if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + split;
-            value = (value === '' || typeof value == 'undefined') ? null : value;
-            var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
-            pseudo.key = key;
-            pseudo.name = name;
-            pseudo.value = value;
-            pseudo['arguments'] = (value || '').split(',');
-            pseudo.action = pseudo.action || trueop;
-            pseudo.source = source;
-            var last = listener;
-            listener = function(){
-              var args = toArray(arguments),
-                  obj = {
-                    key: key,
-                    name: name,
-                    value: value,
-                    source: source,
-                    'arguments': pseudo['arguments'],
-                    listener: last
-                  };
-              var output = pseudo.action.apply(this, [obj].concat(args));
-              if (output === null || output === false) return output;
-              return obj.listener.apply(this, args);
-            };
-            if (target && pseudo.onAdd) {
-              if (target.nodeName) pseudo.onAdd.call(target, pseudo);
-              else target.push(pseudo);
-            }
-          });
-        }
-      }
-      for (var z in pseudos) {
-        if (pseudos[z].onCompiled) listener = pseudos[z].onCompiled(listener, pseudos[z]) || listener;
-      }
-      return listener;
-    },
-
-    removePseudos: function(target, pseudos){
-      pseudos.forEach(function(obj){
-        if (obj.onRemove) obj.onRemove.call(target, obj);
-      });
-    },
 
   /*** Events ***/
 
-    parseEvent: function(type, fn) {
-      var pseudos = type.split(':'),
-          key = pseudos.shift(),
-          custom = xtag.customEvents[key],
-          event = xtag.merge({
-            type: key,
-            stack: noop,
-            condition: trueop,
-            attach: [],
-            _attach: [],
-            pseudos: '',
-            _pseudos: [],
-            onAdd: noop,
-            onRemove: noop
-          }, custom || {});
-      event.attach = toArray(event.base || event.attach);
-      event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
-      var condition = event.condition;
-      event.condition = function(e){
-        var t = e.touches, tt = e.targetTouches;
-        return condition.apply(this, arguments);
-      };
-      var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
-      event.stack = function(e){
-        e.currentTarget = e.currentTarget || this;
-        var t = e.touches, tt = e.targetTouches;
-        var detail = e.detail || {};
-        if (!detail.__stack__) return stack.apply(this, arguments);
-        else if (detail.__stack__ == stack) {
-          e.stopPropagation();
-          e.cancelBubble = true;
-          return stack.apply(this, arguments);
-        }
-      };
-      event.listener = function(e){
-        var args = toArray(arguments),
-            output = event.condition.apply(this, args.concat([event]));
-        if (!output) return output;
-        // The second condition in this IF is to address the following Blink regression: https://code.google.com/p/chromium/issues/detail?id=367537
-        // Remove this when affected browser builds with this regression fall below 5% marketshare
-        if (e.type != key && (e.baseEvent && e.type != e.baseEvent.type)) {
-          xtag.fireEvent(e.target, key, {
-            baseEvent: e,
-            detail: output !== true && (output.__stack__ = stack) ? output : { __stack__: stack }
-          });
-        }
-        else return event.stack.apply(this, args);
-      };
-      event.attach.forEach(function(name) {
-        event._attach.push(xtag.parseEvent(name, event.listener));
-      });
-      if (custom && custom.observe && !custom.__observing__) {
-        custom.observer = function(e){
-          var output = event.condition.apply(this, toArray(arguments).concat([custom]));
-          if (!output) return output;
-          xtag.fireEvent(e.target, key, {
-            baseEvent: e,
-            detail: output !== true ? output : {}
-          });
-        };
-        for (var z in custom.observe) xtag.addEvent(custom.observe[z] || document, z, custom.observer, true);
-        custom.__observing__ = true;
-      }
-      return event;
-    },
 
-    addEvent: function (element, type, fn, capture) {
-      var event = typeof fn == 'function' ? xtag.parseEvent(type, fn) : fn;
-      event._pseudos.forEach(function(obj){
-        obj.onAdd.call(element, obj);
-      });
-      event._attach.forEach(function(obj) {
-        xtag.addEvent(element, obj.type, obj);
-      });
-      event.onAdd.call(element, event, event.listener);
-      element.addEventListener(event.type, event.stack, capture || xtag.captureEvents.indexOf(event.type) > -1);
-      return event;
-    },
 
-    addEvents: function (element, obj) {
-      var events = {};
-      for (var z in obj) {
-        events[z] = xtag.addEvent(element, z, obj[z]);
-      }
-      return events;
-    },
 
-    removeEvent: function (element, type, event) {
-      event = event || type;
-      event.onRemove.call(element, event, event.listener);
-      xtag.removePseudos(element, event._pseudos);
-      event._attach.forEach(function(obj) {
-        xtag.removeEvent(element, obj);
-      });
-      element.removeEventListener(event.type, event.stack);
-    },
-
-    removeEvents: function(element, obj){
-      for (var z in obj) xtag.removeEvent(element, obj[z]);
-    },
-
-    fireEvent: function(element, type, options, warn){
-      var event = doc.createEvent('CustomEvent');
-      options = options || {};
-      if (warn) console.warn('fireEvent has been modified');
-      event.initCustomEvent(type,
-        options.bubbles !== false,
-        options.cancelable !== false,
-        options.detail
-      );
-      if (options.baseEvent) inheritEvent(event, options.baseEvent);
-      try { element.dispatchEvent(event); }
-      catch (e) {
-        console.warn('This error may have been caused by a change in the fireEvent method', e);
-      }
-    },
-
-    /*
-      Listens for insertion or removal of nodes from a given element using
-      Mutation Observers, or Mutation Events as a fallback
-    */
-    addObserver: function(element, type, fn){
-      if (!element._records) {
-        element._records = { inserted: [], removed: [] };
-        if (mutation){
-          element._observer = new mutation(function(mutations) {
-            parseMutations(element, mutations);
-          });
-          element._observer.observe(element, {
-            subtree: true,
-            childList: true,
-            attributes: !true,
-            characterData: false
-          });
-        }
-        else ['Inserted', 'Removed'].forEach(function(type){
-          element.addEventListener('DOMNode' + type, function(event){
-            event._mutation = true;
-            element._records[type.toLowerCase()].forEach(function(fn){
-              fn(event.target, event);
-            });
-          }, false);
-        });
-      }
-      if (element._records[type].indexOf(fn) == -1) element._records[type].push(fn);
-    },
-
-    removeObserver: function(element, type, fn){
-      var obj = element._records;
-      if (obj && fn){
-        obj[type].splice(obj[type].indexOf(fn), 1);
-      }
-      else{
-        obj[type] = [];
-      }
-    }
-
-  };
+    
 
 /*** Universal Touch ***/
 

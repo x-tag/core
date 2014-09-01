@@ -1,4 +1,4 @@
 var str = '';
-function query(element, selector){
+xtag.query = function query(element, selector){
   return (selector || str).length ? toArray(element.querySelectorAll(selector)) : [];
-}
+};
