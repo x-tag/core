@@ -20,4 +20,16 @@ var logFlags = {};
 /*! borschik:include:../node_modules/HTMLImports/src/Observer.js */
 /*! borschik:include:../node_modules/HTMLImports/src/boot.js */
 
-/*! borschik:include:core.js */
+
+(function(global, undefined) {
+    'use strict';
+
+    /*! borschik:include:utils/type.js */
+    /*! borschik:include:utils/clone.js */
+    /*! borschik:include:utils/toArray.js */
+
+    /*! borschik:include:core.js */
+
+}(function() {
+    return this || (1, eval)('this');
+}()));

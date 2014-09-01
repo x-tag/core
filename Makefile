@@ -9,10 +9,10 @@ bower_components: bower.json
 	touch bower_components
 
 build: node_modules
-	./node_modules/.bin/borschik -m no -i src/x-tag-core.js -o xblocks-core-tag.js
+	./node_modules/.bin/borschik -m no -i src/xblocks-core-tag.js -o xblocks-core-tag.js
 
 prod: build
-	./node_modules/.bin/borschik -i src/x-tag-core.js -o xblocks-core-tag.min.js
+	./node_modules/.bin/borschik -i src/xblocks-core-tag.js -o xblocks-core-tag.min.js
 
 #test: node_modules bower_components
 #	./node_modules/.bin/jshint .
