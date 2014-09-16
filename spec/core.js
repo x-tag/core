@@ -595,12 +595,12 @@ describe("x-tag ", function () {
         expect(true).toEqual(onInsertFired);
       });
     });
-    
+
     it("mixins should wrap functions by default", function (){
       var count = 0,
           mixinFired,
           originalFired;
-          
+
       xtag.mixins.wrapFn = {
         lifecycle: {
           created: function (){
@@ -619,22 +619,22 @@ describe("x-tag ", function () {
       });
 
       var foo = document.createElement('x-foo-mixin-fn');
-      
+
       waitsFor(function (){
         return mixinFired && originalFired;
       }, "new tag mixin created should fire", 500);
-      
+
       runs(function (){
         expect(2).toEqual(mixinFired);
         expect(1).toEqual(originalFired);
       });
     });
-    
+
     it("should fire all mixins, even when there is no base function", function (){
       var count = 0,
           mixinOne,
           mixinTwo;
-          
+
       xtag.mixins.mixinOne = {
         lifecycle: {
           created: function (){
@@ -642,7 +642,7 @@ describe("x-tag ", function () {
           }
         }
       };
-      
+
       xtag.mixins.mixinTwo = {
         lifecycle: {
           created: function (){
@@ -656,17 +656,17 @@ describe("x-tag ", function () {
       });
 
       var foo = document.createElement('x-foo-multi-mixin');
-      
+
       waitsFor(function (){
         return count == 2;
       }, "new tag mixin created should fire", 500);
-      
+
       runs(function (){
         expect(1).toEqual(mixinOne);
         expect(2).toEqual(mixinTwo);
       });
     });
-    
+
     it("it should fire the mixin created function BEFORE the element's", function (){
       var count = 0,
           createdFired1,
@@ -830,13 +830,19 @@ describe("x-tag ", function () {
     });
 
     it("should allow mixins to handle events", function (){
-      var mixinEvent1 = false,
-          mixinEvent2 = false;
+      var mixinEvent1 = 0,
+          mixinEvent2 = 0,
+          mixinEvent3 = 0,
+          mixinEvent4 = 0,
+          count = 0;
 
       xtag.mixins.test = {
         events: {
           'click': function(e){
-            mixinEvent1 = true;
+            mixinEvent1 = ++count;
+          },
+          'bar': function(){
+            mixinEvent4 = ++count;
           }
         }
       };
@@ -845,7 +851,11 @@ describe("x-tag ", function () {
         mixins: ['test'],
         events: {
           'click': function(e){
-            mixinEvent2 = true;
+            mixinEvent2 = ++count;
+          },
+          'foo': function(e){
+              mixinEvent3 = ++count;
+              xtag.fireEvent(this, 'bar');
           }
         }
       });
@@ -854,10 +864,13 @@ describe("x-tag ", function () {
       testbox.appendChild(foo);
 
       xtag.fireEvent(foo, 'click');
+      xtag.fireEvent(foo, 'foo');
 
       runs(function (){
-        expect(mixinEvent1).toEqual(true);
-        expect(mixinEvent2).toEqual(true);
+        expect(mixinEvent1).toEqual(2);
+        expect(mixinEvent2).toEqual(1);
+        expect(mixinEvent3).toEqual(3);
+        expect(mixinEvent4).toEqual(4);
       });
     });
 
@@ -1161,15 +1174,14 @@ describe("x-tag ", function () {
         extends: 'div',
         lifecycle: {
           created: function() {
-            this.innerHTML = '<div>hello</div>';
+            var nodes = xtag.createFragment('<div>hello</div>').cloneNode(true);
+            this.appendChild(nodes);
           }
         }
       });
 
       var foo = document.createElement('x-foo29');
-      testbox.appendChild(foo);
-
-      expect(foo.innerHTML).toBeDefined();
+      expect(foo.innerHTML).toEqual('<div>hello</div>');
 
     });
 
@@ -1199,7 +1211,7 @@ describe("x-tag ", function () {
       expect(foo.value).toBeDefined();
 
     });
-    
+
     it('should pass the previous parentNode as the first parameter in the lifecycle removed callback', function(){
       var insertParent, removedParent, removed;
       xtag.register("x-foo31", {
@@ -1215,10 +1227,10 @@ describe("x-tag ", function () {
           }
         }
       });
-      
+
       var foo = document.createElement('x-foo31');
       testbox.appendChild(foo);
-      setTimeout(function(){ testbox.removeChild(foo); }, 200);     
+      setTimeout(function(){ testbox.removeChild(foo); }, 200);
       waitsFor(function(){
         return removed;
       }, 'removed to be passed the last parentNode', 300);
