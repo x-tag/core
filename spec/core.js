@@ -1185,6 +1185,25 @@ describe("x-tag ", function () {
 
     });
 
+    it('is="" should bootstrap element', function(){
+      var count = 0;
+      xtag.register("x-superdivo", {
+        extends: 'div',
+        methods: {
+          test: function(){
+            count++;
+          }
+        }
+      });
+
+      var foo = document.createElement('div');
+      foo.setAttribute('is', 'x-superdivo');
+      expect(foo.test).toBeDefined();
+      foo.test();
+      expect(count).toEqual(1);
+
+    });
+
     it('should allow a custom prototype to be used', function(){
       var proto = Object.create(HTMLElement.prototype);
       proto.fn = function(){};
