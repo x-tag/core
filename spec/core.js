@@ -71,36 +71,6 @@ describe("x-tag ", function () {
     });
   });
 
-  it('fires the correct ready listeners when a tag is parsed', function (){
-    var readySingle = false,
-        readyMany = 0,
-        readyOrder = [];
-
-    xtag.ready('x-ready-one', function(){
-      readySingle = true;
-      readyOrder[0] = 'x-ready-one';
-      readyMany++;
-    });
-
-    xtag.ready(['x-ready-one', 'x-ready-two'], function(){
-      readyOrder[1] = 'x-ready-two';
-      readyMany++;
-    });
-    xtag.register('x-ready-one', {});
-    xtag.register('x-ready-two', {});
-
-    waitsFor(function (){
-      return readySingle && readyMany == 2;
-    }, "all ready listeners should fire", 1000);
-
-    runs(function (){
-      expect(readySingle).toEqual(true);
-      expect(readyMany).toEqual(2);
-      expect(readyOrder[0]).toEqual('x-ready-one');
-      expect(readyOrder[1]).toEqual('x-ready-two');
-    });
-  });
-
   it('all new element proto objects should be unique', function (){
     var createdFired = false;
     xtag.register('x-unique', {
@@ -1181,7 +1151,6 @@ describe("x-tag ", function () {
       });
 
       var foo = document.createElement('div', 'x-foo29');
-      console.log(foo);
       expect(foo.innerHTML).toEqual('<div>hello</div>');
 
     });
