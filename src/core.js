@@ -309,15 +309,6 @@
   function parseMultiline(fn){
     return unwrapComment.exec(fn.toString())[1];
   }
-  
-  var readyTags = {};
-  function fireReady(name){
-    readyTags[name] = (readyTags[name] || []).filter(function(obj){
-      return (obj.tags = obj.tags.filter(function(z){
-        return z != name && !xtag.tags[z];
-      })).length || obj.fn();
-    });
-  }
 
 /*** X-Tag Object Definition ***/
 
@@ -445,7 +436,7 @@
             options['extends'] ?
             Object.create(doc.createElement(options['extends']).constructor).prototype :
             win.HTMLElement.prototype;
-      console.log(elementProto);
+      
       var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
       };
@@ -453,22 +444,7 @@
         definition['extends'] = options['extends'];
       }
       var reg = doc.registerElement(_name, definition);
-      fireReady(_name);
       return reg;
-    },
-    
-    /*
-      NEEDS MORE TESTING!
-      
-      Allows for async dependency resolution, fires when all passed-in elements are 
-      registered and parsed
-    */
-    ready: function(names, fn){
-      var obj = { tags: toArray(names), fn: fn };
-      if (obj.tags.reduce(function(last, name){
-        if (xtag.tags[name]) return last;
-        (readyTags[name] = readyTags[name] || []).push(obj);
-      }, true)) fn();
     },
 
     /* Exposed Variables */
