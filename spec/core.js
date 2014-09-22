@@ -1180,7 +1180,8 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo29');
+      var foo = document.createElement('div', 'x-foo29');
+      console.log(foo);
       expect(foo.innerHTML).toEqual('<div>hello</div>');
 
     });
@@ -1196,8 +1197,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('div');
-      foo.setAttribute('is', 'x-superdivo');
+      var foo = document.createElement('div', 'x-superdivo');
       expect(foo.test).toBeDefined();
       foo.test();
       expect(count).toEqual(1);
@@ -1224,7 +1224,7 @@ describe("x-tag ", function () {
         extends: 'input'
       });
 
-      var foo = document.createElement('x-foo-extend');
+      var foo = document.createElement('input', 'x-foo-extend');
       testbox.appendChild(foo);
 
       expect(foo.value).toBeDefined();

@@ -439,13 +439,13 @@
           delete this.xtag._skipAttr;
         }
       };
-      
+
       var elementProto = basePrototype ?
             basePrototype :
             options['extends'] ?
             Object.create(doc.createElement(options['extends']).constructor).prototype :
             win.HTMLElement.prototype;
-      console.log(elementProto);
+            
       var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
       };
