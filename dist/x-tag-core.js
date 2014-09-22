@@ -666,10 +666,6 @@ if (typeof WeakMap === 'undefined') {
 
   global.JsMutationObserver = JsMutationObserver;
 
-  // Provide unprefixed MutationObserver with native or JS implementation
-  if (!global.MutationObserver && global.WebKitMutationObserver)
-    global.MutationObserver = global.WebKitMutationObserver;
-
   if (!global.MutationObserver)
     global.MutationObserver = JsMutationObserver;
 
@@ -1585,6 +1581,12 @@ function bootstrap() {
   CustomElements.parser.parse(document);
   // one more pass before register is 'live'
   CustomElements.upgradeDocument(document);
+  // install upgrade hook if HTMLImports are available
+  if (window.HTMLImports) {
+    HTMLImports.__importsParsingHook = function(elt) {
+      CustomElements.parser.parse(elt.import);
+    }
+  }
   // set internal 'ready' flag, now document.registerElement will trigger 
   // synchronous upgrades
   CustomElements.ready = true;
@@ -1601,13 +1603,6 @@ function bootstrap() {
     document.dispatchEvent(
       new CustomEvent('WebComponentsReady', {bubbles: true})
     );
-
-    // install upgrade hook if HTMLImports are available
-    if (window.HTMLImports) {
-      HTMLImports.__importsParsingHook = function(elt) {
-        CustomElements.parser.parse(elt.import);
-      }
-    }
   });
 }
 
@@ -2083,13 +2078,13 @@ if (document.readyState === 'complete' || scope.flags.eager) {
           delete this.xtag._skipAttr;
         }
       };
-
+      
       var elementProto = basePrototype ?
             basePrototype :
             options['extends'] ?
             Object.create(doc.createElement(options['extends']).constructor).prototype :
             win.HTMLElement.prototype;
-
+      console.log(elementProto);
       var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
       };
