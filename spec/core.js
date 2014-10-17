@@ -934,6 +934,38 @@ describe("x-tag ", function () {
 
     });
 
+    it('delegate event pseudo should register a click on an inner pseudo element', function (){
+
+      var clicked = false;
+
+      xtag.register('x-foo22-b', {
+        lifecycle: {
+          created: function (){
+            customElement = this;
+            this.innerHTML = '<div></div><div></div>';
+          }
+        },
+        events: {
+          'click:delegate(div:nth-child(2))': function (e, elem){
+            clicked = true;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo22-b');
+      testbox.appendChild(foo);
+
+      waitsFor(function (){
+        return customElement;
+      }, "new tag mixin onInsert should fire", 1000);
+
+      runs(function (){
+        xtag.fireEvent(xtag.query(customElement, 'div')[1], 'click');
+        expect(clicked).toEqual(true);
+      });
+
+    });
+
     it('delegate event pseudo "this" should be the element filtered by pseudo', function (){
 
       var customElement, delegateElement;
