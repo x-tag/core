@@ -4,9 +4,11 @@
 
   var win = window,
     doc = document,
+    hasShadow = Element.prototype.createShadowRoot,
     container = doc.createElement('div'),
     noop = function(){},
     trueop = function(){ return true; },
+    regexCamelToDash = /([a-z])([A-Z])/g,
     regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
     regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
     regexDigits = /(\d+)/g,
@@ -194,20 +196,6 @@
     return true;
   }
 
-  function createFlowEvent(type) {
-    var flow = type == 'over';
-    return {
-      attach: 'OverflowEvent' in win ? 'overflowchanged' : [],
-      condition: function (event, custom) {
-        event.flow = type;
-        return event.type == (type + 'flow') ||
-        ((event.orient === 0 && event.horizontalOverflow == flow) ||
-        (event.orient == 1 && event.verticalOverflow == flow) ||
-        (event.orient == 2 && event.horizontalOverflow == flow && event.verticalOverflow == flow));
-      }
-    };
-  }
-
   function writeProperty(key, event, base, desc){
     if (desc) event[key] = base[key];
     else Object.defineProperty(event, key, {
@@ -263,14 +251,14 @@
       key[0] = prop;
       var setter = tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
         this.xtag._skipSet = true;
-        if (!this.xtag._skipAttr) modAttr(this, attr, name, value);
+        if (name && !this.xtag._skipAttr) modAttr(this, attr, name, value);
         if (this.xtag._skipAttr && attr.skip) delete this.xtag._skipAttr;
         accessor[z].call(this, attr.boolean ? !!value : value);
-        updateView(this, name, value);
+        updateView(this, prop, value);
         delete this.xtag._skipSet;
       } : accessor[z] ? function(value){
         accessor[z].call(this, value);
-        updateView(this, name, value);
+        updateView(this, prop, value);
       } : null, tag.pseudos, accessor[z]);
 
       if (attr) attr.setter = setter;
@@ -281,10 +269,10 @@
   function parseAccessor(tag, prop){
     tag.prototype[prop] = {};
     var accessor = tag.accessors[prop],
-        attr = accessor.attribute,
-        name = attr && attr.name ? attr.name.toLowerCase() : prop;
-
+        attr = accessor.attribute;
+    
     if (attr) {
+      var name = (attr ? (attr.name || prop.replace(regexCamelToDash, '$1-$2')) : prop).toLowerCase();
       attr.key = prop;
       tag.attributes[name] = attr;
     }
@@ -348,17 +336,17 @@
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
       
-      var shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
-      
+      var shadow = tag.shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
+      var content = tag.content = tag.content ? xtag.createFragment(tag.content) : null;
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
-          if (shadow && this.createShadowRoot) {
-            var root = this.createShadowRoot();
-            root.appendChild(shadow.cloneNode(true));
+          if (shadow && hasShadow) {
+            this.createShadowRoot().appendChild(shadow.cloneNode(true));
           }
+          if (content) this.appendChild(content.cloneNode(true));
           xtag.addEvents(this, tag.events);
           var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
@@ -406,7 +394,7 @@
               this.xtag._skipAttr = true;
               attr.setter.call(this, attr.boolean ? true : value);
             }
-            value = attr.skip ? attr.boolean ? this.hasAttribute(name) : this.getAttribute(name) : value;
+            value = attr.skip ? (attr.boolean ? this.hasAttribute(name) : this.getAttribute(name)) : value;
             syncAttr(this, attr, name, attr.boolean ? '' : value, 'setAttribute');
           }
           delete this.xtag._skipAttr;
@@ -453,8 +441,6 @@
     prefix: prefix,
     captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll'],
     customEvents: {
-      overflow: createFlowEvent('over'),
-      underflow: createFlowEvent('under'),
       animationstart: {
         attach: [prefix.dom + 'AnimationStart']
       },
@@ -622,12 +608,10 @@
     skipTransition: function(element, fn, bind){
       var prop = prefix.js + 'TransitionProperty';
       element.style[prop] = element.style.transitionProperty = 'none';
-      var callback = fn ? fn.call(bind) : null;
-      return xtag.requestFrame(function(){
-        xtag.requestFrame(function(){
-          element.style[prop] = element.style.transitionProperty = '';
-          if (callback) xtag.requestFrame(callback);
-        });
+      var callback = fn ? fn.call(bind || element) : null;
+      return xtag.skipFrame(function(){
+        element.style[prop] = element.style.transitionProperty = '';
+        if (callback) callback.call(bind || element)
       });
     },
     
@@ -644,6 +628,11 @@
                    win.clearTimeout;
       return function(id){ return cancel(id); };  
     })(),
+    
+    skipFrame: function(fn){
+      var id = xtag.requestFrame(function(){ id = xtag.requestFrame(fn) });
+      return id;
+    },
 
     matchSelector: function (element, selector) {
       return matchSelector.call(element, selector);
