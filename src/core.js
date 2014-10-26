@@ -336,17 +336,15 @@
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
       
-      var shadow = tag.shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
-      var content = tag.content = tag.content ? xtag.createFragment(tag.content) : null;
+      tag.shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
+      tag.content = tag.content ? xtag.createFragment(tag.content) : null;
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
-          if (shadow && hasShadow) {
-            this.createShadowRoot().appendChild(shadow.cloneNode(true));
-          }
-          if (content) this.appendChild(content.cloneNode(true));
+          if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(tag.shadow.cloneNode(true));
+          if (tag.content) this.appendChild(tag.content.cloneNode(true));
           xtag.addEvents(this, tag.events);
           var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
@@ -741,20 +739,13 @@
             pseudo['arguments'] = (value || '').split(',');
             pseudo.action = pseudo.action || trueop;
             pseudo.source = source;
-            var last = listener;
+            var original = pseudo.listener = listener;
             listener = function(){
-              var args = toArray(arguments),
-                  obj = {
-                    key: key,
-                    name: name,
-                    value: value,
-                    source: source,
-                    'arguments': pseudo['arguments'],
-                    listener: last
-                  };
-              var output = pseudo.action.apply(this, [obj].concat(args));
+              var output = pseudo.action.apply(this, [pseudo].concat(toArray(arguments)));
               if (output === null || output === false) return output;
-              return obj.listener.apply(this, args);
+              output = pseudo.listener.apply(this, arguments);
+              pseudo.listener = original;
+              return output;
             };
             if (target && pseudo.onAdd) {
               if (target.nodeName) pseudo.onAdd.call(target, pseudo);
