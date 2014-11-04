@@ -123,12 +123,9 @@ describe("x-tag ", function () {
           }
         },
         baz: {
-          attribute: {
-            skip: true
-          },
+          attribute: {},
           set: function (value){
             baz++;
-            if (value !== undefined) this.setAttribute('baz', value);
           }
         },
         zoo: {
@@ -186,9 +183,7 @@ describe("x-tag ", function () {
 
       expect(el.zoo).toEqual(true);
       expect(el.getAttribute('zoo')).toEqual('');
-
-      //console.log(el);
-      //console.log(foo, bar, baz, zoo);
+      
       expect(foo == 6 && bar == 7 && baz == 6 && zoo == 7).toEqual(true);
     });
   });
