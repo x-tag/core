@@ -64,7 +64,7 @@ describe("x-tag ", function () {
 
     waitsFor(function (){
       return createdFired;
-    }, "new tag lifecycle event CREATED should fire", 1000);
+    }, "new tag lifecycle event CREATED should fire", 500);
 
     runs(function (){
       expect(existing.foo).toEqual('bar');
@@ -86,7 +86,7 @@ describe("x-tag ", function () {
 
     waitsFor(function (){
       return createdFired;
-    }, "new tag lifecycle event CREATED should fire", 1000);
+    }, "new tag lifecycle event CREATED should fire", 500);
 
     runs(function (){
       expect(u1.xtag == u2.xtag).toEqual(false);
@@ -123,12 +123,9 @@ describe("x-tag ", function () {
           }
         },
         baz: {
-          attribute: {
-            skip: true
-          },
+          attribute: {},
           set: function (value){
             baz++;
-            if (value !== undefined) this.setAttribute('baz', value);
           }
         },
         zoo: {
@@ -172,7 +169,7 @@ describe("x-tag ", function () {
 
     waitsFor(function (){
       return createdFired;
-    }, "new tag lifecycle event CREATED should fire", 1000);
+    }, "new tag lifecycle event CREATED should fire", 500);
 
     runs(function (){
       expect(el.foo).toEqual('foo-3');
@@ -186,9 +183,7 @@ describe("x-tag ", function () {
 
       expect(el.zoo).toEqual(true);
       expect(el.getAttribute('zoo')).toEqual('');
-
-      //console.log(el);
-      //console.log(foo, bar, baz, zoo);
+      
       expect(foo == 6 && bar == 7 && baz == 6 && zoo == 7).toEqual(true);
     });
   });
@@ -233,7 +228,7 @@ describe("x-tag ", function () {
 
     waitsFor(function (){
       return createdFired;
-    }, "new tag lifecycle event CREATED should fire", 1000);
+    }, "new tag lifecycle event CREATED should fire", 500);
 
     runs(function (){
       expect(createdFired).toEqual(true);
@@ -274,7 +269,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return created;
-      }, "new tag lifecycle event {created} should fire", 1000);
+      }, "new tag lifecycle event {created} should fire", 500);
 
       runs(function (){
         var fooElement = document.getElementById('foo');
@@ -307,7 +302,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return created;
-      }, "new tag lifecycle event {created} should fire", 1000);
+      }, "new tag lifecycle event {created} should fire", 500);
 
       runs(function (){
         var fooElement = document.getElementById('foo');
@@ -356,7 +351,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return removed;
-      }, "new tag removed should fire", 1000);
+      }, "new tag removed should fire", 500);
 
       runs(function (){
         expect(removed).toEqual(true);
@@ -380,7 +375,7 @@ describe("x-tag ", function () {
       },100);
       waitsFor(function (){
         return removed;
-      }, "new tag removed should fire", 1000);
+      }, "new tag removed should fire", 500);
 
       runs(function (){
         expect(removed).toEqual(true);
@@ -893,7 +888,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return customElement;
-      }, "new tag mixin onInsert should fire", 1000);
+      }, "new tag mixin onInsert should fire", 500);
 
       runs(function (){
         xtag.fireEvent(xtag.query(customElement, 'div')[0], 'click');
@@ -925,7 +920,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return customElement;
-      }, "new tag mixin onInsert should fire", 1000);
+      }, "new tag mixin onInsert should fire", 500);
 
       runs(function (){
         xtag.fireEvent(xtag.query(customElement, 'div')[0], 'click');
@@ -989,7 +984,7 @@ describe("x-tag ", function () {
 
       waitsFor(function (){
         return customElement;
-      }, "new tag mixin onInsert should fire", 1000);
+      }, "new tag mixin onInsert should fire", 500);
 
       runs(function (){
         xtag.fireEvent(xtag.query(customElement, 'div')[0], 'click');
@@ -1060,6 +1055,25 @@ describe("x-tag ", function () {
       expect(foo.getAttribute('bar')).toEqual('bar');
 
     });
+    
+    it('setter fooBar should auto link to the attribute name foo-bar', function (){
+
+      xtag.register('x-foo-auto-attr-name', {
+        accessors:{
+          fooBar: {
+            attribute: {}
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo-auto-attr-name');
+      testbox.appendChild(foo);
+
+      foo.fooBar = 'bar';
+
+      expect(foo.getAttribute('foo-bar')).toEqual('bar');
+
+    });
 
     it('x-tag pseudos should allow css pseudos', function (){
 
@@ -1125,7 +1139,7 @@ describe("x-tag ", function () {
 
       waitsFor(function(){
         return count == 4;
-      }, 'both clicks to bubble', 1000);
+      }, 'both clicks to bubble', 500);
 
       runs(function (){
         expect(count).toEqual(4);
@@ -1258,6 +1272,24 @@ describe("x-tag ", function () {
       runs(function (){
         expect(insertParent == removedParent).toEqual(true);
       });
+    });
+    
+    it('should add Shadow DOM to the element', function (){
+      xtag.register('x-foo-shadow', {
+        shadow: '<div>bar</div>'
+      });
+
+      var foo = document.createElement('x-foo-shadow');
+      expect(Element.prototype.createShadowRoot ? foo.firstElementChild : !foo.firstElementChild).toEqual(true);
+    });
+    
+    it('should add default content to the element', function (){
+      xtag.register('x-foo-content', {
+        content: '<div>bar</div>'
+      });
+
+      var foo = document.createElement('x-foo-content');
+      expect(foo.firstElementChild.textContent).toEqual('bar');
     });
   });
 
