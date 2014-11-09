@@ -873,11 +873,11 @@ describe("x-tag ", function () {
         lifecycle: {
           created: function (){
             customElement = this;
-            this.innerHTML = '<div></div>';
+            this.innerHTML = '<div><div></div></div>';
           }
         },
         events: {
-          'click:delegate(div)': function (e, elem){
+          'click:delegate(div > div:first-child)': function (e, elem){
             currentTarget = e.currentTarget;
           }
         }
@@ -891,7 +891,7 @@ describe("x-tag ", function () {
       }, "new tag mixin onInsert should fire", 500);
 
       runs(function (){
-        xtag.fireEvent(xtag.query(customElement, 'div')[0], 'click');
+        xtag.fireEvent(xtag.query(customElement, 'div')[1], 'click');
         expect(customElement).toEqual(currentTarget);
       });
 
@@ -899,17 +899,17 @@ describe("x-tag ", function () {
 
     it('delegate event pseudo should register a click on an inner element', function (){
 
-      var clicked = false;
+      var customElement, clicked = false;
 
       xtag.register('x-foo22', {
         lifecycle: {
           created: function (){
             customElement = this;
-            this.innerHTML = '<div></div>';
+            this.innerHTML = '<div></div><div></div>';
           }
         },
         events: {
-          'click:delegate(div)': function (e, elem){
+          'click:delegate(div:not(:nth-child(2)))': function (e, elem){
             clicked = true;
           }
         }
@@ -923,7 +923,7 @@ describe("x-tag ", function () {
       }, "new tag mixin onInsert should fire", 500);
 
       runs(function (){
-        xtag.fireEvent(xtag.query(customElement, 'div')[0], 'click');
+        xtag.fireEvent(xtag.query(customElement, 'div')[1], 'click');
         expect(clicked).toEqual(true);
       });
 
@@ -1248,7 +1248,7 @@ describe("x-tag ", function () {
       });
 
       var foo = document.createElement('x-foo-shadow');
-      expect(Element.prototype.createShadowRoot ? foo.firstElementChild : !foo.firstElementChild).toEqual(true);
+      expect(Element.prototype.createShadowRoot ? foo.shadowRoot.firstElementChild.textContent == 'bar' : !foo.firstElementChild).toEqual(true);
     });
     
     it('should add default content to the element', function (){

@@ -13,8 +13,8 @@
     noop = function(){},
     trueop = function(){ return true; },
     regexCamelToDash = /([a-z])([A-Z])/g,
-    regexPseudoSplit = /([\w-]+(?:\([^\)]+\))?)/g,
-    regexPseudoReplace = /(\w*)(?:\(([^\)]*)\))?/,
+    regexPseudoParens = /\(|\)/g,
+    regexPseudoCapture = /:(\w+)\u276A(.+?(?=\u276B))|:(\w+)/g,
     regexDigits = /(\d+)/g,
     keypseudo = {
       action: function (pseudo, event) {
@@ -113,6 +113,10 @@
       }
     });
   }
+  
+// Pseudos 
+
+  function parsePseudo(fn){ fn() };
 
 // Mixins
 
@@ -223,6 +227,9 @@
 
   function modAttr(element, attr, name, value, method){
     attrProto[method].call(element, name, attr && attr.boolean ? '' : value);
+  }
+  
+  function syncAttr(element, attr, name, value, method){
     if (attr && (attr.property || attr.selector)) {
       var nodes = attr.property ? [element.xtag[attr.property]] : attr.selector ? xtag.query(element, attr.selector) : [],
           index = nodes.length;
@@ -245,8 +252,10 @@
     else if (type == 'set') {
       key[0] = prop;
       var setter = tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
-        modAttr(this, attr, name, value, attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute');
+        var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
+        modAttr(this, attr, name, value, method);
         accessor[z].call(this, attr.boolean ? !!value : value);
+        syncAttr(this, attr, name, value, method)
         updateView(this, prop, value);
       } : accessor[z] ? function(value){
         accessor[z].call(this, value);
@@ -279,7 +288,9 @@
         };
       }
       if (!tag.prototype[prop].set) tag.prototype[prop].set = function(value){
-        modAttr(this, attr, name, value, attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute');
+        var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute'
+        modAttr(this, attr, name, value, method);
+        syncAttr(this, attr, name, value, method);
         updateView(this, name, value);
       };
     }
@@ -378,8 +389,12 @@
         value: function (name, value){
           var _name = name.toLowerCase();
           var attr = tag.attributes[_name];
-          modAttr(this, attr, _name, attr && attr.boolean ? '' : value, 'setAttribute');
-          if (attr) attr.setter.call(this, attr.boolean ? true : value);
+          var value = attr && attr.boolean ? '' : value;
+          modAttr(this, attr, _name, value, 'setAttribute');
+          if (attr) {
+            if (attr.setter) attr.setter.call(this, attr.boolean ? true : value);
+            syncAttr(this, attr, _name, value, 'setAttribute');
+          }
         }
       };
 
@@ -390,7 +405,10 @@
           var _name = name.toLowerCase();
           var attr = tag.attributes[_name];
           modAttr(this, attr, _name, '', 'removeAttribute');
-          if (attr) attr.setter.call(this, attr.boolean ? false : undefined);
+          if (attr) {
+            if (attr.setter) attr.setter.call(this, attr.boolean ? false : undefined);
+            syncAttr(this, attr, _name, '', 'removeAttribute');
+          }
         }
       };
 
@@ -703,33 +721,40 @@
       var listener = fn,
           pseudos = {};
       if (key.match(':')) {
-        var split = key.match(regexPseudoSplit),
-            i = split.length;
-        while (--i) {
-          split[i].replace(regexPseudoReplace, function (match, name, value) {
-            if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + split;
-            value = (value === '' || typeof value == 'undefined') ? null : value;
-            var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
-            pseudo.key = key;
-            pseudo.name = name;
-            pseudo.value = value;
-            pseudo['arguments'] = (value || '').split(',');
-            pseudo.action = pseudo.action || trueop;
-            pseudo.source = source;
-            var original = pseudo.listener = listener;
-            listener = function(){
-              var output = pseudo.action.apply(this, [pseudo].concat(toArray(arguments)));
-              if (output === null || output === false) return output;
-              output = pseudo.listener.apply(this, arguments);
-              pseudo.listener = original;
-              return output;
-            };
-            if (target && pseudo.onAdd) {
-              if (target.nodeName) pseudo.onAdd.call(target, pseudo);
-              else target.push(pseudo);
-            }
-          });
-        }
+        var matches = [],
+            valueFlag = 0;
+        key.replace(regexPseudoParens, function(match){
+          if (match == '(') return ++valueFlag == 1 ? '\u276A' : '(';
+          return !--valueFlag ? '\u276B' : ')';
+        }).replace(regexPseudoCapture, function(z, name, value, solo){
+          matches.push([name || solo, value]);
+        });
+        var i = matches.length;
+        while (i--) parsePseudo(function(){
+          var name = matches[i][0],
+              value = matches[i][1];
+          if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + value;
+          value = (value === '' || typeof value == 'undefined') ? null : value;
+          var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
+          pseudo.key = key;
+          pseudo.name = name;
+          pseudo.value = value;
+          pseudo['arguments'] = (value || '').split(',');
+          pseudo.action = pseudo.action || trueop;
+          pseudo.source = source;
+          var original = pseudo.listener = listener;
+          listener = function(){
+            var output = pseudo.action.apply(this, [pseudo].concat(toArray(arguments)));
+            if (output === null || output === false) return output;
+            output = pseudo.listener.apply(this, arguments);
+            pseudo.listener = original;
+            return output;
+          };
+          if (target && pseudo.onAdd) {
+            if (target.nodeName) pseudo.onAdd.call(target, pseudo);
+            else target.push(pseudo);
+          }
+        });
       }
       for (var z in pseudos) {
         if (pseudos[z].onCompiled) listener = pseudos[z].onCompiled(listener, pseudos[z]) || listener;
