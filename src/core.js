@@ -252,9 +252,10 @@
     else if (type == 'set') {
       key[0] = prop;
       var setter = tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
-        var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
+        var value = attr.boolean ? !!value : attr.filter ? attr.filter.call(this, value) : value,
+            method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
         modAttr(this, attr, name, value, method);
-        accessor[z].call(this, attr.boolean ? !!value : value);
+        accessor[z].call(this, value);
         syncAttr(this, attr, name, value, method)
         updateView(this, prop, value);
       } : accessor[z] ? function(value){
@@ -288,7 +289,8 @@
         };
       }
       if (!tag.prototype[prop].set) tag.prototype[prop].set = function(value){
-        var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute'
+        var value = attr.boolean ? !!value : attr.filter ? attr.filter.call(this, value) : value,
+            method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
         modAttr(this, attr, name, value, method);
         syncAttr(this, attr, name, value, method);
         updateView(this, name, value);
@@ -389,7 +391,9 @@
         value: function (name, value){
           var _name = name.toLowerCase();
           var attr = tag.attributes[_name];
-          var value = attr && attr.boolean ? '' : value;
+          if (attr) {
+            value = attr.boolean ? '' : attr.filter ? attr.filter.call(this, value) : value;
+          }
           modAttr(this, attr, _name, value, 'setAttribute');
           if (attr) {
             if (attr.setter) attr.setter.call(this, attr.boolean ? true : value);

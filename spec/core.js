@@ -1042,6 +1042,32 @@ describe("x-tag ", function () {
       expect(foo.getAttribute('foo-bar')).toEqual('bar');
 
     });
+    
+    it('setter fooBar should run the filter and pass along the modified value', function (){
+      var filteredValue;
+      xtag.register('x-foo-attr-filter', {
+        accessors:{
+          fooBar: {
+            attribute: {
+              filter: function(value){
+                return value | 0;
+              }
+            },
+            set: function(value){
+              filteredValue = value;
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo-attr-filter');
+      testbox.appendChild(foo);
+
+      foo.fooBar = 'bar';
+
+      expect(foo.getAttribute('foo-bar')).toEqual('0');
+
+    });
 
     it('x-tag pseudos should allow css pseudos', function (){
 
