@@ -183,7 +183,7 @@ describe("x-tag ", function () {
 
       expect(el.zoo).toEqual(true);
       expect(el.getAttribute('zoo')).toEqual('');
-      
+
       expect(foo == 6 && bar == 7 && baz == 6 && zoo == 7).toEqual(true);
     });
   });
@@ -899,7 +899,7 @@ describe("x-tag ", function () {
 
     it('delegate event pseudo should register a click on an inner element', function (){
 
-      var customElement, clicked = false;
+      var clicked = false, customElement;
 
       xtag.register('x-foo22', {
         lifecycle: {
@@ -921,6 +921,38 @@ describe("x-tag ", function () {
       waitsFor(function (){
         return customElement;
       }, "new tag mixin onInsert should fire", 500);
+
+      runs(function (){
+        xtag.fireEvent(xtag.query(customElement, 'div')[1], 'click');
+        expect(clicked).toEqual(true);
+      });
+
+    });
+
+    it('delegate event pseudo should register a click on an inner pseudo element', function (){
+
+      var clicked = false, customElement;
+
+      xtag.register('x-foo22-b', {
+        lifecycle: {
+          created: function (){
+            customElement = this;
+            this.innerHTML = '<div></div><div></div>';
+          }
+        },
+        events: {
+          'click:delegate(div:nth-child(2))': function (e, elem){
+            clicked = true;
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo22-b');
+      testbox.appendChild(foo);
+
+      waitsFor(function (){
+        return customElement;
+      }, "new tag mixin onInsert should fire", 1000);
 
       runs(function (){
         xtag.fireEvent(xtag.query(customElement, 'div')[1], 'click');
@@ -1023,7 +1055,7 @@ describe("x-tag ", function () {
       expect(foo.getAttribute('bar')).toEqual('bar');
 
     });
-    
+
     it('setter fooBar should auto link to the attribute name foo-bar', function (){
 
       xtag.register('x-foo-auto-attr-name', {
@@ -1267,7 +1299,7 @@ describe("x-tag ", function () {
         expect(insertParent == removedParent).toEqual(true);
       });
     });
-    
+
     it('should add Shadow DOM to the element', function (){
       xtag.register('x-foo-shadow', {
         shadow: '<div>bar</div>'
@@ -1276,7 +1308,7 @@ describe("x-tag ", function () {
       var foo = document.createElement('x-foo-shadow');
       expect(Element.prototype.createShadowRoot ? foo.shadowRoot.firstElementChild.textContent == 'bar' : !foo.firstElementChild).toEqual(true);
     });
-    
+
     it('should add default content to the element', function (){
       xtag.register('x-foo-content', {
         content: '<div>bar</div>'
