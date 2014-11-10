@@ -1043,13 +1043,13 @@ describe("x-tag ", function () {
 
     });
     
-    it('setter fooBar should run the filter and pass along the modified value', function (){
+    it('setter fooBar should run the validate and pass along the modified value', function (){
       var filteredValue;
-      xtag.register('x-foo-attr-filter', {
+      xtag.register('x-foo-attr-validate', {
         accessors:{
           fooBar: {
             attribute: {
-              filter: function(value){
+              validate: function(value){
                 return value | 0;
               }
             },
@@ -1060,7 +1060,7 @@ describe("x-tag ", function () {
         }
       });
 
-      var foo = document.createElement('x-foo-attr-filter');
+      var foo = document.createElement('x-foo-attr-validate');
       testbox.appendChild(foo);
 
       foo.fooBar = 'bar';
