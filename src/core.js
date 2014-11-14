@@ -6,7 +6,7 @@
     doc = document,
     attrProto = {
       setAttribute: Element.prototype.setAttribute,
-      removeAttribute: Element.prototype.removeAttribute,
+      removeAttribute: Element.prototype.removeAttribute
     },
     hasShadow = Element.prototype.createShadowRoot,
     container = doc.createElement('div'),
@@ -113,10 +113,10 @@
       }
     });
   }
-  
-// Pseudos 
 
-  function parsePseudo(fn){ fn() };
+// Pseudos
+
+  function parsePseudo(fn){fn();}
 
 // Mixins
 
@@ -228,7 +228,7 @@
   function modAttr(element, attr, name, value, method){
     attrProto[method].call(element, name, attr && attr.boolean ? '' : value);
   }
-  
+
   function syncAttr(element, attr, name, value, method){
     if (attr && (attr.property || attr.selector)) {
       var nodes = attr.property ? [element.xtag[attr.property]] : attr.selector ? xtag.query(element, attr.selector) : [],
@@ -252,11 +252,11 @@
     else if (type == 'set') {
       key[0] = prop;
       var setter = tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
-        var value = attr.boolean ? !!value : attr.validate ? attr.validate.call(this, value) : value,
-            method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
+          value = attr.boolean ? !!value : attr.validate ? attr.validate.call(this, value) : value;
+          var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
         modAttr(this, attr, name, value, method);
         accessor[z].call(this, value);
-        syncAttr(this, attr, name, value, method)
+        syncAttr(this, attr, name, value, method);
         updateView(this, prop, value);
       } : accessor[z] ? function(value){
         accessor[z].call(this, value);
@@ -271,10 +271,11 @@
   function parseAccessor(tag, prop){
     tag.prototype[prop] = {};
     var accessor = tag.accessors[prop],
-        attr = accessor.attribute;
+        attr = accessor.attribute,
+        name;
 
     if (attr) {
-      var name = attr.name = (attr ? (attr.name || prop.replace(regexCamelToDash, '$1-$2')) : prop).toLowerCase();
+      name = attr.name = (attr ? (attr.name || prop.replace(regexCamelToDash, '$1-$2')) : prop).toLowerCase();
       attr.key = prop;
       tag.attributes[name] = attr;
     }
@@ -289,8 +290,8 @@
         };
       }
       if (!tag.prototype[prop].set) tag.prototype[prop].set = function(value){
-        var value = attr.boolean ? !!value : attr.validate ? attr.validate.call(this, value) : value,
-            method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
+        value = attr.boolean ? !!value : attr.validate ? attr.validate.call(this, value) : value;
+        var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
         modAttr(this, attr, name, value, method);
         syncAttr(this, attr, name, value, method);
         updateView(this, name, value);
@@ -608,7 +609,7 @@
       var callback = fn ? fn.call(bind || element) : null;
       return xtag.skipFrame(function(){
         element.style[prop] = element.style.transitionProperty = '';
-        if (callback) callback.call(bind || element)
+        if (callback) callback.call(bind || element);
       });
     },
 
@@ -627,7 +628,7 @@
     })(),
 
     skipFrame: function(fn){
-      var id = xtag.requestFrame(function(){ id = xtag.requestFrame(fn) });
+      var id = xtag.requestFrame(function(){ id = xtag.requestFrame(fn); });
       return id;
     },
 
