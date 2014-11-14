@@ -873,11 +873,11 @@ describe("x-tag ", function () {
         lifecycle: {
           created: function (){
             customElement = this;
-            this.innerHTML = '<div></div>';
+            this.innerHTML = '<div><div></div></div>';
           }
         },
         events: {
-          'click:delegate(div)': function (e, elem){
+          'click:delegate(div > div:first-child)': function (e, elem){
             currentTarget = e.currentTarget;
           }
         }
@@ -891,7 +891,7 @@ describe("x-tag ", function () {
       }, "new tag mixin onInsert should fire", 500);
 
       runs(function (){
-        xtag.fireEvent(xtag.query(customElement, 'div')[0], 'click');
+        xtag.fireEvent(xtag.query(customElement, 'div')[1], 'click');
         expect(customElement).toEqual(currentTarget);
       });
 
@@ -905,11 +905,11 @@ describe("x-tag ", function () {
         lifecycle: {
           created: function (){
             customElement = this;
-            this.innerHTML = '<div></div>';
+            this.innerHTML = '<div></div><div></div>';
           }
         },
         events: {
-          'click:delegate(div)': function (e, elem){
+          'click:delegate(div:not(:nth-child(2)))': function (e, elem){
             clicked = true;
           }
         }
@@ -923,7 +923,7 @@ describe("x-tag ", function () {
       }, "new tag mixin onInsert should fire", 500);
 
       runs(function (){
-        xtag.fireEvent(xtag.query(customElement, 'div')[0], 'click');
+        xtag.fireEvent(xtag.query(customElement, 'div')[1], 'click');
         expect(clicked).toEqual(true);
       });
 
@@ -1072,6 +1072,32 @@ describe("x-tag ", function () {
       foo.fooBar = 'bar';
 
       expect(foo.getAttribute('foo-bar')).toEqual('bar');
+
+    });
+    
+    it('setter fooBar should run the validate and pass along the modified value', function (){
+      var filteredValue;
+      xtag.register('x-foo-attr-validate', {
+        accessors:{
+          fooBar: {
+            attribute: {
+              validate: function(value){
+                return value | 0;
+              }
+            },
+            set: function(value){
+              filteredValue = value;
+            }
+          }
+        }
+      });
+
+      var foo = document.createElement('x-foo-attr-validate');
+      testbox.appendChild(foo);
+
+      foo.fooBar = 'bar';
+
+      expect(foo.getAttribute('foo-bar')).toEqual('0');
 
     });
 
