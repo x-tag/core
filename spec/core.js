@@ -1074,7 +1074,7 @@ describe("x-tag ", function () {
       expect(foo.getAttribute('foo-bar')).toEqual('bar');
 
     });
-    
+
     it('setter fooBar should run the validate and pass along the modified value', function (){
       var filteredValue;
       xtag.register('x-foo-attr-validate', {
@@ -1211,6 +1211,8 @@ describe("x-tag ", function () {
 
     });
 
+
+
     it('extends should allow elements to use other elements base functionality', function(){
       xtag.register("x-foo29", {
         extends: 'div',
@@ -1226,6 +1228,21 @@ describe("x-tag ", function () {
       expect(foo.innerHTML).toEqual('<div>hello</div>');
 
     });
+
+    it('extends should instantiate elements in natural source', function(){
+      xtag.register("x-extendelement1",{
+        extends: 'div',
+        lifecycle: {
+          created: function() {
+            var nodes = xtag.createFragment('<div>hello</div>').cloneNode(true);
+            this.appendChild(nodes);
+          }
+        }
+      });
+      var foo = document.getElementById('extend_element');
+      expect(foo.innerHTML).toEqual('<div>hello</div>');
+    })
+
 
     it('is="" should bootstrap element', function(){
       var count = 0;
