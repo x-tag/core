@@ -47,6 +47,15 @@
     matchSelector = Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'],
     mutation = win.MutationObserver || win[prefix.js + 'MutationObserver'];
 
+  var issetCustomEvent = false;
+  var customEvent;
+  try {
+    customEvent = doc.createEvent('CustomEvent');
+    issetCustomEvent = true;
+  } catch(e) {
+    customEvent = doc.createEvent('Event');
+  }
+
 /*** Functions ***/
 
 // Utilities
@@ -214,7 +223,7 @@
   }
 
   var skipProps = {};
-  for (var z in doc.createEvent('CustomEvent')) skipProps[z] = 1;
+  for (var z in customEvent) skipProps[z] = 1;
   function inheritEvent(event, base){
     var desc = Object.getOwnPropertyDescriptor(event, 'target');
     for (var z in base) {
@@ -877,14 +886,24 @@
     },
 
     fireEvent: function(element, type, options){
-      var event = doc.createEvent('CustomEvent');
       options = options || {};
-      event.initCustomEvent(type,
-        options.bubbles !== false,
-        options.cancelable !== false,
-        options.detail
-      );
+
+      var event;
+      var bubbles = options.bubbles !== false;
+      var cancelable = options.cancelable !== false;
+
+      if (issetCustomEvent) {
+        event = doc.createEvent('CustomEvent');
+        event.initCustomEvent(type, bubbles, cancelable, options.detail);
+
+      } else {
+        event = doc.createEvent('Event');
+        event.initEvent(type, bubbles, cancelable);
+        event.detail = options.detail;
+      }
+
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
+
       element.dispatchEvent(event);
     },
 

@@ -21,7 +21,7 @@
       - The 4 variations of prefix are as follows:
         * prefix.dom: the correct prefix case and form when used on DOM elements/style properties
         * prefix.lowercase: a lowercase version of the prefix for use in various user-code situations
-        * prefix.css: the lowercase, dashed version of the prefix 
+        * prefix.css: the lowercase, dashed version of the prefix
         * prefix.js: addresses prefixed APIs present in global and non-Element contexts
     */
     prefix = (function () {
@@ -41,10 +41,19 @@
     matchSelector = Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'],
     mutation = win.MutationObserver || win[prefix.js + 'MutationObserver'];
 
+    var issetCustomEvent = false;
+    var customEvent;
+    try {
+        customEvent = doc.createEvent('CustomEvent');
+        issetCustomEvent = true;
+    } catch(e) {
+        customEvent = doc.createEvent('Event');
+    }
+
 /*** Functions ***/
 
 // Utilities
-  
+
   /*
     This is an enhanced typeof check for all types of objects. Where typeof would normaly return
     'object' for many common DOM objects (like NodeLists and HTMLCollections).
@@ -57,7 +66,7 @@
     var type = typeString.call(obj);
     return typeCache[type] || (typeCache[type] = type.match(typeRegexp)[1].toLowerCase());
   }
-  
+
   function clone(item, type){
     var fn = clone[type || typeOf(item)];
     return fn ? fn(item) : item;
@@ -72,7 +81,7 @@
       while (i--) array[i] = clone(src[i]);
       return array;
     };
-  
+
   /*
     The toArray() method allows for conversion of any object to a true array. For types that
     cannot be converted to an array, the method returns a 1 item array containing the passed-in object.
@@ -218,7 +227,7 @@
   }
 
   var skipProps = {};
-  for (var z in doc.createEvent('CustomEvent')) skipProps[z] = 1;
+  for (var z in customEvent) skipProps[z] = 1;
   function inheritEvent(event, base){
     var desc = Object.getOwnPropertyDescriptor(event, 'target');
     for (var z in base) {
@@ -304,12 +313,12 @@
       };
     }
   }
-  
+
   var unwrapComment = /\/\*!?(?:\@preserve)?[ \t]*(?:\r\n|\n)([\s\S]*?)(?:\r\n|\n)\s*\*\//;
   function parseMultiline(fn){
     return unwrapComment.exec(fn.toString())[1];
   }
-  
+
   var readyTags = {};
   function fireReady(name){
     readyTags[name] = (readyTags[name] || []).filter(function(obj){
@@ -356,9 +365,9 @@
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
-      
+
       var shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
-      
+
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
@@ -383,7 +392,7 @@
           return output;
         }
       };
-			
+
       var inserted = tag.lifecycle.inserted,
           removed = tag.lifecycle.removed;
       if (inserted || removed) {
@@ -445,7 +454,7 @@
             options['extends'] ?
             Object.create(doc.createElement(options['extends']).constructor).prototype :
             win.HTMLElement.prototype;
-            
+
       var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
       };
@@ -456,11 +465,11 @@
       fireReady(_name);
       return reg;
     },
-    
+
     /*
       NEEDS MORE TESTING!
-      
-      Allows for async dependency resolution, fires when all passed-in elements are 
+
+      Allows for async dependency resolution, fires when all passed-in elements are
       registered and parsed
     */
     ready: function(names, fn){
@@ -556,8 +565,8 @@
     pseudos: {
       __mixin__: {},
       /*
-        
-        
+
+
       */
       mixins: {
         onCompiled: function(fn, pseudo){
@@ -609,7 +618,7 @@
     clone: clone,
     typeOf: typeOf,
     toArray: toArray,
-    
+
     wrap: function (original, fn) {
       return function(){
         var args = arguments,
@@ -630,11 +639,11 @@
       }
       return source;
     },
-    
+
     /*
       ----- This should be simplified! -----
       Generates a random ID string
-    */ 
+    */
     uid: function(){
       return Math.random().toString(36).substr(2,10);
     },
@@ -654,19 +663,19 @@
         });
       });
     },
-    
+
     requestFrame: (function(){
       var raf = win.requestAnimationFrame ||
                 win[prefix.lowercase + 'RequestAnimationFrame'] ||
                 function(fn){ return win.setTimeout(fn, 20); };
       return function(fn){ return raf(fn); };
     })(),
-    
+
     cancelFrame: (function(){
       var cancel = win.cancelAnimationFrame ||
                    win[prefix.lowercase + 'CancelAnimationFrame'] ||
                    win.clearTimeout;
-      return function(id){ return cancel(id); };  
+      return function(id){ return cancel(id); };
     })(),
 
     matchSelector: function (element, selector) {
@@ -706,7 +715,7 @@
     toggleClass: function (element, klass) {
       return xtag[xtag.hasClass(element, klass) ? 'removeClass' : 'addClass'].call(null, element, klass);
     },
-    
+
     /*
       Runs a query on only the children of an element
     */
@@ -743,7 +752,7 @@
       }
       return frag;
     },
-    
+
     /*
       Removes an element from the DOM for more performant node manipulation. The element
       is placed back into the DOM at the place it was taken from.
@@ -914,23 +923,33 @@
     },
 
     fireEvent: function(element, type, options, warn){
-      var event = doc.createEvent('CustomEvent');
       options = options || {};
+
+      var event;
+      var bubbles = options.bubbles !== false;
+      var cancelable = options.cancelable !== false;
+
+      if (issetCustomEvent) {
+        event = doc.createEvent('CustomEvent');
+        event.initCustomEvent(type, bubbles, cancelable, options.detail);
+
+      } else {
+        event = doc.createEvent('Event');
+        event.initEvent(type, bubbles, cancelable);
+        event.detail = options.detail;
+      }
+
       if (warn) console.warn('fireEvent has been modified');
-      event.initCustomEvent(type,
-        options.bubbles !== false,
-        options.cancelable !== false,
-        options.detail
-      );
+
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
       try { element.dispatchEvent(event); }
       catch (e) {
         console.warn('This error may have been caused by a change in the fireEvent method', e);
       }
     },
-    
+
     /*
-      Listens for insertion or removal of nodes from a given element using 
+      Listens for insertion or removal of nodes from a given element using
       Mutation Observers, or Mutation Events as a fallback
     */
     addObserver: function(element, type, fn){
@@ -1105,7 +1124,7 @@ for (z in UIEventProto){
 
   win.xtag = xtag;
   if (typeof define == 'function' && define.amd) define(xtag);
-  
+
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');
   });
