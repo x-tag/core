@@ -1241,7 +1241,7 @@ describe("x-tag ", function () {
       });
       var foo = document.getElementById('extend_element');
       expect(foo.innerHTML).toEqual('<div>hello</div>');
-    })
+    });
 
 
     it('is="" should bootstrap element', function(){

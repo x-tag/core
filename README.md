@@ -25,8 +25,7 @@ To get started hacking on X-Tag core:
 ````bash
 git clone https://github.com/x-tag/core x-tag-core --recursive
 cd x-tag-core
-npm install     # installs all the required dependencies using package.json
-grunt polyfill  # rebuilds polyfill file
+npm install        # installs all the required dependencies using package.json
 grunt build     # outputs x-tag-core.js and x-tag-core.min.js to ./dist
 ````
 
@@ -34,14 +33,12 @@ If you are interested in building your own custom elements, you can use our [web
 
 ## Updating
 
-If you already have cloned the library and want to update to the latest changes, do:
+If you already cloned the library and want to update to the latest changes, do:
 
 ````bash
 cd x-tag-core
 git pull origin master
-git submodule update
 npm install
-grunt polyfill
 grunt build
 ````
 

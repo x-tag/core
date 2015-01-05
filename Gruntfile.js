@@ -1,19 +1,6 @@
 module.exports = function (grunt) {
   'use strict';
 
-  // Polymer Platform custom biuld
-  var polyfillFiles = [
-   'lib/platform-bootstrap.js',
-   'lib/DOMTokenList.js',
-   'lib/WeakMap/weakmap.js',
-   'lib/CustomElements/src/sidetable.js',
-   'lib/MutationObservers/MutationObserver.js',
-   'lib/CustomElements/src/CustomElements.js',
-   'lib/CustomElements/src/Observer.js',
-   'lib/CustomElements/src/Parser.js',
-   'lib/CustomElements/src/boot.js'
-  ];
-
   var browsers = [{
     browserName: "firefox",
     version: "14",
@@ -53,14 +40,18 @@ module.exports = function (grunt) {
     concat: {
       core:{
         src:[
-          'lib/web-components-polyfills.js',
+          'lib/DOMTokenList.js',
+          'bower_components/webcomponentsjs/webcomponents-lite.js',
           'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'
       },
-      polyfill: {
-        src: polyfillFiles,
-        dest: 'lib/web-components-polyfills.js'
+      'core-full':{
+        src:[
+        '/bower_components/webcomponentsjs/webcomponents.js',
+        'src/core.js'
+        ],
+        dest: 'dist/x-tag-core.js'
       }
     },
     uglify: {
@@ -121,7 +112,6 @@ module.exports = function (grunt) {
 
   // Default task.
   grunt.registerTask('default', ['test']);
-  grunt.registerTask('polyfill', ['concat:polyfill']);
   grunt.registerTask('test', ['jshint','connect:test', 'saucelabs-jasmine']);
   grunt.registerTask('compress', ['concat:core','uglify']);
   grunt.registerTask('build', ['test','concat:core','uglify']);
