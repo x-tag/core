@@ -13,6 +13,6 @@
     "src/core.js"
   ],
   "dependencies": {
-    "webcomponentsjs": "0.5.2"
+    "webcomponentsjs": "0.5.4"
   }
 }

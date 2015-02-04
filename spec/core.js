@@ -6,7 +6,7 @@ describe("x-tag ", function () {
   it('should load x-tag.js and fire DOMComponentsLoaded', function (){
 
     var DOMComponentsLoaded = false;
-    var WebComponentsReady = false;
+    var WebComponentsReady = true;
     var HTMLImportsLoaded = false;
 
     document.addEventListener('DOMComponentsLoaded', function (){

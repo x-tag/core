@@ -114,5 +114,5 @@ module.exports = function (grunt) {
   grunt.registerTask('default', ['test']);
   grunt.registerTask('test', ['jshint','connect:test', 'saucelabs-jasmine']);
   grunt.registerTask('compress', ['concat:core','uglify']);
-  grunt.registerTask('build', ['test','concat:core','uglify']);
+  grunt.registerTask('build', ['concat:core','uglify']);
 };
