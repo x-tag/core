@@ -183,7 +183,7 @@
     var match, target = event.target;
     if (!target.tagName) return null;
     if (xtag.matchSelector(target, pseudo.value)) match = target;
-    else if (xtag.matchSelector(target, pseudo.value + ' *')) {
+    else if (xtag.matchSelector(target, pseudo.arguments.join(' *,') + ' *')) {
       var parent = target.parentNode;
       while (!match) {
         if (xtag.matchSelector(parent, pseudo.value)) match = parent;
