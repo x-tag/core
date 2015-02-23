@@ -182,11 +182,11 @@
   function delegateAction(pseudo, event) {
     var match, target = event.target;
     if (!target.tagName) return null;
-    if (xtag.matchSelector(target, pseudo.value)) match = target;
-    else if (xtag.matchSelector(target, pseudo.arguments.join(' *,') + ' *')) {
+    if (matchSelector.call(target, pseudo.value)) match = target;
+    else if (matchSelector.call(target, pseudo._delegate_selector)) {
       var parent = target.parentNode;
       while (!match) {
-        if (xtag.matchSelector(parent, pseudo.value)) match = parent;
+        if (matchSelector.call(parent, pseudo.value)) match = parent;
         parent = parent.parentNode;
       }
     }
