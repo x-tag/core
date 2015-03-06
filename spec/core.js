@@ -905,12 +905,11 @@ describe("x-tag ", function () {
         lifecycle: {
           created: function (){
             customElement = this;
-            this.innerHTML = '<div></div><div></div>';
+            this.innerHTML = '<div><div></div></div>';
           }
         },
         events: {
           'click:delegate(div:not(:nth-child(2)))': function (e, elem){
-            console.log(e);
             clicked = true;
           }
         }

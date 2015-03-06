@@ -181,14 +181,9 @@
 
   function delegateAction(pseudo, event) {
     var match, target = event.target;
-    if (!target.tagName) return null;
-    if (matchSelector.call(target, pseudo.value)) match = target;
-    else if (matchSelector.call(target, pseudo._delegate_selector)) {
-      var parent = target.parentNode;
-      while (!match) {
-        if (matchSelector.call(parent, pseudo.value)) match = parent;
-        parent = parent.parentNode;
-      }
+    if (target.tagName) {
+      if (matchSelector.call(target, pseudo.value)) match = target;
+      else match = (pseudo.walker.currentNode = target) && pseudo.walker.parentNode();
     }
     return match ? pseudo.listener = pseudo.listener.bind(match) : null;
   }
@@ -515,10 +510,6 @@
     },
     pseudos: {
       __mixin__: {},
-      /*
-
-
-      */
       mixins: {
         onCompiled: function(fn, pseudo){
           var mixins = pseudo.source.__mixins__;
@@ -548,13 +539,13 @@
       delegate: {
         action: delegateAction,
         onAdd: function(pseudo){
-          pseudo._delegate_selector = pseudo.arguments.join(' *,') + ' *';
+          pseudo.walker = document.createTreeWalker(this, -1, { acceptNode: function(node) { return matchSelector.call(node, pseudo.value); } });
         }
       },
       within: {
         action: delegateAction,
         onAdd: function(pseudo){
-          pseudo._delegate_selector = pseudo.arguments.join(' *,') + ' *';
+          pseudo.walker = document.createTreeWalker(this, -1, { acceptNode: function(node) { return matchSelector.call(node, pseudo.value); } });
           var condition = pseudo.source.condition;
           if (condition) pseudo.source.condition = function(event, custom){
             return xtag.query(this, pseudo.value).filter(function(node){
