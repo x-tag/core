@@ -545,10 +545,16 @@
       },
       keypass: keypseudo,
       keyfail: keypseudo,
-      delegate: { action: delegateAction },
+      delegate: {
+        action: delegateAction,
+        onAdd: function(pseudo){
+          pseudo._delegate_selector = pseudo.arguments.join(' *,') + ' *';
+        }
+      },
       within: {
         action: delegateAction,
         onAdd: function(pseudo){
+          pseudo._delegate_selector = pseudo.arguments.join(' *,') + ' *';
           var condition = pseudo.source.condition;
           if (condition) pseudo.source.condition = function(event, custom){
             return xtag.query(this, pseudo.value).filter(function(node){

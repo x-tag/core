@@ -910,6 +910,7 @@ describe("x-tag ", function () {
         },
         events: {
           'click:delegate(div:not(:nth-child(2)))': function (e, elem){
+            console.log(e);
             clicked = true;
           }
         }
