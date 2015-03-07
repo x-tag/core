@@ -539,13 +539,13 @@
       delegate: {
         action: delegateAction,
         onAdd: function(pseudo){
-          pseudo.walker = document.createTreeWalker(this, -1, { acceptNode: function(node) { return matchSelector.call(node, pseudo.value); } });
+          pseudo.walker = document.createTreeWalker(this, 1, { acceptNode: function(node) { return matchSelector.call(node, pseudo.value); } });
         }
       },
       within: {
         action: delegateAction,
         onAdd: function(pseudo){
-          pseudo.walker = document.createTreeWalker(this, -1, { acceptNode: function(node) { return matchSelector.call(node, pseudo.value); } });
+          pseudo.walker = document.createTreeWalker(this, 1, { acceptNode: function(node) { return matchSelector.call(node, pseudo.value); } });
           var condition = pseudo.source.condition;
           if (condition) pseudo.source.condition = function(event, custom){
             return xtag.query(this, pseudo.value).filter(function(node){
