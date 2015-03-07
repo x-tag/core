@@ -183,13 +183,11 @@
     var match,
         target = event.target,
         root = event.currentTarget;
-    if (target.tagName) {
-      while (!match && target != root) {
-        if (matchSelector.call(target, pseudo.value)) match = target;
-        target = target.parentNode;
-      }
-      if (!match && matchSelector.call(root, pseudo.value)) match = root;
+    while (!match && target != root) {
+      if (target.tagName && matchSelector.call(target, pseudo.value)) match = target;
+      target = target.parentNode;
     }
+    if (!match && root.tagName && matchSelector.call(root, pseudo.value)) match = root;
     return match ? pseudo.listener = pseudo.listener.bind(match) : null;
   }
 
