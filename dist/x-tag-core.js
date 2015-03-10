@@ -2046,13 +2046,7 @@ if (typeof HTMLTemplateElement === "undefined") {
       while (index--) nodes[index][method](name, value);
     }
   }
-
-  function updateView(element, name, value){
-    if (element.__view__){
-      element.__view__.updateBindingValue(element, name, value);
-    }
-  }
-
+  
   function attachProperties(tag, prop, z, accessor, attr, name){
     var key = z.split(':'), type = key[0];
     if (type == 'get') {
@@ -2062,15 +2056,21 @@ if (typeof HTMLTemplateElement === "undefined") {
     else if (type == 'set') {
       key[0] = prop;
       var setter = tag.prototype[prop].set = xtag.applyPseudos(key.join(':'), attr ? function(value){
-          value = attr.boolean ? !!value : attr.validate ? attr.validate.call(this, value) : value;
-          var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
+        var old, method = 'setAttribute';
+        if (attr.boolean){
+          value = !!value;
+          old = this.hasAttribute(name);
+          if (!value) method = 'removeAttribute';
+        }
+        else {
+          value = attr.validate ? attr.validate.call(this, value) : value;
+          old = this.getAttribute(name);
+        }
         modAttr(this, attr, name, value, method);
-        accessor[z].call(this, value);
+        accessor[z].call(this, value, old);
         syncAttr(this, attr, name, value, method);
-        updateView(this, prop, value);
       } : accessor[z] ? function(value){
         accessor[z].call(this, value);
-        updateView(this, prop, value);
       } : null, tag.pseudos, accessor[z]);
 
       if (attr) attr.setter = accessor[z];
@@ -2104,7 +2104,6 @@ if (typeof HTMLTemplateElement === "undefined") {
         var method = attr.boolean ? (value ? 'setAttribute' : 'removeAttribute') : 'setAttribute';
         modAttr(this, attr, name, value, method);
         syncAttr(this, attr, name, value, method);
-        updateView(this, name, value);
       };
     }
   }
@@ -2198,16 +2197,18 @@ if (typeof HTMLTemplateElement === "undefined") {
 
       tag.prototype.setAttribute = {
         writable: true,
-        enumberable: true,
+        enumerable: true,
         value: function (name, value){
+          var old;
           var _name = name.toLowerCase();
           var attr = tag.attributes[_name];
           if (attr) {
+            old = this.getAttribute(_name);
             value = attr.boolean ? '' : attr.validate ? attr.validate.call(this, value) : value;
           }
           modAttr(this, attr, _name, value, 'setAttribute');
           if (attr) {
-            if (attr.setter) attr.setter.call(this, attr.boolean ? true : value);
+            if (attr.setter) attr.setter.call(this, attr.boolean ? true : value, old);
             syncAttr(this, attr, _name, value, 'setAttribute');
           }
         }
@@ -2215,13 +2216,14 @@ if (typeof HTMLTemplateElement === "undefined") {
 
       tag.prototype.removeAttribute = {
         writable: true,
-        enumberable: true,
+        enumerable: true,
         value: function (name){
           var _name = name.toLowerCase();
           var attr = tag.attributes[_name];
+          var old = this.hasAttribute(_name);
           modAttr(this, attr, _name, '', 'removeAttribute');
           if (attr) {
-            if (attr.setter) attr.setter.call(this, attr.boolean ? false : undefined);
+            if (attr.setter) attr.setter.call(this, attr.boolean ? false : undefined, old);
             syncAttr(this, attr, _name, '', 'removeAttribute');
           }
         }
