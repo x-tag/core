@@ -183,7 +183,7 @@
     var match,
         target = event.target,
         root = event.currentTarget;
-    while (!match && target != root) {
+    while (!match && target && target != root) {
       if (target.tagName && matchSelector.call(target, pseudo.value)) match = target;
       target = target.parentNode;
     }
