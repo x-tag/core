@@ -2231,15 +2231,15 @@ if (typeof HTMLTemplateElement === "undefined") {
 
       var elementProto = basePrototype ?
             basePrototype :
-            options['extends'] ?
-            Object.create(doc.createElement(options['extends']).constructor).prototype :
+            tag['extends'] ?
+            Object.create(doc.createElement(tag['extends']).constructor).prototype :
             win.HTMLElement.prototype;
 
       var definition = {
         'prototype': Object.create(elementProto, tag.prototype)
       };
-      if (options['extends']) {
-        definition['extends'] = options['extends'];
+      if (tag['extends']) {
+        definition['extends'] = tag['extends'];
       }
       var reg = doc.registerElement(_name, definition);
       return reg;
