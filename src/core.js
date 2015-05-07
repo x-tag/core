@@ -550,6 +550,20 @@
       delegate: {
         action: delegateAction
       },
+      once: {
+        action: function(pseudo, event){
+          console.log('once starting');
+          if (pseudo.__once__) {
+            xtag.removeEvent(event.currentTarget || event.target, pseudo.source);
+            return false;
+          }
+          console.log('once firing');
+          return pseudo.__once__ = true;
+        },
+        onRemove: function(){
+          console.log('once removing');
+        }
+      },
       within: {
         action: delegateAction,
         onAdd: function(pseudo){
@@ -751,6 +765,8 @@
           pseudo['arguments'] = (value || '').split(',');
           pseudo.action = pseudo.action || trueop;
           pseudo.source = source;
+          pseudo.onAdd = pseudo.onAdd || noop;
+          pseudo.onRemove = pseudo.onRemove || noop;
           var original = pseudo.listener = listener;
           listener = function(){
             var output = pseudo.action.apply(this, [pseudo].concat(toArray(arguments)));
@@ -759,10 +775,8 @@
             pseudo.listener = original;
             return output;
           };
-          if (target && pseudo.onAdd) {
-            if (target.nodeName) pseudo.onAdd.call(target, pseudo);
-            else target.push(pseudo);
-          }
+          if (!target) pseudo.onAdd.call(fn, pseudo);
+          else target.push(pseudo);
         });
       }
       for (var z in pseudos) {
@@ -773,7 +787,7 @@
 
     removePseudos: function(target, pseudos){
       pseudos.forEach(function(obj){
-        if (obj.onRemove) obj.onRemove.call(target, obj);
+        obj.onRemove.call(target, obj);
       });
     },
 
