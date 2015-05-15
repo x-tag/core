@@ -42,13 +42,16 @@ module.exports = function (grunt) {
         src:[
           'lib/DOMTokenList.js',
           'bower_components/webcomponentsjs/webcomponents-lite.js',
+          'lib/hand.base.min.js',
           'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'
       },
       'core-full':{
         src:[
+        'lib/DOMTokenList.js',
         '/bower_components/webcomponentsjs/webcomponents.js',
+        'lib/hand.base.min.js',
         'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'

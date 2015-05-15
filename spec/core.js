@@ -835,32 +835,6 @@ describe("x-tag ", function () {
       });
     });
 
-    it('fires mouse event to verify properties', function(){
-      var clickTouch = false;
-
-      var clickHandler = function(e){
-        clickTouch = e.touches;
-      };
-
-      document.addEventListener('mousedown', clickHandler);
-
-      waitsFor(function(){
-        return clickTouch !== false;
-      });
-
-      var me = document.createEvent('MouseEvent');
-      me.initMouseEvent('mousedown', true, true, window, {}, 0,0,0,0,false, false, false, false, 0, null);
-      document.dispatchEvent(me);
-
-      runs(function(){
-        expect(clickTouch instanceof Array).toEqual(true);
-      });
-
-      document.removeEventListener('mousedown', clickHandler);
-
-    });
-
-
     it('delegate event pseudo should pass the custom element as second param', function (){
 
       var customElement, currentTarget;
