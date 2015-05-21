@@ -203,15 +203,8 @@
     return match ? pseudo.listener = pseudo.listener.bind(match) : null;
   }
 
-  function touchFilter(event) {
-    if (event.type.match('touch')){
-      event.target.__touched__ = true;
-    }
-    else if (event.target.__touched__ && event.type.match('mouse')){
-      delete event.target.__touched__;
-      return;
-    }
-    return true;
+  function touchFilter(event){
+    return event.button == 0;
   }
 
   function writeProperty(key, event, base, desc){
@@ -477,19 +470,16 @@
         }
       },
       tap: {
-        observe: {
-          pointerup: doc
-        }
+        attach: ['pointerup'],
+        condition: touchFilter
       }, 
       tapstart: {
-        observe: {
-          pointerdown: doc
-        }
+        attach: ['pointerdown'],
+        condition: touchFilter
       },
       tapend: {
-        observe: {
-          pointerup: doc
-        }
+        attach: ['pointerup'],
+        condition: touchFilter
       },
       tapmove: {
         attach: ['pointerdown', 'pointerup'],
@@ -500,6 +490,24 @@
           else if (event.type == 'pointerup') {
             xtag.removeEvent(this, custom.moveListener);
             custom.moveListener = null;
+          }
+          else return true;
+        }
+      },
+      taphold: {
+        attach: ['pointerdown', 'pointerup'],
+        condition: function(event, custom){
+          if (event.type == 'pointerdown') {
+            (custom.pointers = custom.pointers || {})[event.pointerId] = setTimeout(
+              xtag.fireEvent.bind(null, this, 'taphold'),
+              custom.duration || 1000
+            );   
+          }
+          else if (event.type == 'pointerup') {
+            if (custom.pointers) {
+              clearTimeout(custom.pointers[event.pointerId]);
+              delete custom.pointers[event.pointerId];
+            }
           }
           else return true;
         }
@@ -545,6 +553,9 @@
         action: function (pseudo, event) {
           return !event.defaultPrevented;
         }
+      },
+      duration: {
+        onAdd: function(pseudo){ pseudo.source.duration = Number(pseudo.value) }
       }
     },
 
@@ -810,18 +821,6 @@
       event.attach.forEach(function(name) {
         event._attach.push(xtag.parseEvent(name, event.listener));
       });
-      if (custom && custom.observe && !custom.__observing__) {
-        custom.observer = function(e){
-          var output = event.condition.apply(this, toArray(arguments).concat([custom]));
-          if (!output) return output;
-          xtag.fireEvent(e.target, key, {
-            baseEvent: e,
-            detail: output !== true ? output : {}
-          });
-        };
-        for (var z in custom.observe) xtag.addEvent(custom.observe[z] || document, z, custom.observer, true);
-        custom.__observing__ = true;
-      }
       return event;
     },
 
@@ -907,9 +906,7 @@
       if (obj && fn){
         obj[type].splice(obj[type].indexOf(fn), 1);
       }
-      else{
-        obj[type] = [];
-      }
+      else obj[type] = [];
     }
 
   };

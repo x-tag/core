@@ -106,6 +106,20 @@
 		<div id="move"
 				event-name="move"
 				test-name="basic move"></div>
+    
+    <div id="enter"
+				event-name="enter"
+				test-name="basic enter"></div>
+        
+    <div id="leave"
+				event-name="leave"
+				test-name="basic leave"></div>
+        
+    <div id="taphold"
+				event-name="taphold:duration(3000)"
+				test-name="tap that fires based after 3 seconds"></div>
+        
+        
 	</body>
 	
 	<script>
@@ -140,6 +154,18 @@
 		});
 		
 		addTest('move', function(){
+			showResult(this, 'pass')
+		});
+    
+    addTest('enter', function(){
+			showResult(this, 'pass')
+		});
+    
+    addTest('leave', function(){
+			showResult(this, 'pass')
+		});
+    
+    addTest('taphold', function(){
 			showResult(this, 'pass')
 		});
 		
