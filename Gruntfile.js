@@ -41,7 +41,7 @@ module.exports = function (grunt) {
       core:{
         src:[
           'lib/DOMTokenList.js',
-          'bower_components/webcomponentsjs/webcomponents-lite.js',
+          'lib/webcomponents-lite.js',
           'lib/hand.base.min.js',
           'src/core.js'
         ],
@@ -50,7 +50,7 @@ module.exports = function (grunt) {
       'core-full':{
         src:[
         'lib/DOMTokenList.js',
-        '/bower_components/webcomponentsjs/webcomponents.js',
+        'lib/webcomponents.js',
         'lib/hand.base.min.js',
         'src/core.js'
         ],
