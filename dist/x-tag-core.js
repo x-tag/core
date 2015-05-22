@@ -2140,12 +2140,10 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
       }
     },
     register: function (name, options) {
-      var _name;
       if (typeof name == 'string') {
-        _name = name.toLowerCase();
-      } else {
-        return;
+        var _name = name.toLowerCase();
       }
+      else return;
       xtag.tags[_name] = options || {};
       // save prototype for actual object creation below
       var basePrototype = options.prototype;
@@ -2380,9 +2378,8 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
 
     wrap: function (original, fn) {
       return function(){
-        var args = arguments,
-            output = original.apply(this, args);
-        fn.apply(this, args);
+        var output = original.apply(this, arguments);
+        fn.apply(this, arguments);
         return output;
       };
     },
