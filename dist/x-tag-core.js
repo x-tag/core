@@ -2825,20 +2825,13 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
       tap: {
         attach: ['pointerdown', 'pointerup'],
         condition: function(event, custom){
-          switch (event.type) {
-            case 'pointerdown':
-              if (!custom.moveListener) custom.moveListener = xtag.addEvent(this, 'pointermove', custom.listener);
-              break;
-            case 'pointermove':
-              custom.moved = true;
-              xtag.removeEvent(this, custom.moveListener);
-              break;
-            case 'pointerup':
-              xtag.removeEvent(this, custom.moveListener);
-              custom.moveListener = null;
-              if (!custom.moved && event.button == 0) return true;
-              custom.moved = false;
+          if (event.type == 'pointerdown') {
+            custom.startX = event.clientX;
+            custom.startY = event.clientY;
           }
+          else if (event.button == 0 &&
+                   Math.abs(custom.startX - event.clientX) < 10 &&
+                   Math.abs(custom.startY - event.clientY) < 10) return true;
         }
       },
       tapstart: {
