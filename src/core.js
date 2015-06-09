@@ -468,9 +468,24 @@
         }
       },
       tap: {
-        attach: ['pointerup'],
-        condition: touchFilter
-      }, 
+        attach: ['pointerdown', 'pointerup'],
+        condition: function(event, custom){
+          switch (event.type) {
+            case 'pointerdown':
+              if (!custom.moveListener) custom.moveListener = xtag.addEvent(this, 'pointermove', custom.listener);
+              break;
+            case 'pointermove':
+              custom.moved = true;
+              xtag.removeEvent(this, custom.moveListener);
+              break;
+            case 'pointerup':
+              xtag.removeEvent(this, custom.moveListener);
+              custom.moveListener = null;
+              if (!custom.moved && event.button == 0) return true;
+              custom.moved = false;
+          }
+        }
+      },
       tapstart: {
         attach: ['pointerdown'],
         condition: touchFilter
