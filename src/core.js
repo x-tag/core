@@ -440,7 +440,7 @@
 
     mixins: {},
     prefix: prefix,
-    captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll'],
+    captureEvents: { focus: 1, blur: 1, scroll: 1, DOMMouseScroll: 1 },
     customEvents: {
       animationstart: {
         attach: [prefix.dom + 'AnimationStart']
@@ -562,6 +562,11 @@
       },
       duration: {
         onAdd: function(pseudo){ pseudo.source.duration = Number(pseudo.value) }
+      },
+      capture: {
+        onCompiled: function(fn, pseudo){
+          if (pseudo.source) pseudo.source.capture = true;
+        }
       }
     },
 
@@ -783,6 +788,7 @@
             type: key,
             stack: noop,
             condition: trueop,
+            capture: xtag.captureEvents[key],
             attach: [],
             _attach: [],
             pseudos: '',
@@ -838,7 +844,7 @@
         xtag.addEvent(element, obj.type, obj);
       });
       event.onAdd.call(element, event, event.listener);
-      element.addEventListener(event.type, event.stack, capture || xtag.captureEvents.indexOf(event.type) > -1);
+      element.addEventListener(event.type, event.stack, capture || event.capture);
       return event;
     },
 

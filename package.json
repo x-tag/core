@@ -1,7 +1,7 @@
 {
   "name": "x-tag-core",
   "description": "X-Tags core library",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "homepage": "http://www.x-tags.org",
   "repository": {
     "type": "git",
