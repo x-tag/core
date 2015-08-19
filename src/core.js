@@ -441,7 +441,7 @@
 
     mixins: {},
     prefix: prefix,
-    captureEvents: { focus: 1, blur: 1, scroll: 1, DOMMouseScroll: 1 },
+    captureEvents: ['focus', 'blur', 'scroll', 'underflow', 'overflow', 'overflowchanged', 'DOMMouseScroll'],
     customEvents: {
       animationstart: {
         attach: [prefix.dom + 'AnimationStart']
@@ -469,16 +469,8 @@
         }
       },
       tap: {
-        attach: ['pointerdown', 'pointerup'],
-        condition: function(event, custom){
-          if (event.type == 'pointerdown') {
-            custom.startX = event.clientX;
-            custom.startY = event.clientY;
-          }
-          else if (event.button == 0 &&
-                   Math.abs(custom.startX - event.clientX) < 10 &&
-                   Math.abs(custom.startY - event.clientY) < 10) return true;
-        }
+        attach: ['pointerup'],
+        condition: touchFilter
       },
       tapstart: {
         attach: ['pointerdown'],
@@ -563,11 +555,6 @@
       },
       duration: {
         onAdd: function(pseudo){ pseudo.source.duration = Number(pseudo.value) }
-      },
-      capture: {
-        onCompiled: function(fn, pseudo){
-          if (pseudo.source) pseudo.source.capture = true;
-        }
       }
     },
 
@@ -789,7 +776,6 @@
             type: key,
             stack: noop,
             condition: trueop,
-            capture: xtag.captureEvents[key],
             attach: [],
             _attach: [],
             pseudos: '',
@@ -845,7 +831,7 @@
         xtag.addEvent(element, obj.type, obj);
       });
       event.onAdd.call(element, event, event.listener);
-      element.addEventListener(event.type, event.stack, capture || event.capture);
+      element.addEventListener(event.type, event.stack, capture || xtag.captureEvents.indexOf(event.type) > -1);
       return event;
     },
 
