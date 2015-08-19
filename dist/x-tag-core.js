@@ -2481,7 +2481,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
     else source[key] = clone(current, type);
     return source;
   }
-  
+
   function mergeMixin(tag, original, mixin, name) {
     var key, keys = {};
     for (var z in original) keys[z.split(':')[0]] = z;
@@ -2501,14 +2501,14 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
       }
     }
   }
-  
+
   var uniqueMixinCount = 0;
   function addMixin(tag, original, mixin){
     for (var z in mixin){
       original[z + ':__mixin__(' + (uniqueMixinCount++) + ')'] = xtag.applyPseudos(z, mixin[z], tag.pseudos);
     }
   }
-  
+
   function resolveMixins(mixins, output){
     var index = mixins.length;
     while (index--){
@@ -2517,7 +2517,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
     }
     return output;
   }
-  
+
   function applyMixins(tag) {
     resolveMixins(tag.mixins, []).forEach(function(name){
       var mixin = xtag.mixins[name];
@@ -2535,7 +2535,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
                 if (!original[z]) original[z] = item[z];
                 else mergeMixin(tag, original[z], item[z], name);
               }
-              break;             
+              break;
             default: mergeMixin(tag, original, item, name);
           }
         }
@@ -2594,7 +2594,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
       while (index--) nodes[index][method](name, value);
     }
   }
-  
+
   function attachProperties(tag, prop, z, accessor, attr, name){
     var key = z.split(':'), type = key[0];
     if (type == 'get') {
@@ -2691,7 +2691,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
       var basePrototype = options.prototype;
       delete options.prototype;
       var tag = xtag.tags[_name].compiled = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
-      
+
       for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
@@ -2710,9 +2710,10 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
           var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
-                hasAttr = this.hasAttribute(name);
-            if (hasAttr || attr.boolean) {
-              this[attr.key] = attr.boolean ? hasAttr : this.getAttribute(name);
+                hasAttr = this.hasAttribute(name),
+                hasDefault = attr.def !== undefined;
+            if (hasAttr || attr.boolean || hasDefault) {
+              this[attr.key] = attr.boolean ? hasAttr : !hasAttr && hasDefault ? attr.def : this.getAttribute(name);
             }
           }
           tag.pseudos.forEach(function(obj){
@@ -2846,7 +2847,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
         attach: ['pointerdown', 'pointerup'],
         condition: function(event, custom){
           if (event.type == 'pointerdown') {
-            if (!custom.moveListener) custom.moveListener = xtag.addEvent(this, 'pointermove', custom.listener);    
+            if (!custom.moveListener) custom.moveListener = xtag.addEvent(this, 'pointermove', custom.listener);
           }
           else if (event.type == 'pointerup') {
             xtag.removeEvent(this, custom.moveListener);
@@ -2862,7 +2863,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
             (custom.pointers = custom.pointers || {})[event.pointerId] = setTimeout(
               xtag.fireEvent.bind(null, this, 'taphold'),
               custom.duration || 1000
-            );   
+            );
           }
           else if (event.type == 'pointerup') {
             if (custom.pointers) {
@@ -2883,7 +2884,7 @@ var HANDJS=HANDJS||{};!function(){function e(){b=!0,clearTimeout(M),M=setTimeout
             case null: case '': case 'before': return function(){
               mixin.apply(this, arguments);
               return fn.apply(this, arguments);
-            }; 
+            };
             case 'after': return function(){
               var returns = fn.apply(this, arguments);
               mixin.apply(this, arguments);

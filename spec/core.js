@@ -99,6 +99,7 @@ describe("x-tag ", function () {
         bar = 0,
         baz = 0,
         zoo = 0;
+        def = 0;
 
     xtag.register('x-attr', {
       lifecycle: {
@@ -132,6 +133,12 @@ describe("x-tag ", function () {
           attribute: { boolean: true },
           set: function (value){
             zoo++;
+          }
+        },
+        defAttr: {
+          attribute: { def: 'seahawks' },
+          set: function (value){
+            def++;
           }
         }
       }
@@ -184,7 +191,9 @@ describe("x-tag ", function () {
       expect(el.zoo).toEqual(true);
       expect(el.getAttribute('zoo')).toEqual('');
 
-      expect(foo == 6 && bar == 7 && baz == 6 && zoo == 7).toEqual(true);
+      expect(el.defAttr).toEqual('seahawks');
+
+      expect(foo == 6 && bar == 7 && baz == 6 && zoo == 7 && def == 1).toEqual(true);
     });
   });
 
