@@ -44,8 +44,7 @@
         js: pre == 'ms' ? pre : pre[0].toUpperCase() + pre.substr(1)
       };
     })(),
-    matchSelector = Element.prototype.matches || Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'],
-    mutation = win.MutationObserver || win[prefix.js + 'MutationObserver'];
+    matchSelector = Element.prototype.matches || Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'];
 
 /*** Functions ***/
 
@@ -95,23 +94,6 @@
   var str = '';
   function query(element, selector){
     return (selector || str).length ? toArray(element.querySelectorAll(selector)) : [];
-  }
-
-  function parseMutations(element, mutations) {
-    var diff = { added: [], removed: [] };
-    mutations.forEach(function(record){
-      record._mutation = true;
-      for (var z in diff) {
-        var type = element._records[(z == 'added') ? 'inserted' : 'removed'],
-          nodes = record[z + 'Nodes'], length = nodes.length;
-        for (var i = 0; i < length && diff[z].indexOf(nodes[i]) == -1; i++){
-          diff[z].push(nodes[i]);
-          type.forEach(function(fn){
-            fn(nodes[i], record);
-          });
-        }
-      }
-    });
   }
 
 // Pseudos
@@ -545,17 +527,6 @@
       delegate: {
         action: delegateAction
       },
-      within: {
-        action: delegateAction,
-        onAdd: function(pseudo){
-          var condition = pseudo.source.condition;
-          if (condition) pseudo.source.condition = function(event, custom){
-            return xtag.query(this, pseudo.value).filter(function(node){
-              return node == event.target || node.contains ? node.contains(event.target) : null;
-            })[0] ? condition.call(this, event, custom) : null;
-          };
-        }
-      },
       preventable: {
         action: function (pseudo, event) {
           return !event.defaultPrevented;
@@ -681,19 +652,12 @@
     */
     queryChildren: function (element, selector) {
       var id = element.id,
-        guid = element.id = id || 'x_' + xtag.uid(),
-        attr = '#' + guid + ' > ',
-        noParent = false;
-      if (!element.parentNode){
-        noParent = true;
-        container.appendChild(element);
-      }
+          attr = '#' + (element.id = id || 'x_' + xtag.uid()) + ' > ',
+          parent = element.parentNode || !container.appendChild(element);
       selector = attr + (selector + '').replace(',', ',' + attr, 'g');
       var result = element.parentNode.querySelectorAll(selector);
       if (!id) element.removeAttribute('id');
-      if (noParent){
-        container.removeChild(element);
-      }
+      if (!parent) container.removeChild(element);
       return toArray(result);
     },
     /*
@@ -881,44 +845,6 @@
       );
       if (options.baseEvent) inheritEvent(event, options.baseEvent);
       element.dispatchEvent(event);
-    },
-
-    /*
-      Listens for insertion or removal of nodes from a given element using
-      Mutation Observers, or Mutation Events as a fallback
-    */
-    addObserver: function(element, type, fn){
-      if (!element._records) {
-        element._records = { inserted: [], removed: [] };
-        if (mutation){
-          element._observer = new mutation(function(mutations) {
-            parseMutations(element, mutations);
-          });
-          element._observer.observe(element, {
-            subtree: true,
-            childList: true,
-            attributes: !true,
-            characterData: false
-          });
-        }
-        else ['Inserted', 'Removed'].forEach(function(type){
-          element.addEventListener('DOMNode' + type, function(event){
-            event._mutation = true;
-            element._records[type.toLowerCase()].forEach(function(fn){
-              fn(event.target, event);
-            });
-          }, false);
-        });
-      }
-      if (element._records[type].indexOf(fn) == -1) element._records[type].push(fn);
-    },
-
-    removeObserver: function(element, type, fn){
-      var obj = element._records;
-      if (obj && fn){
-        obj[type].splice(obj[type].indexOf(fn), 1);
-      }
-      else obj[type] = [];
     }
 
   };
