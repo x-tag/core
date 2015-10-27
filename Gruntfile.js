@@ -42,7 +42,7 @@ module.exports = function (grunt) {
         src:[
           'lib/DOMTokenList.js',
           'lib/webcomponents-lite.js',
-          'lib/hand.base.min.js',
+          'lib/pep.min.js',
           'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'
@@ -51,7 +51,7 @@ module.exports = function (grunt) {
         src:[
         'lib/DOMTokenList.js',
         'lib/webcomponents.js',
-        'lib/hand.base.min.js',
+        'lib/pep.min.js',
         'src/core.js'
         ],
         dest: 'dist/x-tag-core.js'
