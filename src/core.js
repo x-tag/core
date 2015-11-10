@@ -8,6 +8,7 @@
       setAttribute: Element.prototype.setAttribute,
       removeAttribute: Element.prototype.removeAttribute
     },
+    cleanDoc = document.createElement('template').content.ownerDocument,
     hasShadow = Element.prototype.createShadowRoot,
     container = doc.createElement('div'),
     noop = function(){},
@@ -329,8 +330,8 @@
         enumerable: true,
         value: function(){
           var element = this;
-          if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(tag.shadow.cloneNode(true));
-          if (tag.content) this.appendChild(tag.content.cloneNode(true));
+          if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(xtag.importClone(tag.shadow));
+          if (tag.content) this.appendChild(xtag.importClone(tag.content));
           xtag.addEvents(this, tag.events);
           var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
@@ -658,21 +659,25 @@
       if (!parent) container.removeChild(element);
       return toArray(result);
     },
+
     /*
       Creates a document fragment with the content passed in - content can be
       a string of HTML, an element, or an array/collection of elements
     */
     createFragment: function(content) {
-      var frag = doc.createDocumentFragment();
+      var frag = cleanDoc.createDocumentFragment();
       if (content) {
-        var div = frag.appendChild(doc.createElement('div')),
-          nodes = toArray(content.nodeName ? arguments : !(div.innerHTML = typeof content == 'function' ? parseMultiline(content) : content) || div.children),
-          length = nodes.length,
-          index = 0;
-        while (index < length) frag.insertBefore(nodes[index++], div);
-        frag.removeChild(div);
+        if (content.content) return content.content;
+        var div = cleanDoc.createElement('div');
+        toArray((div.innerHTML = typeof content == 'function' ? parseMultiline(content) : content) && div.childNodes).forEach(function(node){
+          frag.appendChild(node);
+        });
       }
       return frag;
+    },
+
+    importClone: function(node){
+      return document.importNode(node.cloneNode(true), true);
     },
 
     /*
