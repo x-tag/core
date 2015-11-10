@@ -284,7 +284,7 @@
 
   var unwrapComment = /\/\*!?(?:\@preserve)?[ \t]*(?:\r\n|\n)([\s\S]*?)(?:\r\n|\n)\s*\*\//;
   function parseMultiline(fn){
-    return unwrapComment.exec(fn.toString())[1];
+    return typeof fn == 'function' ? unwrapComment.exec(fn.toString())[1] : fn;
   }
 
 /*** X-Tag Object Definition ***/
@@ -323,15 +323,15 @@
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
-      tag.shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
-      tag.content = tag.content ? xtag.createFragment(tag.content) : null;
+      if (tag.shadow) tag.shadow = xtag.createFragment(tag.shadow);
+      if (tag.content) tag.content = parseMultiline(tag.content);
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
-          if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(xtag.importClone(tag.shadow));
-          if (tag.content) this.appendChild(xtag.importClone(tag.content));
+          if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(tag.shadow.cloneNode(true));
+          if (tag.content) this.appendChild(document.createElement('div')).outerHTML = tag.content;
           xtag.addEvents(this, tag.events);
           var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
@@ -667,17 +667,13 @@
     createFragment: function(content) {
       var frag = cleanDoc.createDocumentFragment();
       if (content) {
-        if (content.content) return content.content;
-        var div = cleanDoc.createElement('div');
-        toArray((div.innerHTML = typeof content == 'function' ? parseMultiline(content) : content) && div.childNodes).forEach(function(node){
+        var div = frag.appendChild(cleanDoc.createElement('div'));
+        toArray((div.innerHTML = parseMultiline(content)) && div.childNodes).forEach(function(node){
           frag.appendChild(node);
         });
+        frag.removeChild(div);
       }
       return frag;
-    },
-
-    importClone: function(node){
-      return document.importNode(node.cloneNode(true), true);
     },
 
     /*
@@ -686,11 +682,9 @@
     */
     manipulate: function(element, fn){
       var next = element.nextSibling,
-        parent = element.parentNode,
-        frag = doc.createDocumentFragment(),
-        returned = fn.call(frag.appendChild(element), frag) || element;
-      if (next) parent.insertBefore(returned, next);
-      else parent.appendChild(returned);
+          parent = element.parentNode,
+          returned = fn.call(element) || element;
+      next ? parent.insertBefore(returned, next) : parent.appendChild(returned);
     },
 
     /* PSEUDOS */
