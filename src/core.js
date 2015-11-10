@@ -8,7 +8,6 @@
       setAttribute: Element.prototype.setAttribute,
       removeAttribute: Element.prototype.removeAttribute
     },
-    cleanDoc = document.createElement('template').content.ownerDocument,
     hasShadow = Element.prototype.createShadowRoot,
     container = doc.createElement('div'),
     noop = function(){},
@@ -323,8 +322,8 @@
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
-      if (tag.shadow) tag.shadow = xtag.createFragment(tag.shadow);
-      if (tag.content) tag.content = parseMultiline(tag.content);
+      if (tag.shadow) tag.shadow = tag.shadow.nodeName ? tag.shadow : xtag.createFragment(tag.shadow);
+      if (tag.content) tag.content = tag.content.nodeName ? tag.content.innerHTML : parseMultiline(tag.content);
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
@@ -665,15 +664,14 @@
       a string of HTML, an element, or an array/collection of elements
     */
     createFragment: function(content) {
-      var frag = cleanDoc.createDocumentFragment();
+      var template = document.createElement('template');
       if (content) {
-        var div = frag.appendChild(cleanDoc.createElement('div'));
-        toArray((div.innerHTML = parseMultiline(content)) && div.childNodes).forEach(function(node){
-          frag.appendChild(node);
+        if (content.nodeName) toArray(arguments).forEach(function(e){
+          template.content.appendChild(e)
         });
-        frag.removeChild(div);
+        else template.innerHTML = parseMultiline(content);
       }
-      return frag;
+      return template.content;
     },
 
     /*
