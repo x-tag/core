@@ -760,15 +760,9 @@
           }, custom || {});
       event.attach = toArray(event.base || event.attach);
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
-      var condition = event.condition;
-      event.condition = function(e){
-        var t = e.touches, tt = e.targetTouches;
-        return condition.apply(this, arguments);
-      };
       var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
       event.stack = function(e){
         e.currentTarget = e.currentTarget || this;
-        var t = e.touches, tt = e.targetTouches;
         var detail = e.detail || {};
         if (!detail.__stack__) return stack.apply(this, arguments);
         else if (detail.__stack__ == stack) {
