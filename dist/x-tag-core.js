@@ -4190,7 +4190,7 @@ if (typeof HTMLTemplateElement === "undefined") {
 
   var unwrapComment = /\/\*!?(?:\@preserve)?[ \t]*(?:\r\n|\n)([\s\S]*?)(?:\r\n|\n)\s*\*\//;
   function parseMultiline(fn){
-    return unwrapComment.exec(fn.toString())[1];
+    return typeof fn == 'function' ? unwrapComment.exec(fn.toString())[1] : fn;
   }
 
 /*** X-Tag Object Definition ***/
@@ -4229,15 +4229,15 @@ if (typeof HTMLTemplateElement === "undefined") {
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
-      tag.shadow = tag.shadow ? xtag.createFragment(tag.shadow) : null;
-      tag.content = tag.content ? xtag.createFragment(tag.content) : null;
+      if (tag.shadow) tag.shadow = tag.shadow.nodeName ? tag.shadow : xtag.createFragment(tag.shadow);
+      if (tag.content) tag.content = tag.content.nodeName ? tag.content.innerHTML : parseMultiline(tag.content);
       var ready = tag.lifecycle.created || tag.lifecycle.ready;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
           if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(tag.shadow.cloneNode(true));
-          if (tag.content) this.appendChild(tag.content.cloneNode(true));
+          if (tag.content) this.appendChild(document.createElement('div')).outerHTML = tag.content;
           xtag.addEvents(this, tag.events);
           var output = ready ? ready.apply(this, arguments) : null;
           for (var name in tag.attributes) {
@@ -4565,21 +4565,20 @@ if (typeof HTMLTemplateElement === "undefined") {
       if (!parent) container.removeChild(element);
       return toArray(result);
     },
+
     /*
       Creates a document fragment with the content passed in - content can be
       a string of HTML, an element, or an array/collection of elements
     */
     createFragment: function(content) {
-      var frag = doc.createDocumentFragment();
+      var template = document.createElement('template');
       if (content) {
-        var div = frag.appendChild(doc.createElement('div')),
-          nodes = toArray(content.nodeName ? arguments : !(div.innerHTML = typeof content == 'function' ? parseMultiline(content) : content) || div.children),
-          length = nodes.length,
-          index = 0;
-        while (index < length) frag.insertBefore(nodes[index++], div);
-        frag.removeChild(div);
+        if (content.nodeName) toArray(arguments).forEach(function(e){
+          template.content.appendChild(e)
+        });
+        else template.innerHTML = parseMultiline(content);
       }
-      return frag;
+      return template.content;
     },
 
     /*
@@ -4588,11 +4587,9 @@ if (typeof HTMLTemplateElement === "undefined") {
     */
     manipulate: function(element, fn){
       var next = element.nextSibling,
-        parent = element.parentNode,
-        frag = doc.createDocumentFragment(),
-        returned = fn.call(frag.appendChild(element), frag) || element;
-      if (next) parent.insertBefore(returned, next);
-      else parent.appendChild(returned);
+          parent = element.parentNode,
+          returned = fn.call(element) || element;
+      next ? parent.insertBefore(returned, next) : parent.appendChild(returned);
     },
 
     /* PSEUDOS */
@@ -4668,15 +4665,9 @@ if (typeof HTMLTemplateElement === "undefined") {
           }, custom || {});
       event.attach = toArray(event.base || event.attach);
       event.chain = key + (event.pseudos.length ? ':' + event.pseudos : '') + (pseudos.length ? ':' + pseudos.join(':') : '');
-      var condition = event.condition;
-      event.condition = function(e){
-        var t = e.touches, tt = e.targetTouches;
-        return condition.apply(this, arguments);
-      };
       var stack = xtag.applyPseudos(event.chain, fn, event._pseudos, event);
       event.stack = function(e){
         e.currentTarget = e.currentTarget || this;
-        var t = e.touches, tt = e.targetTouches;
         var detail = e.detail || {};
         if (!detail.__stack__) return stack.apply(this, arguments);
         else if (detail.__stack__ == stack) {
