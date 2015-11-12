@@ -324,7 +324,7 @@
 
       if (tag.shadow) tag.shadow = tag.shadow.nodeName ? tag.shadow : xtag.createFragment(tag.shadow);
       if (tag.content) tag.content = tag.content.nodeName ? tag.content.innerHTML : parseMultiline(tag.content);
-      var ready = tag.lifecycle.created || tag.lifecycle.ready;
+      var created = tag.lifecycle.created;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
@@ -332,7 +332,7 @@
           if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(tag.shadow.cloneNode(true));
           if (tag.content) this.appendChild(document.createElement('div')).outerHTML = tag.content;
           xtag.addEvents(this, tag.events);
-          var output = ready ? ready.apply(this, arguments) : null;
+          var output = created ? created.apply(this, arguments) : null;
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
                 hasAttr = this.hasAttribute(name),
@@ -344,6 +344,7 @@
           tag.pseudos.forEach(function(obj){
             obj.onAdd.call(element, obj);
           });
+          this.xtagComponentReady = true;
           return output;
         }
       };
