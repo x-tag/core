@@ -669,7 +669,7 @@
       var template = document.createElement('template');
       if (content) {
         if (content.nodeName) toArray(arguments).forEach(function(e){
-          template.content.appendChild(e)
+          template.content.appendChild(e);
         });
         else template.innerHTML = parseMultiline(content);
       }
