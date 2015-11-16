@@ -2,7 +2,7 @@
 
 [![Bower version](https://badge.fury.io/bo/x-tag-core.svg)](http://badge.fury.io/bo/x-tag-core)
 
-[![Build Status](https://travis-ci.org/x-tag/core.png)](https://travis-ci.org/x-tag/core)
+[![NPM version](https://badge.fury.io/js/x-tag.svg)](https://badge.fury.io/js/x-tag)
 
 **This is the repository for the core [X-Tag](http://x-tags.org) library.**
 
