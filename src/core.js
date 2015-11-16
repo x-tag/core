@@ -184,7 +184,7 @@
   }
 
   function touchFilter(event){
-    return event.button == 0;
+    return event.button === 0;
   }
 
   function writeProperty(key, event, base, desc){
@@ -307,12 +307,11 @@
       }
     },
     register: function (name, options) {
-      if (typeof name == 'string') {
-        var _name = name.toLowerCase();
-      }
-      else return;
+      var _name;
+      if (typeof name == 'string') _name = name.toLowerCase();
+      else throw 'First argument must be a Custom Element string name';
       xtag.tags[_name] = options || {};
-      // save prototype for actual object creation below
+
       var basePrototype = options.prototype;
       delete options.prototype;
       var tag = xtag.tags[_name].compiled = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
@@ -456,7 +455,7 @@
             custom.startX = event.clientX;
             custom.startY = event.clientY;
           }
-          else if (event.button == 0 &&
+          else if (event.button === 0 &&
                    Math.abs(custom.startX - event.clientX) < 10 &&
                    Math.abs(custom.startY - event.clientY) < 10) return true;
         }
@@ -532,7 +531,9 @@
         }
       },
       duration: {
-        onAdd: function(pseudo){ pseudo.source.duration = Number(pseudo.value) }
+        onAdd: function(pseudo){
+          pseudo.source.duration = Number(pseudo.value);
+        }
       },
       capture: {
         onCompiled: function(fn, pseudo){
@@ -683,7 +684,8 @@
       var next = element.nextSibling,
           parent = element.parentNode,
           returned = fn.call(element) || element;
-      next ? parent.insertBefore(returned, next) : parent.appendChild(returned);
+      if (next) parent.insertBefore(returned, next);
+      else parent.appendChild(returned);
     },
 
     /* PSEUDOS */
