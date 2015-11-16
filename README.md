@@ -4,8 +4,6 @@
 
 [![Build Status](https://travis-ci.org/x-tag/core.png)](https://travis-ci.org/x-tag/core)
 
-[![Selenium Test Status](https://saucelabs.com/browser-matrix/aschaar.svg)](https://saucelabs.com/u/aschaar)
-
 **This is the repository for the core [X-Tag](http://x-tags.org) library.**
 
 X-Tag is a Microsoft supported, open source, JavaScript library that wraps the W3C standard Web Components family of APIs to provide a compact, feature-rich interface for rapid component development. While X-Tag offers feature hooks for all Web Component APIs (Custom Elements, Shadow DOM, Templates, and HTML Imports), it only requires [Custom Element][1] support to operate. In the absence of native Custom Element support, X-Tag uses a set of polyfills shared with Google's Polymer framework.
