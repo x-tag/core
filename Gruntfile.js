@@ -38,6 +38,10 @@ module.exports = function (grunt) {
       }
     },
     concat: {
+      raw:{
+        src:['src/core.js'],
+        dest: 'dist/x-tag-no-polyfills.js'
+      },
       core:{
         src:[
           'lib/DOMTokenList.js',
@@ -47,20 +51,30 @@ module.exports = function (grunt) {
         ],
         dest: 'dist/x-tag-core.js'
       },
-      'core-full':{
+      full:{
         src:[
         'lib/DOMTokenList.js',
         'lib/webcomponents.js',
         'lib/pep.js',
         'src/core.js'
         ],
-        dest: 'dist/x-tag-core.js'
+        dest: 'dist/x-tag-core-with-shadowdom.js'
       }
     },
     uglify: {
-      all: {
-        files :{
+      raw: {
+        files: {
+          'dist/x-tag-no-polyfills.min.js': ['src/core.js']
+        }
+      },
+      core: {
+        files: {
           'dist/x-tag-core.min.js': ['dist/x-tag-core.js']
+        }
+      },
+      full: {
+        files: {
+          'dist/x-tag-core-with-shadowdom.min.js': ['dist/x-tag-core-with-shadowdom.js']
         }
       }
     },
@@ -116,6 +130,6 @@ module.exports = function (grunt) {
   // Default task.
   grunt.registerTask('default', ['test']);
   grunt.registerTask('test', ['jshint','connect:test', 'saucelabs-jasmine']);
-  grunt.registerTask('compress', ['concat:core','uglify']);
-  grunt.registerTask('build', ['concat:core','uglify']);
+  grunt.registerTask('compress', ['concat:raw', 'concat:core', 'concat:full']);
+  grunt.registerTask('build', ['concat:raw', 'concat:core', 'concat:full', 'uglify']);
 };
