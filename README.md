@@ -8,7 +8,7 @@
 
 X-Tag is a Microsoft supported, open source, JavaScript library that wraps the W3C standard Web Components family of APIs to provide a compact, feature-rich interface for rapid component development. While X-Tag offers feature hooks for all Web Component APIs (Custom Elements, Shadow DOM, Templates, and HTML Imports), it only requires [Custom Element][1] support to operate. In the absence of native Custom Element support, X-Tag uses a set of polyfills shared with Google's Polymer framework.
 
-You can find out more about what X-Tag does, where it works, and how to use it, on the project page: [x-tag.github.io/](http://x-tag.github.io/).
+You can find out more about what X-Tag does, where it works, and how to use it, on the project page: [x-tag.github.io](http://x-tag.github.io/).
 
   [1]: https://dvcs.w3.org/hg/webcomponents/raw-file/tip/explainer/index.html       "W3 Web Components Spec (Draft)"
 
@@ -64,7 +64,7 @@ and both `x-tag-core.js` and `x-tag-core.min.js` will be rebuilt and placed in t
 
 ## Creating your own web components
 
-To learn more about X-Tags visit [x-tag.github.io/](http://x-tag.github.io/).
+To learn more about X-Tags visit [x-tag.github.io](http://x-tag.github.io/).
 
 To create your own component, use our [web-component-stub](https://github.com/x-tag/web-component-stub).
 
