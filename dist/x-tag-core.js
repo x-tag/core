@@ -3352,7 +3352,7 @@ if (typeof HTMLTemplateElement === "undefined") {
           inEvent.buttons = e.buttons;
         }
         mouse__pointermap.set(this.POINTER_ID, inEvent);
-        if (e.buttons === 0) {
+        if (e.buttons === 0 || e.buttons === BUTTON_TO_BUTTONS[e.button]) {
           this.cleanupMouse();
           _dispatcher.up(e);
         } else {
@@ -3905,6 +3905,7 @@ if (typeof HTMLTemplateElement === "undefined") {
   return pointerevents;
 
 }));
+
 (function () {
 
 /*** Variables ***/
