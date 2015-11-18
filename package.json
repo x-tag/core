@@ -10,6 +10,7 @@
   "scripts": {
     "test": "grunt test"
   },
+  "main": "src/core.js",
   "devDependencies": {
     "grunt": "~0.4.0",
     "grunt-cli": "0.1.13",
