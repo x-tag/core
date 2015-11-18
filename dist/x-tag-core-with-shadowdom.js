@@ -8648,6 +8648,7 @@ window.CustomElements.addModule(function(scope) {
     container = doc.createElement('div'),
     noop = function(){},
     trueop = function(){ return true; },
+    regexReplaceCommas = /,/g,
     regexCamelToDash = /([a-z])([A-Z])/g,
     regexPseudoParens = /\(|\)/g,
     regexPseudoCapture = /:(\w+)\u276A(.+?(?=\u276B))|:(\w+)/g,
@@ -9290,7 +9291,7 @@ window.CustomElements.addModule(function(scope) {
       var id = element.id,
           attr = '#' + (element.id = id || 'x_' + xtag.uid()) + ' > ',
           parent = element.parentNode || !container.appendChild(element);
-      selector = attr + (selector + '').replace(',', ',' + attr, 'g');
+      selector = attr + (selector + '').replace(regexReplaceCommas, ',' + attr);
       var result = element.parentNode.querySelectorAll(selector);
       if (!id) element.removeAttribute('id');
       if (!parent) container.removeChild(element);
