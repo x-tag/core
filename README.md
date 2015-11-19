@@ -1,4 +1,4 @@
-# X-Tag - Custom Elements for Modern Browsers
+# X-Tag - Rocket fuel for component development
 
 [![Bower version](https://badge.fury.io/bo/x-tag-core.svg)](http://badge.fury.io/bo/x-tag-core)
 
