@@ -325,14 +325,15 @@
       if (tag.shadow) tag.shadow = tag.shadow.nodeName ? tag.shadow : xtag.createFragment(tag.shadow);
       if (tag.content) tag.content = tag.content.nodeName ? tag.content.innerHTML : parseMultiline(tag.content);
       var created = tag.lifecycle.created;
+      var finalized = tag.lifecycle.finalized;
       tag.prototype.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
           if (tag.shadow && hasShadow) this.createShadowRoot().appendChild(tag.shadow.cloneNode(true));
           if (tag.content) this.appendChild(document.createElement('div')).outerHTML = tag.content;
-          xtag.addEvents(this, tag.events);
           var output = created ? created.apply(this, arguments) : null;
+          xtag.addEvents(this, tag.events);
           for (var name in tag.attributes) {
             var attr = tag.attributes[name],
                 hasAttr = this.hasAttribute(name),
@@ -345,6 +346,7 @@
             obj.onAdd.call(element, obj);
           });
           this.xtagComponentReady = true;
+          if (finalized) finalized.apply(this, arguments);
           return output;
         }
       };
@@ -842,8 +844,9 @@
 
   };
 
-  win.xtag = xtag;
-  if (typeof define == 'function' && define.amd) define(xtag);
+  if (typeof define === 'function' && define.amd) define(xtag);
+  else if (typeof module !== 'undefined' && module.exports) module.exports = xtag;
+  else win.xtag = xtag;
 
   doc.addEventListener('WebComponentsReady', function(){
     xtag.fireEvent(doc.body, 'DOMComponentsLoaded');

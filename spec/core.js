@@ -197,7 +197,39 @@ describe("x-tag ", function () {
     });
   });
 
-  it('should fire attributeChanged any attributes are updated', function(){
+  it('should set the default value when provided', function(){
+
+    var valueOnCreate, valueOnAccess;
+
+    xtag.register('x-set-default-value', {
+      lifecycle: {
+        finalized: function(){
+          valueOnCreate = this.foo;
+        }
+      },
+      accessors: {
+        foo: {
+          attribute: {
+            def: 5
+          }
+        }
+      }
+    });
+
+    var node = document.createElement('x-set-default-value');
+    valueOnAccess = node.foo;
+
+    waitsFor(function(){
+      return valueOnCreate && valueOnAccess;
+    });
+
+    runs(function (){
+      expect(valueOnCreate == 5).toEqual(true);
+      expect(valueOnAccess == 5).toEqual(true);
+    });
+  });
+
+  it('should fire attributeChanged when attributes are updated', function(){
 
     var attributeChanged = false;
 
