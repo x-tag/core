@@ -676,7 +676,7 @@
         });
         else template.innerHTML = parseMultiline(content);
       }
-      return template.content;
+      return document.importNode(template.content, true);
     },
 
     /*
