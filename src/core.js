@@ -368,8 +368,13 @@
           return output;
         }, enumerable: true };
       }
-      if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
-
+      if (tag.lifecycle.attributeChanged) {
+        tag.prototype.attributeChangedCallback = { value: function(name, old, value){
+          var attr = tag.attributes[name.toLowerCase()];
+          if (attr && attr.sync) attr.setter.call(this, attr.boolean ? value !== null : value, old);
+          tag.lifecycle.attributeChanged.call(this, name, old, value);
+        }, enumerable: true };
+      }
       tag.prototype.setAttribute = {
         writable: true,
         enumerable: true,
