@@ -205,6 +205,10 @@
       if (!skipProps[z]) writeProperty(z, event, base, desc);
     }
     event.baseEvent = base;
+    // https://developer.mozilla.org/en/docs/Web/API/Event/preventDefault
+    event.preventDefault = base.preventDefault.bind( base );
+    // https://developer.mozilla.org/en/docs/Web/API/Event/stopPropagation
+    event.stopPropaggation = base.preventDefault.bind( base );
   }
 
 // Accessors
