@@ -4333,20 +4333,19 @@ window.CustomElements.addModule(function(scope) {
         }
       };
 
-      var elementProto = basePrototype ?
-            basePrototype :
-            tag['extends'] ?
-            Object.create(doc.createElement(tag['extends']).constructor).prototype :
-            win.HTMLElement.prototype;
-
-      var definition = {
-        'prototype': Object.create(elementProto, tag.prototype)
-      };
-      if (tag['extends']) {
-        definition['extends'] = tag['extends'];
-      }
-      var reg = doc.registerElement(_name, definition);
-      return reg;
+      var extended = tag['extends'];
+      var elementProto = win.HTMLElement.prototype;
+      return doc.registerElement(_name, {
+        'extends': extended,
+        'prototype': extended ?
+                        Object.create(
+                          Object.create(doc.createElement(extended).constructor).prototype,
+                          tag.prototype
+                        ) :
+                        basePrototype instanceof elementProto.constructor ?
+                          basePrototype :
+                          Object.create(elementProto, tag.prototype)
+      });
     },
 
     /* Exposed Variables */
