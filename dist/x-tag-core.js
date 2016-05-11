@@ -4334,7 +4334,9 @@ window.CustomElements.addModule(function(scope) {
       };
 
       var extended = tag['extends'];
-      var elementProto = win.HTMLElement.prototype;
+      if (basePrototype) {
+        for (var z in basePrototype) tag.prototype[z] = basePrototype[z];
+      }
       return doc.registerElement(_name, {
         'extends': extended,
         'prototype': extended ?
@@ -4342,9 +4344,7 @@ window.CustomElements.addModule(function(scope) {
                           Object.create(doc.createElement(extended).constructor).prototype,
                           tag.prototype
                         ) :
-                        basePrototype instanceof elementProto.constructor ?
-                          basePrototype :
-                          Object.create(elementProto, tag.prototype)
+                        Object.create(win.HTMLElement.prototype, tag.prototype)
       });
     },
 
