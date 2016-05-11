@@ -9131,9 +9131,9 @@ window.CustomElements.addModule(function(scope) {
       return doc.registerElement(_name, {
         'extends': extended,
         'prototype': Object.create(
-                      extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
-                      tag.prototype
-                    )
+          extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
+          tag.prototype
+        )
       });
     },
 
