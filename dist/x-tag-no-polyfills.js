@@ -410,12 +410,10 @@
       }
       return doc.registerElement(_name, {
         'extends': extended,
-        'prototype': extended ?
-                        Object.create(
-                          Object.create(doc.createElement(extended).constructor).prototype,
-                          tag.prototype
-                        ) :
-                        Object.create(win.HTMLElement.prototype, tag.prototype)
+        'prototype': Object.create(
+                      extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
+                      tag.prototype
+                    )
       });
     },
 
