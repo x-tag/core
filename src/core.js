@@ -408,13 +408,19 @@
       if (basePrototype) {
         for (var z in basePrototype) tag.prototype[z] = basePrototype[z];
       }
-      return doc.registerElement(_name, {
-        'extends': extended,
+
+      var definition = {
         'prototype': Object.create(
           extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
           tag.prototype
         )
-      });
+      };
+
+      if (extended) {
+        definition.extends = extended;
+      }
+      
+      return doc.registerElement(_name, definition);
     },
 
     /* Exposed Variables */
