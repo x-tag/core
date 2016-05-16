@@ -1288,6 +1288,20 @@ describe("x-tag ", function () {
 
     });
 
+    it('should allow an inherited custom element prototype to be used', function(){
+        var CompA = xtag.register('comp-a', {
+        	methods: {
+        		sayHi: function () {
+        			console.log('hi');
+        		}
+        	}
+        });
+
+        var CompB = xtag.register('comp-b', {
+        	prototype: CompA.prototype
+        });
+    });
+
     it('should be able to extend existing elements', function(){
       xtag.register("x-foo-extend", {
         extends: 'input'
