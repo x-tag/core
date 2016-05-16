@@ -9124,17 +9124,18 @@ window.CustomElements.addModule(function(scope) {
         }
       };
 
-      var extended = tag['extends'];
       if (basePrototype) {
         for (var z in basePrototype) tag.prototype[z] = basePrototype[z];
       }
-      return doc.registerElement(_name, {
-        'extends': extended,
-        'prototype': Object.create(
-          extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
-          tag.prototype
-        )
-      });
+
+      var definition = {};
+      var extended = tag['extends'];
+      if (extended) definition['extends'] = extended;
+      definition['prototype'] = Object.create(
+        extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
+        tag.prototype
+      )
+      return doc.registerElement(_name, definition);
     },
 
     /* Exposed Variables */
