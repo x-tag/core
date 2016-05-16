@@ -404,19 +404,19 @@
         }
       };
 
-      var baked = basePrototype instanceof HTMLElement;
+      var definition = {};
+      var instance = basePrototype instanceof win.HTMLElement;
+      var extended = tag['extends'] && (definition['extends'] = tag['extends']);
 
-      if (basePrototype && !baked) {
+      if (basePrototype && !instance) {
         for (var z in basePrototype) tag.prototype[z] = basePrototype[z];
       }
 
-      var definition = {};
-      var extended = tag['extends'];
-      if (extended) definition['extends'] = extended;
       definition['prototype'] = Object.create(
-        extended ? Object.create(doc.createElement(extended).constructor).prototype : baked ? basePrototype : win.HTMLElement.prototype,
+        extended ? Object.create(doc.createElement(extended).constructor).prototype : instance ? basePrototype : win.HTMLElement.prototype,
         tag.prototype
       )
+
       return doc.registerElement(_name, definition);
     },
 
