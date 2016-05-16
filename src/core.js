@@ -404,7 +404,9 @@
         }
       };
 
-      if (basePrototype) {
+      var baked = basePrototype instanceof HTMLElement;
+
+      if (basePrototype && !baked) {
         for (var z in basePrototype) tag.prototype[z] = basePrototype[z];
       }
 
@@ -412,7 +414,7 @@
       var extended = tag['extends'];
       if (extended) definition['extends'] = extended;
       definition['prototype'] = Object.create(
-        extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
+        extended ? Object.create(doc.createElement(extended).constructor).prototype : baked ? basePrototype : win.HTMLElement.prototype,
         tag.prototype
       )
       return doc.registerElement(_name, definition);
