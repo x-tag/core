@@ -1343,6 +1343,63 @@ describe("x-tag ", function () {
       expect(elementA2.firstElementChild.nodeName.toLowerCase()).toEqual('span');
       expect(elementB2.firstElementChild.nodeName.toLowerCase()).toEqual('span');
     });
+    
+    it('should propagate mixins', function(){
+      xtag.mixins.test = {
+        methods: {
+          someTestFunction: function () {
+            
+          }
+        }
+      };
+      
+      var CompA3 = xtag.register('comp-a3', {
+        mixins: ['test']
+      });
+      
+      var CompB3 = xtag.register('comp-b3', {
+        prototype: CompA3.prototype
+      });
+      
+      var elementA3 = document.createElement('comp-a3');
+      var elementB3 = document.createElement('comp-b3');
+      expect(elementA3.someTestFunction).toBeDefined();
+      expect(elementB3.someTestFunction).toBeDefined();
+    });
+    
+    it('should propagate multiple mixins', function(){
+      xtag.mixins.test = {
+        methods: {
+          someTestFunction: function () {
+            
+          }
+        }
+      };
+      xtag.mixins.test1 = {
+        methods: {
+          someTestFunction1: function () {
+            
+          }
+        }
+      };
+      
+      var CompA4 = xtag.register('comp-a4', {
+        mixins: ['test', 'test1']
+      });
+      
+      var CompB4 = xtag.register('comp-b4', {
+        prototype: CompA4.prototype
+      });
+      
+      var elementA4 = document.createElement('comp-a4');
+      var elementB4 = document.createElement('comp-b4');
+      expect(elementA4.someTestFunction).toBeDefined();
+      expect(elementB4.someTestFunction).toBeDefined();
+      expect(elementA4.someTestFunction1).toBeDefined();
+      expect(elementB4.someTestFunction1).toBeDefined();
+    });
+
+
 
     it('should be able to extend existing elements', function(){
       xtag.register("x-foo-extend", {
