@@ -1301,6 +1301,48 @@ describe("x-tag ", function () {
         	prototype: CompA.prototype
         });
     });
+    
+    it('should allow a method to be overridden', function(){
+      var executeCount = 0;
+      var CompA1 = xtag.register('comp-a1', {
+        methods: {
+          someMethod: function () {
+            executeCount++;
+          }
+        }
+      });
+      
+      var CompB1 = xtag.register('comp-b1', {
+        prototype: CompA1.prototype,
+        methods: {
+          someMethod: function () {
+            // super call
+            CompA1.prototype.someMethod.call(this);
+            executeCount++;
+          }
+        }
+      });
+      
+      var elementB1 = document.createElement('comp-b1');
+      elementB1.someMethod();
+      
+      expect(executeCount).toEqual(2);
+    });
+    
+    it('should propagate content', function(){
+      var CompA2 = xtag.register('comp-a2', {
+        content: '<span></span>',
+      });
+      
+      var CompB2 = xtag.register('comp-b2', {
+        prototype: CompA2.prototype,
+      });
+      
+      var elementA2 = document.createElement('comp-a2');
+      var elementB2 = document.createElement('comp-b2');
+      expect(elementA2.firstElementChild.nodeName.toLowerCase()).toEqual('span');
+      expect(elementB2.firstElementChild.nodeName.toLowerCase()).toEqual('span');
+    });
 
     it('should be able to extend existing elements', function(){
       xtag.register("x-foo-extend", {
