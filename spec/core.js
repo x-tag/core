@@ -1289,17 +1289,17 @@ describe("x-tag ", function () {
     });
 
     it('should allow an inherited custom element prototype to be used', function(){
-        var CompA = xtag.register('comp-a', {
-        	methods: {
-        		sayHi: function () {
-        			console.log('hi');
-        		}
-        	}
-        });
-
-        var CompB = xtag.register('comp-b', {
-        	prototype: CompA.prototype
-        });
+      var CompA = xtag.register('comp-a', {
+        methods: {
+          sayHi: function () {
+            console.log('hi');
+          }
+        }
+      });
+      
+      var CompB = xtag.register('comp-b', {
+        prototype: CompA.prototype
+      });
     });
     
     it('should allow a method to be overridden', function(){
@@ -1331,11 +1331,11 @@ describe("x-tag ", function () {
     
     it('should propagate content', function(){
       var CompA2 = xtag.register('comp-a2', {
-        content: '<span></span>',
+        content: '<span></span>'
       });
       
       var CompB2 = xtag.register('comp-b2', {
-        prototype: CompA2.prototype,
+        prototype: CompA2.prototype
       });
       
       var elementA2 = document.createElement('comp-a2');
