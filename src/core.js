@@ -308,6 +308,7 @@
       }
     },
     register: function (name, options) {
+      var z;
       var _name;
       if (typeof name == 'string') _name = name.toLowerCase();
       else throw 'First argument must be a Custom Element string name';
@@ -317,7 +318,7 @@
       delete options.prototype;
       var tag = xtag.tags[_name].compiled = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
 
-      for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
+      for (z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
       for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
       for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
@@ -409,13 +410,13 @@
       var extended = tag['extends'] && (definition['extends'] = tag['extends']);
 
       if (basePrototype && !instance) {
-        for (var z in basePrototype) tag.prototype[z] = basePrototype[z];
+        for (z in basePrototype) tag.prototype[z] = basePrototype[z];
       }
 
-      definition['prototype'] = Object.create(
+      definition.prototype = Object.create(
         extended ? Object.create(doc.createElement(extended).constructor).prototype : instance ? basePrototype : win.HTMLElement.prototype,
         tag.prototype
-      )
+      );
 
       return doc.registerElement(_name, definition);
     },
