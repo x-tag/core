@@ -1289,17 +1289,144 @@ describe("x-tag ", function () {
     });
 
     it('should allow an inherited custom element prototype to be used', function(){
-        var CompA = xtag.register('comp-a', {
-        	methods: {
-        		sayHi: function () {
-        			console.log('hi');
-        		}
-        	}
-        });
-
-        var CompB = xtag.register('comp-b', {
-        	prototype: CompA.prototype
-        });
+      var CompA = xtag.register('comp-a', {
+        methods: {
+          sayHi: function () {
+            console.log('hi');
+          }
+        }
+      });
+      
+      var CompB = xtag.register('comp-b', {
+        prototype: CompA.prototype
+      });
+    });
+    
+    it('should allow a method to be overridden', function(){
+      var executeCount = 0;
+      var CompA1 = xtag.register('comp-a1', {
+        methods: {
+          someMethod: function () {
+            executeCount++;
+          }
+        }
+      });
+      
+      var CompB1 = xtag.register('comp-b1', {
+        prototype: CompA1.prototype,
+        methods: {
+          someMethod: function () {
+            // super call
+            CompA1.prototype.someMethod.call(this);
+            executeCount++;
+          }
+        }
+      });
+      
+      var elementB1 = document.createElement('comp-b1');
+      elementB1.someMethod();
+      
+      expect(executeCount).toEqual(2);
+    });
+    
+    it('should propagate content', function(){
+      var CompA2 = xtag.register('comp-a2', {
+        content: '<span></span>'
+      });
+      
+      var CompB2 = xtag.register('comp-b2', {
+        prototype: CompA2.prototype
+      });
+      
+      var elementA2 = document.createElement('comp-a2');
+      var elementB2 = document.createElement('comp-b2');
+      expect(elementA2.firstElementChild.nodeName.toLowerCase()).toEqual('span');
+      expect(elementB2.firstElementChild.nodeName.toLowerCase()).toEqual('span');
+    });
+    
+    it('should propagate mixins', function(){
+      xtag.mixins.test = {
+        methods: {
+          someTestFunction: function () {
+            
+          }
+        }
+      };
+      
+      var CompA3 = xtag.register('comp-a3', {
+        mixins: ['test']
+      });
+      
+      var CompB3 = xtag.register('comp-b3', {
+        prototype: CompA3.prototype
+      });
+      
+      var elementA3 = document.createElement('comp-a3');
+      var elementB3 = document.createElement('comp-b3');
+      expect(elementA3.someTestFunction).toBeDefined();
+      expect(elementB3.someTestFunction).toBeDefined();
+    });
+    
+    it('should propagate multiple mixins', function(){
+      xtag.mixins.test = {
+        methods: {
+          someTestFunction: function () {
+            
+          }
+        }
+      };
+      xtag.mixins.test1 = {
+        methods: {
+          someTestFunction1: function () {
+            
+          }
+        }
+      };
+      
+      var CompA4 = xtag.register('comp-a4', {
+        mixins: ['test', 'test1']
+      });
+      
+      var CompB4 = xtag.register('comp-b4', {
+        prototype: CompA4.prototype
+      });
+      
+      var elementA4 = document.createElement('comp-a4');
+      var elementB4 = document.createElement('comp-b4');
+      expect(elementA4.someTestFunction).toBeDefined();
+      expect(elementB4.someTestFunction).toBeDefined();
+      expect(elementA4.someTestFunction1).toBeDefined();
+      expect(elementB4.someTestFunction1).toBeDefined();
+    });
+    
+    it('should trigger lifecycle hooks from mixins when using prototype', function(){
+      var countTriggers = 0;
+      xtag.mixins.test2 = {
+        lifecycle: {
+          created: function () {
+            countTriggers++;
+          }
+        }
+      };
+      xtag.mixins.test3 = {
+        lifecycle: {
+          created: function () {
+            countTriggers++;
+          }
+        }
+      };
+      
+      var CompA5 = xtag.register('comp-a5', {
+        mixins: ['test2', 'test3']
+      });
+      
+      var CompB5 = xtag.register('comp-b5', {
+        prototype: CompA5.prototype
+      });
+      
+      var elementB5 = document.createElement('comp-b5');
+      testbox.appendChild(elementB5);
+      expect(countTriggers).toEqual(2);
     });
 
     it('should be able to extend existing elements', function(){
