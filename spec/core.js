@@ -1398,8 +1398,36 @@ describe("x-tag ", function () {
       expect(elementA4.someTestFunction1).toBeDefined();
       expect(elementB4.someTestFunction1).toBeDefined();
     });
-
-
+    
+    it('should trigger lifecycle hooks from mixins when using prototype', function(){
+      var countTriggers = 0;
+      xtag.mixins.test2 = {
+        lifecycle: {
+          created: function () {
+            countTriggers++;
+          }
+        }
+      };
+      xtag.mixins.test3 = {
+        lifecycle: {
+          created: function () {
+            countTriggers++;
+          }
+        }
+      };
+      
+      var CompA5 = xtag.register('comp-a5', {
+        mixins: ['test2', 'test3']
+      });
+      
+      var CompB5 = xtag.register('comp-b5', {
+        prototype: CompA5.prototype
+      });
+      
+      var elementB5 = document.createElement('comp-b5');
+      testbox.appendChild(elementB5);
+      expect(countTriggers).toEqual(2);
+    });
 
     it('should be able to extend existing elements', function(){
       xtag.register("x-foo-extend", {
