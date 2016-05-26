@@ -1274,32 +1274,68 @@ describe("x-tag ", function () {
     });
 
     it('should allow a custom prototype to be used', function(){
-      var proto = Object.create(HTMLElement.prototype);
-      proto.fn = function(){};
-      xtag.register("x-foo-proto", {
-        prototype: proto
+      xtag.register("x-raw-proto", {
+        prototype: { fn: { value: function(){
+          return 'passed';
+        }}}
       });
 
-      var foo = document.createElement('x-foo-proto');
-      testbox.appendChild(foo);
+      var foo = document.createElement('x-raw-proto');
 
       expect(foo.fn).toBeDefined();
+      expect(foo.fn()).toEqual('passed');
       expect(foo.click).toBeDefined();
 
     });
 
     it('should allow an inherited custom element prototype to be used', function(){
+        var count = 0;
+        xtag.mixins.compACreated = {
+          lifecycle: {
+            created: function(){
+              count++;
+            }
+          }
+        };
         var CompA = xtag.register('comp-a', {
+          mixins: ['compACreated'],
+          lifecycle: {
+            created: function(){
+              count++;
+            }
+          },
+          accessors: {
+            foo: {
+              set: function(){
+                count++;
+              },
+              get: function(){
+                return count;
+              }
+            }
+          },
         	methods: {
         		sayHi: function () {
-        			console.log('hi');
+        			return count + 1;
         		}
         	}
         });
 
-        var CompB = xtag.register('comp-b', {
-        	prototype: CompA.prototype
+        xtag.register('comp-b', {
+        	prototype: CompA.prototype,
+          lifecycle: {
+            created: function(){
+              count++;
+            }
+          }
         });
+
+        var compb = document.createElement('comp-b');
+        compb.foo = 'bar';
+
+        expect(count).toEqual(4);
+        expect(compb.foo).toEqual(4);
+        expect(compb.sayHi()).toEqual(5);
     });
 
     it('should be able to extend existing elements', function(){

@@ -9036,17 +9036,19 @@ window.CustomElements.addModule(function(scope) {
       var basePrototype = options.prototype;
       delete options.prototype;
       var tag = xtag.tags[_name].compiled = applyMixins(xtag.merge({}, xtag.defaultOptions, options));
+      var proto = tag.prototype;
+      var lifecycle = tag.lifecycle;
 
       for (var z in tag.events) tag.events[z] = xtag.parseEvent(z, tag.events[z]);
-      for (z in tag.lifecycle) tag.lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, tag.lifecycle[z], tag.pseudos, tag.lifecycle[z]);
-      for (z in tag.methods) tag.prototype[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
+      for (z in lifecycle) lifecycle[z.split(':')[0]] = xtag.applyPseudos(z, lifecycle[z], tag.pseudos, lifecycle[z]);
+      for (z in tag.methods) proto[z.split(':')[0]] = { value: xtag.applyPseudos(z, tag.methods[z], tag.pseudos, tag.methods[z]), enumerable: true };
       for (z in tag.accessors) parseAccessor(tag, z);
 
       if (tag.shadow) tag.shadow = tag.shadow.nodeName ? tag.shadow : xtag.createFragment(tag.shadow);
       if (tag.content) tag.content = tag.content.nodeName ? tag.content.innerHTML : parseMultiline(tag.content);
-      var created = tag.lifecycle.created;
-      var finalized = tag.lifecycle.finalized;
-      tag.prototype.createdCallback = {
+      var created = lifecycle.created;
+      var finalized = lifecycle.finalized;
+      proto.createdCallback = {
         enumerable: true,
         value: function(){
           var element = this;
@@ -9071,16 +9073,16 @@ window.CustomElements.addModule(function(scope) {
         }
       };
 
-      var inserted = tag.lifecycle.inserted,
-          removed = tag.lifecycle.removed;
+      var inserted = lifecycle.inserted;
+      var removed = lifecycle.removed;
       if (inserted || removed) {
-        tag.prototype.attachedCallback = { value: function(){
+        proto.attachedCallback = { value: function(){
           if (removed) this.xtag.__parentNode__ = this.parentNode;
           if (inserted) return inserted.apply(this, arguments);
         }, enumerable: true };
       }
       if (removed) {
-        tag.prototype.detachedCallback = { value: function(){
+        proto.detachedCallback = { value: function(){
           var args = toArray(arguments);
           args.unshift(this.xtag.__parentNode__);
           var output = removed.apply(this, args);
@@ -9088,9 +9090,9 @@ window.CustomElements.addModule(function(scope) {
           return output;
         }, enumerable: true };
       }
-      if (tag.lifecycle.attributeChanged) tag.prototype.attributeChangedCallback = { value: tag.lifecycle.attributeChanged, enumerable: true };
+      if (lifecycle.attributeChanged) proto.attributeChangedCallback = { value: lifecycle.attributeChanged, enumerable: true };
 
-      tag.prototype.setAttribute = {
+      proto.setAttribute = {
         writable: true,
         enumerable: true,
         value: function (name, value){
@@ -9109,7 +9111,7 @@ window.CustomElements.addModule(function(scope) {
         }
       };
 
-      tag.prototype.removeAttribute = {
+      proto.removeAttribute = {
         writable: true,
         enumerable: true,
         value: function (name){
@@ -9128,14 +9130,22 @@ window.CustomElements.addModule(function(scope) {
       var instance = basePrototype instanceof win.HTMLElement;
       var extended = tag['extends'] && (definition['extends'] = tag['extends']);
 
-      if (basePrototype && !instance) {
-        for (var z in basePrototype) tag.prototype[z] = basePrototype[z];
-      }
+      if (basePrototype) Object.getOwnPropertyNames(basePrototype).forEach(function(z){
+        var prop = proto[z];
+        var desc = instance ? Object.getOwnPropertyDescriptor(basePrototype, z) : basePrototype[z];
+        if (prop) {
+          for (var y in desc) {
+            if (typeof desc[y] == 'function' && prop[y]) prop[y] = xtag.wrap(desc[y], prop[y]);
+            else prop[y] = desc[y];
+          }
+        }
+        proto[z] = prop || desc;
+      });
 
       definition['prototype'] = Object.create(
-        extended ? Object.create(doc.createElement(extended).constructor).prototype : instance ? basePrototype : win.HTMLElement.prototype,
-        tag.prototype
-      )
+        extended ? Object.create(doc.createElement(extended).constructor).prototype : win.HTMLElement.prototype,
+        proto
+      );
 
       return doc.registerElement(_name, definition);
     },
