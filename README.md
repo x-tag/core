@@ -1,5 +1,7 @@
 # X-Tag - Rocket fuel for component development
 
+[![Join the chat at https://gitter.im/x-tag/core](https://badges.gitter.im/x-tag/core.svg)](https://gitter.im/x-tag/core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Bower version](https://badge.fury.io/bo/x-tag-core.svg)](http://badge.fury.io/bo/x-tag-core)
 
 [![NPM version](https://badge.fury.io/js/x-tag.svg)](https://badge.fury.io/js/x-tag)
