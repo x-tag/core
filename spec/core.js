@@ -1291,6 +1291,7 @@ describe("x-tag ", function () {
     it('should allow an inherited custom element prototype to be used', function(){
         var count = 0;
         xtag.mixins.compACreated = {
+          content: '<div>foo</div>',
           lifecycle: {
             created: function(){
               count++;
@@ -1323,6 +1324,7 @@ describe("x-tag ", function () {
 
         xtag.register('comp-b', {
         	prototype: CompA.prototype,
+          content: '<div>bar</div>',
           lifecycle: {
             created: function(){
               count++;
@@ -1333,6 +1335,8 @@ describe("x-tag ", function () {
         var compb = document.createElement('comp-b');
         compb.foo = 'bar';
 
+        expect(compb.children[0].textContent).toEqual('foo');
+        expect(compb.children[1].textContent).toEqual('bar');
         expect(count).toEqual(4);
         expect(compb.foo).toEqual(4);
         expect(compb.sayHi()).toEqual(5);

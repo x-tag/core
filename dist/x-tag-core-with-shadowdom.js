@@ -7304,7 +7304,7 @@ window.CustomElements.addModule(function(scope) {
   window.Platform = scope;
 })(window.WebComponents);
 /*!
- * PEP v0.4.0 | https://github.com/jquery/PEP
+ * PEP v0.4.1 | https://github.com/jquery/PEP
  * Copyright jQuery Foundation and other contributors | http://jquery.org/license
  */
 (function (global, factory) {
@@ -7539,6 +7539,13 @@ window.CustomElements.addModule(function(scope) {
     0
   ];
 
+  var BOUNDARY_EVENTS = {
+    'pointerover': 1,
+    'pointerout': 1,
+    'pointerenter': 1,
+    'pointerleave': 1
+  };
+
   var HAS_SVG_INSTANCE = (typeof SVGElementInstance !== 'undefined');
 
   /**
@@ -7753,10 +7760,13 @@ window.CustomElements.addModule(function(scope) {
       return eventCopy;
     },
     getTarget: function(inEvent) {
-
-      // if pointer capture is set, route all events for the specified pointerId
-      // to the capture target
-      return this.captureInfo[inEvent.pointerId] || inEvent._target;
+      var capture = this.captureInfo[inEvent.pointerId];
+      if (!capture) {
+        return inEvent._target;
+      }
+      if (inEvent._target === capture || !(inEvent.type in BOUNDARY_EVENTS)) {
+        return capture;
+      }
     },
     setCapture: function(inPointerId, inTarget) {
       if (this.captureInfo[inPointerId]) {
@@ -8164,6 +8174,11 @@ window.CustomElements.addModule(function(scope) {
           inEvent.buttons = e.buttons;
         }
         mouse__pointermap.set(this.POINTER_ID, inEvent);
+
+        // Support: Firefox <=44 only
+        // FF Ubuntu includes the lifted button in the `buttons` property on
+        // mouseup.
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=1223366
         if (e.buttons === 0 || e.buttons === BUTTON_TO_BUTTONS[e.button]) {
           this.cleanupMouse();
           _dispatcher.up(e);
@@ -8689,7 +8704,7 @@ window.CustomElements.addModule(function(scope) {
     };
   }
 
-  function capture__applyPolyfill() {
+  function _capture__applyPolyfill() {
     if (window.Element && !Element.prototype.setPointerCapture) {
       Object.defineProperties(Element.prototype, {
         'setPointerCapture': {
@@ -8704,7 +8719,7 @@ window.CustomElements.addModule(function(scope) {
 
   applyAttributeStyles();
   platform_events__applyPolyfill();
-  capture__applyPolyfill();
+  _capture__applyPolyfill();
 
   var pointerevents = {
     dispatcher: _dispatcher,
@@ -9202,16 +9217,21 @@ window.CustomElements.addModule(function(scope) {
         condition: touchFilter
       },
       tapmove: {
-        attach: ['pointerdown', 'pointerup'],
+        attach: ['pointerdown'],
         condition: function(event, custom){
           if (event.type == 'pointerdown') {
-            if (!custom.moveListener) custom.moveListener = xtag.addEvent(this, 'pointermove', custom.listener);
+            var listener = custom.listener.bind(this);
+            if (!custom.tapmoveListeners) custom.tapmoveListeners = xtag.addEvents(document, {
+              pointermove: listener,
+              pointerup: listener,
+              pointercancel: listener
+            });
           }
-          else if (event.type == 'pointerup') {
-            xtag.removeEvent(this, custom.moveListener);
-            custom.moveListener = null;
+          else if (event.type == 'pointerup' || event.type == 'pointercancel') {
+            xtag.removeEvents(document, custom.tapmoveListeners);
+            custom.tapmoveListeners = null;
           }
-          else return true;
+          return true;
         }
       },
       taphold: {

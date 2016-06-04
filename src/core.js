@@ -482,16 +482,21 @@
         condition: touchFilter
       },
       tapmove: {
-        attach: ['pointerdown', 'pointerup'],
+        attach: ['pointerdown'],
         condition: function(event, custom){
           if (event.type == 'pointerdown') {
-            if (!custom.moveListener) custom.moveListener = xtag.addEvent(this, 'pointermove', custom.listener);
+            var listener = custom.listener.bind(this);
+            if (!custom.tapmoveListeners) custom.tapmoveListeners = xtag.addEvents(document, {
+              pointermove: listener,
+              pointerup: listener,
+              pointercancel: listener
+            });
           }
-          else if (event.type == 'pointerup') {
-            xtag.removeEvent(this, custom.moveListener);
-            custom.moveListener = null;
+          else if (event.type == 'pointerup' || event.type == 'pointercancel') {
+            xtag.removeEvents(document, custom.tapmoveListeners);
+            custom.tapmoveListeners = null;
           }
-          else return true;
+          return true;
         }
       },
       taphold: {
