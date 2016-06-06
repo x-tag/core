@@ -33,8 +33,7 @@
     */
     prefix = (function () {
       var styles = win.getComputedStyle(doc.documentElement, ''),
-          pre = (Array.prototype.slice
-            .call(styles)
+          pre = (cssStyleDeclerationToArray(styles)
             .join('')
             .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
           )[1];
@@ -78,6 +77,19 @@
       while (i--) array[i] = clone(src[i]);
       return array;
     };
+
+  function cssStyleDeclerationToArray(styles){
+    var array;
+    try {
+      array = Array.prototype.slice.call(styles)
+    } catch(e) {
+      array = [];
+      for (var i = 0; i < styles.length; i++) {
+        array.push(styles.item(i));
+      }
+    }
+    return array;
+  }
 
   /*
     The toArray() method allows for conversion of any object to a true array. For types that
