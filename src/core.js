@@ -32,17 +32,13 @@
         * prefix.js: addresses prefixed APIs present in global and non-Element contexts
     */
     prefix = (function () {
-      var styles = win.getComputedStyle(doc.documentElement, ''),
-          pre = (Array.prototype.slice
-            .call(styles)
-            .join('')
-            .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
-          )[1];
+      var keys = Object.keys(window).join();
+      var pre = ((keys.match(/,(ms)/) || keys.match(/,(moz)/) || keys.match(/,(O)/)) || [null, 'webkit'])[1].toLowerCase();
       return {
         dom: pre == 'ms' ? 'MS' : pre,
         lowercase: pre,
         css: '-' + pre + '-',
-        js: pre == 'ms' ? pre : pre[0].toUpperCase() + pre.substr(1)
+        js: pre == 'ms' ? pre : pre.charAt(0).toUpperCase() + pre.substring(1)
       };
     })(),
     matchSelector = Element.prototype.matches || Element.prototype.matchesSelector || Element.prototype[prefix.lowercase + 'MatchesSelector'];
