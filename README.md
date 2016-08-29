@@ -66,7 +66,7 @@ and both `x-tag-core.js` and `x-tag-core.min.js` will be rebuilt and placed in t
 
 ## Creating your own web components
 
-To learn more about X-Tags visit [x-tag.github.io](http://x-tag.github.io/).
+To learn more about X-Tags visit [x-tag.github.io/docs](http://x-tag.github.io/docs).
 
 To create your own component, use our [web-component-stub](https://github.com/x-tag/web-component-stub).
 
