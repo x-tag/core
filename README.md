@@ -6,6 +6,8 @@
 
 [![NPM version](https://badge.fury.io/js/x-tag.svg)](https://badge.fury.io/js/x-tag)
 
+[![CDNJS](https://img.shields.io/cdnjs/v/x-tag.svg)](https://cdnjs.com/libraries/x-tag) 
+
 **This is the repository for the core [X-Tag](http://x-tag.github.io/) library.**
 
 X-Tag is a Microsoft supported, open source, JavaScript library that wraps the W3C standard Web Components family of APIs to provide a compact, feature-rich interface for rapid component development. While X-Tag offers feature hooks for all Web Component APIs (Custom Elements, Shadow DOM, Templates, and HTML Imports), it only requires [Custom Element][1] support to operate. In the absence of native Custom Element support, X-Tag uses a set of polyfills shared with Google's Polymer framework.
