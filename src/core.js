@@ -135,7 +135,7 @@
     var index = mixins.length;
     while (index--){
       output.unshift(mixins[index]);
-      if (xtag.mixins[mixins[index]].mixins) resolveMixins(xtag.mixins[mixins[index]].mixins, output);
+      if (xtag.mixins[mixins[index]] && xtag.mixins[mixins[index]].mixins) resolveMixins(xtag.mixins[mixins[index]].mixins, output);
     }
     return output;
   }
