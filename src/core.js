@@ -32,8 +32,15 @@
         * prefix.js: addresses prefixed APIs present in global and non-Element contexts
     */
     prefix = (function () {
-      var keys = Object.keys(window).join();
-      var pre = ((keys.match(/,(ms)/) || keys.match(/,(moz)/) || keys.match(/,(O)/)) || [null, 'webkit'])[1].toLowerCase();
+      function findPrefix(obj) {
+        var keys = Object.keys(obj).join(),
+            matches = keys.match(/,(ms)/) || keys.match(/,(moz)/) || keys.match(/,(webkit)/) || keys.match(/,(O)/);
+
+        if (matches) return matches[1].toLowerCase();
+      }
+
+      var pre = findPrefix(window) || findPrefix(Object.getPrototypeOf(window)) || 'webkit';
+
       return {
         dom: pre == 'ms' ? 'MS' : pre,
         lowercase: pre,
