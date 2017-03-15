@@ -9,198 +9,224 @@
 
   // NodeList.prototype.forEach = NodeList.prototype.forEach || Array.prototype.forEach;
 
-  // function delegateAction(pseudo, event) {
-  //   var match,
-  //       target = event.target,
-  //       root = event.currentTarget;
-  //   while (!match && target && target != root) {
-  //     if (target.tagName && matches(target, pseudo.value)) match = target;
-  //     target = target.parentNode;
-  //   }
-  //   if (!match && root.tagName && matches(root, pseudo.value)) match = root;
-  //   return match ? pseudo.listener = pseudo.listener.bind(match) : null;
-  //}
+  var regexParseProperty = /(\w+)|(?:(:*)(\w+)(?:\((.+?(?=\)))\))?)/g;
+  // var regexPseudoParens = /\(|\)/g;
+  // var regexCapturePseudos = /(?::{2,}|(?::)(\w+)(\((.+?(?=\)))\))?)/g;
 
   var regexReplaceCommas = /,/g;
   var regexCamelToDash = /([a-z])([A-Z])/g;
-  var regexPseudoParens = /\(|\)/g;
-  var regexPseudoCapture = /:(\w+)\u276A(.+?(?=\u276B))|:(\w+)/g;
-  var regexDigits = /(\d+)/g;
+  var regexCaptureDigits = /(\d+)/g;
+
+  function mix(klass, key, obj, fn){
+    Object.defineProperty(klass.prototype, key, {
+      __proto__: obj.__proto__ = klass.__proto__.prototype,
+      value (){
+        return fn.apply(this, [...arguments, super[key]]);
+      }
+    });
+  }
 
   xtag = {
-    pseudos: {
-      // delegate: {
-      //   action: delegateAction
-      // },
-      preventable: {
-        action: function (pseudo, event) {
-          return !event.defaultPrevented;
-        }
-      },
-      duration: {
-        onAdd: function(pseudo){
-          pseudo.source.duration = Number(pseudo.value);
-        }
-      },
-      capture: {
-        onCompile: function(fn, pseudo){
-          if (pseudo.source) pseudo.source.capture = true;
-        }
-      }
-    },
-    customEvents: {
-
-    },
     mixins: {},
+    pseudos: {},
+    customEvents: {},
     extensions: {
-      reactions: {
+      attr: {
+        onDeclare: function(klass){
+          var proto = klass.prototype;
+          Object.getOwnPropertyNames(proto).forEach(prop => {
+            
+          })
 
-      },
-      methods: {
-        onDeclare: function(base, methods){
-          console.log(methods)
+          for (let z in accessors) {
+            mix(target, z, accessors, accessors[z]);
+          }
         }
-      },
-      accessors: {
-
       },
       events: {
-        onConnect: function(){
-          console.log('event added')
+        onDeclare: function(klass){
+
+          console.log('events added')
         }
-      },
-      pseudos: {
+      }
+    },
+    create: function(klass){
 
-      },
-      mixins: {
-
-      }
+      processExtensions('onDeclare', klass); 
     },
-    define: function (name, def) {
-      // customElements.define(name, def);
-    },
-    applyPseudos: function(key, fn, target, source) {
-      var listener = fn,
-          pseudos = {};
-      if (key.match(':')) {
-        var matches = [],
-            valueFlag = 0;
-        key.replace(regexPseudoParens, function(match){
-          if (match == '(') return ++valueFlag == 1 ? '\u276A' : '(';
-          return !--valueFlag ? '\u276B' : ')';
-        }).replace(regexPseudoCapture, function(z, name, value, solo){
-          matches.push([name || solo, value]);
-        });
-        var i = matches.length;
-        while (i--) parsePseudo(function(){
-          var name = matches[i][0],
-              value = matches[i][1];
-          if (!xtag.pseudos[name]) throw "pseudo not found: " + name + " " + value;
-          value = (value === '' || typeof value == 'undefined') ? null : value;
-          var pseudo = pseudos[i] = Object.create(xtag.pseudos[name]);
-          pseudo.key = key;
-          pseudo.name = name;
-          pseudo.value = value;
-          pseudo['arguments'] = (value || '').split(',');
-          pseudo.action = pseudo.action || trueop;
-          pseudo.source = source;
-          pseudo.onAdd = pseudo.onAdd || noop;
-          pseudo.onRemove = pseudo.onRemove || noop;
-          var original = pseudo.listener = listener;
-          listener = function(){
-            var output = pseudo.action.apply(this, [pseudo].concat(toArray(arguments)));
-            if (output === null || output === false) return output;
-            output = pseudo.listener.apply(this, arguments);
-            pseudo.listener = original;
-            return output;
-          };
-          if (!target) pseudo.onAdd.call(fn, pseudo);
-          else target.push(pseudo);
-        });
-      }
-      for (var z in pseudos) {
-        if (pseudos[z].onCompiled) listener = pseudos[z].onCompiled(listener, pseudos[z]) || listener;
-      }
-      return listener;
-    },
-    removePseudos: function(target, pseudos){
-      pseudos.forEach(function(obj){
-        obj.onRemove.call(target, obj);
-      });
+    define: function (name, klass) {
+      customElements.define(name, klass);
     },
     fireEvent: function(node, name, obj = {}){
       node.dispatchEvent(new CustomEvent(name, obj));
     }
   }
 
-  function createClass(name){
-
-    var base = class extends (name ? Object.getPrototypeOf(document.createElement(name)).constructor : HTMLElement) {
+  function createClass(options = {}){
+    var klass = class extends (options.native ? Object.getPrototypeOf(document.createElement(options.native)).constructor : HTMLElement) {
       constructor () {
         super();
+        processExtensions('onConstruct', this); 
       }
-      connectedCallback (){
-        processExtensions(base.definition, this, 'onConnect'); 
-      }
-    });
-
-    base.definition = {};
-
-    base.with = function(def){ 
-      base = def.native && base == XTagElement ? createClass(def.native) : createClass();
-      base.definition = def;
-      processExtensions(def, base, 'onDeclare');
-      return base;
     };
 
-    return base;
+    klass.extensions = {};
+    klass.pseudos = {};  
+    klass.mixins = {};
 
-  };
+    klass.mix = function mix(...mixins){
+      return class extends (mixins.reduce(mixin, current => {
+        let mixed = mixin(current);
+        processExtendsions('onDeclare', mixed);
+        return mixed;
+      }, this)){}
+    }
 
-  function processExtensions(def, obj, event){
-    for (let z in def) {
+    return klass;
+  }
+
+  XTagElement = function(tag){
+    return createClass({
+      native: tag
+    });
+  }
+
+  function pseudoWrap(pseudo, fn, args){
+    return function(){
+      var output = pseudo.onInvoke.apply(this, [pseudo, ...args]);
+      if (output === null || output === false) return output;
+      return fn.apply(this, output instanceof Array ? output : arguments);
+    };
+  }
+
+  var doubleColon = '::';
+  function processExtensions(event, target){
+    
+    switch (event) {
+      case 'onDeclare': {
+        var processedProps = {};
+        var descriptors = getDescriptors(target);
+        for (let z in descriptors) {
+          var property;
+          var extension;
+          var extensionArgs;
+          var descriptor = descriptors[z];
+          var pseudos = target.pseudos || xtag.pseudos;
+          z.replace(regexParseProperty, function(match, prop, dots, name, args){
+            property = prop || property;
+            if (args) _args = JSON.parse('['+ args +']');
+            if (dots == '::') {
+              extension = extension || target.extensions[name] || xtag.extensions[name];
+              extensionArgs = _args;
+            }
+            else {
+              for (let z in descriptor) {
+                if (typeof descriptor[z] == 'function') {
+                  descriptor[z] = pseudoWrap(pseudos[name], descriptor[z], _args);
+                }
+              }
+            }
+          });
+
+          if (extension) {
+            var attachProperty = extension.onDeclare.call(target, property, args, descriptor);
+            if (property && attachProperty !== false) {
+              let prop = processedProps[property] || (processedProps[property] = {});
+              
+            }
+          }
+          else {
+            
+          }
+          if (property && !extension.virtual && !processedProps[property]) processedProps[property] = {};
+
+          match[1]
+        }
+        Object.getOwnPropertyNames(proto).forEach(key => {
+
+
+        });
+
+        break;
+      }
+    
+      case 'onConstruct': {
+        break;
+      }
+
+    }
+    for (let z in options) {
       let extension = xtag.extensions[z];
-      if (extension && extension[event]) extension[event](obj, def[z]);
+      if (extension && extension[event]) extension[event](options[z], target);
     }
   }
 
-  XTagElement = createClass();
+  function getDescriptors(target){
+    var descriptors = {};
+    var proto = target.prototype;
+    Object.getOwnPropertyNames(proto).forEach(key => {
+      descriptors[key] = Object.getOwnPropertyDescriptor(proto, key);
+    });
+    return descriptors;
+  }
 
 })();
 
-class Clock extends XTagElement.with({
+// xtag.create(class Clock extends XTagElement() {
 
-  native: 'video',
+//   connectedCallback () {
+//     var span = document.createElement('span');
+//     span.textContent = 1;
+//     this.appendChild(span)
+//   }
 
-  reactions: {
-    constructed: function() {
-      this.super();
-    },
-    connected: function() {
-      
-    }
-  },
+//   'tap::event:once' (){
 
-  events: {
-    'tap:once': function(){
+//   }
 
-    }
-  },
+//   sum (a, b){
+//     return a + b;
+//   }
 
-  methods: {
-    start: function(){
-      if (this.disabled) return;
-      this.update();
-      this.data.interval = setInterval(this.update.bind(this), 1000);
-    },
-    stop: function(){
-      this.data.interval = clearInterval(this.data.interval);
-    },
-    update: function(){
-      this.textContent = new Date().toLocaleTimeString();
-    }
-  }
+// });
 
-}){};
+// xtag.define('x-clock', Clock);
 
-//xtag.define('x-clock', Clock);
+// xtag.create(class DigitalClock extends Clock {
+
+//   connectedCallback () {
+//     var span = document.createElement('span');
+//     span.textContent = 1;
+//     this.appendChild(span)
+//   }
+
+//   'tap::event' (){
+
+//   }
+
+//   sum (a, b){
+//     return a + b;
+//   }
+
+// });
+
+// xtag.define('x-clock2', DigitalClock);
+
+
+function parseClass(c){
+  var fn = c.prototype['foo::bar'];
+  delete c.prototype['foo::bar'];
+  c.prototype['foo'] = fn;
+}
+
+class foo {
+  'foo::bar' (){ return 1; }
+}
+
+parseClass(foo);
+
+class bar extends foo {
+  'foo::bar' (){ return super.foo() + 1; }
+}
+
+parseClass(bar);
