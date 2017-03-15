@@ -112,7 +112,7 @@
           var extensionArgs;
           var descriptor = descriptors[z];
           var pseudos = target.pseudos || xtag.pseudos;
-          z.replace(regexParseProperty, function(match, prop, dots, name, args){
+          if (z.contains(':')) z.replace(regexParseProperty, function(match, prop, dots, name, args){
             property = prop || property;
             if (args) _args = JSON.parse('['+ args +']');
             if (dots == '::') {
@@ -140,7 +140,8 @@
           else {
             
           }
-          if (property && !extension.virtual && !processedProps[property]) processedProps[property] = {};
+          
+
 
           match[1]
         }
