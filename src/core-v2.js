@@ -132,7 +132,9 @@
             var attachProperty = extension.onDeclare.call(target, property, args, descriptor);
             if (property && attachProperty !== false) {
               let prop = processedProps[property] || (processedProps[property] = {});
-              
+              for (let key in descriptor) {
+                processedProps[property][key] = descriptor[key];
+              }
             }
           }
           else {
