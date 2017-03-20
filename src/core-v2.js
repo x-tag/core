@@ -10,16 +10,16 @@
   // NodeList.prototype.forEach = NodeList.prototype.forEach || Array.prototype.forEach;
 
   var regexParseProperty = /(\w+)|(?:(:*)(\w+)(?:\((.+?(?=\)))\))?)/g;
+  var regexCaptureExtensions = /::(\w+)/;
   var regexReplaceCommas = /,/g;
   var regexCamelToDash = /([a-z])([A-Z])/g;
   var regexCaptureDigits = /(\d+)/g;
 
-  var createFragment = document.createRange.createContextualFragment;
+  var range = document.createRange();
 
   xtag = {
-    mixins: {},
+    events: {},
     pseudos: {},
-    customEvents: {},
     extensions: {
       attr: {
         types: {
@@ -40,7 +40,7 @@
             }
           }
         },
-        onDeclare: function(extension, prop, args, descriptor){
+        onParse: function(extension, prop, args, descriptor){
           var type = extension.types[args[0]];
           if (descriptor.set || type && type.set) {
             let descFn = descriptor.set;
@@ -64,7 +64,7 @@
         }
       },
       event: {
-        onDeclare: function(){
+        onParse: function(){
           return false;
         },
         onConstruct: function(extension, property, args, descriptor){
@@ -72,18 +72,32 @@
         }
       },
       template: {
-        onDeclare: function(extension, property, args, descriptor){
-          descriptor.value = createFragment(descriptor.value).firstChild;
+        mixin: (base) => class extends base {
+          set 'template::attr' (name){
+            this.innerHTML = '';
+            this.appendChild(range.createContextualFragment(this.templates[name || 'default']));
+          }
+          get templates (){
+            return this.constructor.templates;
+          }
+        },
+        onDeclare: function(){
+          if (!this.templates) this.templates = {};
+        },
+        onParse: function(extension, property, args, descriptor){
+          this.templates[property || 'default'] = descriptor.value();
           return false;
         },
-        onConstruct: function(){}
+        onConstruct: function(){
+
+        }
       }
     },
     create: function(klass){
-      processExtensions('onDeclare', klass); 
+      processExtensions('onParse', klass); 
       return klass;
     },
-    define: function (name, klass) {
+    register: function (name, klass) {
       customElements.define(name, klass);
     },
     fireEvent: function(node, name, obj = {}){
@@ -95,37 +109,44 @@
     var klass = class extends (options.native ? Object.getPrototypeOf(document.createElement(options.native)).constructor : HTMLElement) {
       constructor () {
         super();
-        console.log('onConstruct');
         processExtensions('onConstruct', this);
       }
-
-      static get observedAttributes(){ return []; }
 
       attributeChangedCallback(){
 
       }
     };
 
-    klass._onConstruct = {};
-    klass._extensions = {}; 
+    klass._extensions = {};
     klass._pseudos = {};
-    klass._mixins = {};
 
-    klass.mix = function mix(...mixins){
-      return class extends (mixins.reduce(mixin, current => {
-        let mixed = mixin instanceof String ? klass._mixins[mixin] || xtag.mixins[mixin] : mixin(current);
-        processExtendsions('onDeclare', mixed);
-        return mixed;
-      }, this)){}
+    klass.extensions = function extensions(...extensions){
+      return extensions.reduce((current, extension) => {
+        var mixin;
+        var extended = current;
+        if (typeof extension == 'string') {
+          mixin = xtag.extensions[extension].mixin;
+        }
+        else {
+          mixin = extension.mixin;
+          klass._extensions[extension.name] = extension;
+        }
+        if (mixin) {
+          extended = mixin(current);
+          processExtensions('onParse', extended);
+        }
+        return extended;
+      }, klass);
     }
 
     return klass;
   }
 
   XTagElement = function(tag){
-    return createClass({
+    var klass = createClass({
       native: tag
     });
+    return klass.extensions('attr', 'event', 'template');
   }
 
   function pseudoWrap(pseudo, args, fn){
@@ -140,23 +161,28 @@
   function processExtensions(event, target){
     
     switch (event) {
-      case 'onDeclare': {
-        let processedProps = {};
-        let descriptors = getDescriptors(target);
+      case 'onParse': {
+        var processedProps = {};
+        var descriptors = getDescriptors(target);
+        var extensions = target._processedExtensions = {};   
         for (let z in descriptors) {
           let property;
           let extension;
           let extensionName;
           let extensionArgs = [];
           let descriptor = descriptors[z];
-          let pseudos = target._pseudos || xtag.pseudos;
+          let pseudos = target._pseudos || xtag.pseudos;   
           z.replace(regexParseProperty, function(match, prop, dots, name, args){
             property = prop || property;
             if (args) var _args = JSON.parse('['+ args +']');
             if (dots == doubleColon) {
               extensionName = name;
-              extension = extension || target._extensions[name] || xtag.extensions[name];
               extensionArgs = _args || [];
+              extension = target._extensions[name] || xtag.extensions[name];
+              if (!extensions[name]) {
+                extensions[name] = [];
+                if (extension.onDeclare) extension.onDeclare.call(target, descriptors);
+              }
             }
             else if (!prop){
               for (let y in descriptor) {
@@ -165,17 +191,14 @@
                   if (pseudo.onInvoke) descriptor[y] = pseudoWrap(pseudo, _args, descriptor[y]);
                 }
               }
-              if (pseudo.onDeclare) pseudo.onDeclare.apply(target, [pseudo, property, args, descriptor]);
+              if (pseudo.onParse) pseudo.onParse.apply(target, [pseudo, property, args, descriptor]);
             }
           });
-
           let attachProperty;
           if (extension) {
             let args = [extension, property, extensionArgs, descriptor];
-            if (extension.onConstruct) {
-              (target._onConstruct[extensionName] = (target._onConstruct[extensionName] || [])).push(args);
-            }
-            attachProperty = extension.onDeclare.apply(target, args);
+            extensions[extensionName].push(args);
+            attachProperty = extension.onParse ? extension.onParse.apply(target, args) : null;
           }
           if (!property || attachProperty === false) delete target.prototype[z];
           if (property && attachProperty !== false) {
@@ -185,18 +208,17 @@
             }
           }
         }
-
+        //delete processedProps.constructor;
         Object.defineProperties(target.prototype, processedProps);
 
         break;
       }
     
       case 'onConstruct': {
-        
-        var constructEntries = target.constructor._onConstruct;
-        for (let z in constructEntries) {
-          constructEntries[z].forEach(item => {
-            item[0].onConstruct.call(target, ...item);
+        let extensions = target.constructor._processedExtensions;
+        for (let z in extensions) {
+          extensions[z].forEach(item => {
+            if (item[0].onConstruct) item[0].onConstruct.call(target, ...item);
           })
         }
         break;
@@ -217,8 +239,7 @@
 })();
 
 Article = xtag.create(class Article extends XTagElement() {
-  '::template' (){ return
-    `
+  '::template' (){ return (`
       <h1>Great Post</h1>
       <h3>Actually, it's the greatest</h3>
       <ul>
@@ -226,8 +247,12 @@ Article = xtag.create(class Article extends XTagElement() {
         <li>2</li>
         <li>3</li>
       </ul>
-    `
+    `);
   }
+});
+
+xtag.register('x-article', Article);
+
 
 Clock = xtag.create(class Clock extends XTagElement() {
   connectedCallback (){
@@ -249,7 +274,7 @@ Clock = xtag.create(class Clock extends XTagElement() {
   }
 });
 
-xtag.define('x-clock', Clock);
+xtag.register('x-clock', Clock);
 
 DigitalClock = xtag.create(class DigitalClock extends Clock {
 
@@ -266,4 +291,4 @@ DigitalClock = xtag.create(class DigitalClock extends Clock {
 
 });
 
-xtag.define('x-clock2', DigitalClock);
+xtag.register('x-clock2', DigitalClock);
