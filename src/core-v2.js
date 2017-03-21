@@ -17,20 +17,12 @@
 
   var range = document.createRange();
 
-  xtag = {
+  var xtag = {
     events: {},
     pseudos: {},
     extensions: {
       attr: {
         types: {
-          undefined: {
-            set: function(prop, val){
-              this.setAttribute(prop, val);
-            },
-            get: function(prop){
-              return this.getAttribute(prop);
-            }
-          },
           boolean: {
             set: function(prop, val){
               val ? this.setAttribute(prop, '') : this.removeAttribute(prop);
@@ -41,7 +33,7 @@
           }
         },
         onParse: function(extension, prop, args, descriptor){
-          var type = extension.types[args[0]];
+          var type = extension.types[args[0]] || {};
           if (descriptor.set || type && type.set) {
             let descFn = descriptor.set;
             let typeFn = type.set || HTMLElement.prototype.setAttribute;
@@ -55,8 +47,10 @@
             let descFn = descriptor.get;
             let typeFn = type.get || HTMLElement.prototype.getAttribute;
             descriptor.get = function(){
-              if (descFn) descFn.call(this);
-              return typeFn.call(this, prop);
+              var output;
+              var val = typeFn.call(this, prop);
+              if (descFn) output = descFn.call(this, val);
+              return typeof output == 'undefined' ? val : output;
             }
           }
           delete descriptor.value;
@@ -87,9 +81,6 @@
         onParse: function(extension, property, args, descriptor){
           this.templates[property || 'default'] = descriptor.value();
           return false;
-        },
-        onConstruct: function(){
-
         }
       }
     },
@@ -124,30 +115,34 @@
       return extensions.reduce((current, extension) => {
         var mixin;
         var extended = current;
-        if (typeof extension == 'string') {
-          mixin = xtag.extensions[extension].mixin;
-        }
-        else {
-          mixin = extension.mixin;
-          klass._extensions[extension.name] = extension;
-        }
-        if (mixin) {
-          extended = mixin(current);
-          processExtensions('onParse', extended);
+        if (!klass._extensions[extension.name]) {
+          if (typeof extension == 'string') {
+            mixin = xtag.extensions[extension].mixin;
+            klass._extensions[extension] = xtag.extensions[extension];
+          }
+          else {
+            mixin = extension.mixin;
+            klass._extensions[extension.name] = extension;
+          }
+          if (mixin) {
+            extended = mixin(current);
+            processExtensions('onParse', extended);
+          }
         }
         return extended;
       }, klass);
     }
 
-    return klass;
-  }
+    klass.as = function(tag){
+      return createClass({
+        native: tag
+      });
+    }
 
-  XTagElement = function(tag){
-    var klass = createClass({
-      native: tag
-    });
     return klass.extensions('attr', 'event', 'template');
   }
+
+  XTagElement = createClass();
 
   function pseudoWrap(pseudo, args, fn){
     return function(){
@@ -159,7 +154,6 @@
 
   var doubleColon = '::';
   function processExtensions(event, target){
-    
     switch (event) {
       case 'onParse': {
         var processedProps = {};
@@ -172,45 +166,43 @@
           let extensionArgs = [];
           let descriptor = descriptors[z];
           let pseudos = target._pseudos || xtag.pseudos;   
-          z.replace(regexParseProperty, function(match, prop, dots, name, args){
+          z.replace(regexParseProperty, function(match, prop, dots, name, args){ 
             property = prop || property;
             if (args) var _args = JSON.parse('['+ args +']');
-            if (dots == doubleColon) {
+            if (dots && dots == '::') {
               extensionName = name;
               extensionArgs = _args || [];
-              extension = target._extensions[name] || xtag.extensions[name];
+              extension = target._extensions[name] || xtag.extensions[name];             
               if (!extensions[name]) {
                 extensions[name] = [];
                 if (extension.onDeclare) extension.onDeclare.call(target, descriptors);
               }
             }
             else if (!prop){
-              for (let y in descriptor) {
-                var pseudo = pseudos[name];
-                if (typeof descriptor[y] == 'function') {
-                  if (pseudo.onInvoke) descriptor[y] = pseudoWrap(pseudo, _args, descriptor[y]);
+              let pseudo = pseudos[name];
+              if (pseudo) {
+                for (let y in descriptor) {
+                  if (typeof descriptor[y] == 'function' && pseudo.onInvoke) {
+                    descriptor[y] = pseudoWrap(pseudo, _args, descriptor[y]);
+                  }
                 }
+                if (pseudo.onParse) pseudo.onParse.apply(target, [pseudo, property, args, descriptor]);
               }
-              if (pseudo.onParse) pseudo.onParse.apply(target, [pseudo, property, args, descriptor]);
             }
           });
           let attachProperty;
           if (extension) {
             let args = [extension, property, extensionArgs, descriptor];
             extensions[extensionName].push(args);
-            attachProperty = extension.onParse ? extension.onParse.apply(target, args) : null;
+            if (extension.onParse) attachProperty = extension.onParse.apply(target, args);
           }
           if (!property || attachProperty === false) delete target.prototype[z];
           if (property && attachProperty !== false) {
             let prop = processedProps[property] || (processedProps[property] = {});
-            for (let y in descriptor) {
-              processedProps[property][y] = descriptor[y];
-            }
+            for (let y in descriptor) prop[y] = descriptor[y];
           }
         }
-        //delete processedProps.constructor;
         Object.defineProperties(target.prototype, processedProps);
-
         break;
       }
     
@@ -236,25 +228,37 @@
     return descriptors;
   }
 
+  if (typeof define === 'function' && define.amd) {
+    define(xtag);
+    define(XTagElement);
+  }
+  else if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { xtag: xtag, XTagElement: XTagElement };
+  }
+  else win.xtag = xtag;
+
 })();
 
-Article = xtag.create(class Article extends XTagElement() {
-  '::template' (){ return (`
-      <h1>Great Post</h1>
+
+
+Article = xtag.create(class Article extends XTagElement {
+  set 'foo::attr'(val){
+    console.log(val);
+  }
+  'basic::template' (){ return `<h1>Great Post</h1>
       <h3>Actually, it's the greatest</h3>
       <ul>
         <li>1</li>
         <li>2</li>
         <li>3</li>
-      </ul>
-    `);
+      </ul>`;
   }
 });
 
 xtag.register('x-article', Article);
 
 
-Clock = xtag.create(class Clock extends XTagElement() {
+Clock = xtag.create(class Clock extends XTagElement {
   connectedCallback (){
     this.start();
   }
