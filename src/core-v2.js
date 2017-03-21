@@ -235,7 +235,7 @@
   else if (typeof module !== 'undefined' && module.exports) {
     module.exports = { xtag: xtag, XTagElement: XTagElement };
   }
-  else win.xtag = xtag;
+  else window.xtag = xtag;
 
 })();
 
