@@ -10,7 +10,6 @@
   // NodeList.prototype.forEach = NodeList.prototype.forEach || Array.prototype.forEach;
 
   var regexParseProperty = /(\w+)|(?:(:*)(\w+)(?:\((.+?(?=\)))\))?)/g;
-  var regexCaptureExtensions = /::(\w+)/;
   var regexReplaceCommas = /,/g;
   var regexCamelToDash = /([a-z])([A-Z])/g;
   var regexCaptureDigits = /(\d+)/g;
@@ -34,24 +33,20 @@
         },
         onParse: function(extension, prop, args, descriptor){
           var type = extension.types[args[0]] || {};
-          if (descriptor.set || type && type.set) {
-            let descFn = descriptor.set;
-            let typeFn = type.set || HTMLElement.prototype.setAttribute;
-            descriptor.set = function(val){
-              var output;
-              if (descFn) output = descFn.call(this, val);
-              typeFn.call(this, prop, typeof output == 'undefined' ? val : output) ;
-            }
+          let descSet = descriptor.set;
+          let typeSet = type.set || HTMLElement.prototype.setAttribute;
+          descriptor.set = function(val){
+            var output;
+            if (descSet) output = descSet.call(this, val);
+            typeSet.call(this, prop, typeof output == 'undefined' ? val : output) ;
           }
-          if (descriptor.get || type && type.get) {
-            let descFn = descriptor.get;
-            let typeFn = type.get || HTMLElement.prototype.getAttribute;
-            descriptor.get = function(){
-              var output;
-              var val = typeFn.call(this, prop);
-              if (descFn) output = descFn.call(this, val);
-              return typeof output == 'undefined' ? val : output;
-            }
+          let descGet = descriptor.get;
+          let typeGet = type.get || HTMLElement.prototype.getAttribute;
+          descriptor.get = function(){
+            var output;
+            var val = typeGet.call(this, prop);
+            if (descGet) output = descGet.call(this, val);
+            return typeof output == 'undefined' ? val : output;
           }
           delete descriptor.value;
           delete descriptor.writable;
@@ -68,18 +63,26 @@
       template: {
         mixin: (base) => class extends base {
           set 'template::attr' (name){
-            this.innerHTML = '';
-            this.appendChild(range.createContextualFragment(this.templates[name || 'default']));
+            this.render(name);
           }
           get templates (){
-            return this.constructor.templates;
+            return this.baseClass._templates;
+          }
+          render(name){
+            var _name = name || 'default';
+            var template = this.baseClass._templates[_name];
+            if (template) {
+              this.innerHTML = '';
+              this.appendChild(range.createContextualFragment(template.call(this)));
+            }
+            else throw new ReferenceError('Template "' + _name + '" is undefined');
           }
         },
         onDeclare: function(){
-          if (!this.templates) this.templates = {};
+          if (!this.baseClass._templates) this.baseClass._templates = {};
         },
         onParse: function(extension, property, args, descriptor){
-          this.templates[property || 'default'] = descriptor.value();
+          this.baseClass._templates[property || 'default'] = descriptor.value;
           return false;
         }
       }
@@ -97,17 +100,21 @@
   }
 
   function createClass(options = {}){
-    var klass = class extends (options.native ? Object.getPrototypeOf(document.createElement(options.native)).constructor : HTMLElement) {
+    var klass;
+    klass = class extends (options.native ? Object.getPrototypeOf(document.createElement(options.native)).constructor : HTMLElement) {
       constructor () {
         super();
         processExtensions('onConstruct', this);
       }
+
+      get baseClass(){ return klass }
 
       attributeChangedCallback(){
 
       }
     };
 
+    klass.baseClass = klass;
     klass._extensions = {};
     klass._pseudos = {};
 
@@ -241,58 +248,64 @@
 
 
 
-Article = xtag.create(class Article extends XTagElement {
-  set 'foo::attr'(val){
-    console.log(val);
+Post = xtag.create(class Post extends XTagElement {
+  'title::attr'(val){}
+  'byline::attr'(val){}
+  get 'listItems'(){
+    return [1,2,3];
   }
-  'basic::template' (){ return `<h1>Great Post</h1>
-      <h3>Actually, it's the greatest</h3>
-      <ul>
-        <li>1</li>
-        <li>2</li>
-        <li>3</li>
-      </ul>`;
+  'basic::template' (){ return `<h1>${this.title}</h1>
+      <h3>${this.byline}</h3>
+      <ul>${this.listItems.map(item => `<li>${item}</li>`).join('')}</ul>`;
   }
+});
+
+xtag.register('x-post', Post);
+
+
+Article = xtag.create(class Article extends Post {
+  get test(){ return 'Test'; }
 });
 
 xtag.register('x-article', Article);
 
 
-Clock = xtag.create(class Clock extends XTagElement {
-  connectedCallback (){
-    this.start();
-  }
-  start (){
-    this.update();
-    this.interval = setInterval(this.update.bind(this), 1000);
-  }
-  stop (){
-    this.interval = clearInterval(this.interval);
-  }
-  update (){
-    this.textContent = new Date().toLocaleTimeString();
-  }
-  'click::event' (){
-    if (this.interval) this.stop();
-    else this.start();
-  }
-});
 
-xtag.register('x-clock', Clock);
+// Clock = xtag.create(class Clock extends XTagElement {
+//   connectedCallback (){
+//     this.start();
+//   }
+//   start (){
+//     this.update();
+//     this.interval = setInterval(this.update.bind(this), 1000);
+//   }
+//   stop (){
+//     this.interval = clearInterval(this.interval);
+//   }
+//   update (){
+//     this.textContent = new Date().toLocaleTimeString();
+//   }
+//   'click::event' (){
+//     if (this.interval) this.stop();
+//     else this.start();
+//   }
+// });
 
-DigitalClock = xtag.create(class DigitalClock extends Clock {
+// xtag.register('x-clock', Clock);
 
-  connectedCallback () {
-    super.connectedCallback();
-    var span = document.createElement('span');
-    span.textContent = 2;
-    this.appendChild(span)
-  }
+// DigitalClock = xtag.create(class DigitalClock extends Clock {
 
-  'tap::event' (){
+//   connectedCallback () {
+//     super.connectedCallback();
+//     var span = document.createElement('span');
+//     span.textContent = 2;
+//     this.appendChild(span)
+//   }
 
-  }
+//   'tap::event' (){
 
-});
+//   }
 
-xtag.register('x-clock2', DigitalClock);
+// });
+
+// xtag.register('x-clock2', DigitalClock);
