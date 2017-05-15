@@ -33,7 +33,7 @@
     */
     prefix = (function () {
       var keys = Object.keys(Object.getPrototypeOf(window)).concat(Object.keys(window)).join();
-      var pre = ((keys.match(/,(ms)/) || keys.match(/,(moz)/) || keys.match(/,(O)/)) || [null, 'webkit'])[1].toLowerCase();
+      var pre = (keys.match(/,(ms|moz|O)/) || [null, 'webkit'])[1].toLowerCase();
       return {
         dom: pre == 'ms' ? 'MS' : pre,
         lowercase: pre,
