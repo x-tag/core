@@ -1,3 +1,7 @@
+=====
+:warning: TODO(xooxdoo): move xtag.component to seperate repo if xtag is just a dependancy
+=====
+
 # X-Tag - Rocket fuel for component development
 
 [![Join the chat at https://gitter.im/x-tag/core](https://badges.gitter.im/x-tag/core.svg)](https://gitter.im/x-tag/core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
