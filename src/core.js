@@ -459,17 +459,13 @@
       },
       tap: {
           attach: ['pointerdown', 'pointerup', 'keypress'],
-        condition: function(event, custom){
+          condition: function (event, custom) {
           if (event.type == 'pointerdown') {
             custom.startX = event.clientX;
             custom.startY = event.clientY;
           }
           else if (event.type == 'keypress') {
-              if (event.which == 13 || event.which == 32) {
-                  return true;
-              } else {
-                  return false;
-              }
+              return event.which == 13 || event.which == 32;
           }
           else if (event.button === 0 &&
                    Math.abs(custom.startX - event.clientX) < 10 &&
