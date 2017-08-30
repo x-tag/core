@@ -9,8 +9,8 @@ var paths = {
     'src-attr': ['extensions/src-attr/main.js'],
     'hyperHTML': ['extensions/hyperHTML/hyperHTML.min.js', 'extensions/hyperHTML/main.js'],
   },
-  extras: {
-    'tap-events': ['extras/tap-events/pep.min.js', 'extras/tap-events/main.js']
+  events: {
+    'tap': ['events/tap/pep.min.js', 'events/tap/main.js']
   }
 };
 
@@ -37,15 +37,16 @@ for (let z in paths.extensions) {
   });
 }
 
-for (let z in paths.extras) {
+for (let z in paths.events) {
   gulp.task(z, function() {
-    return gulp.src(paths.extras[z])
+    return gulp.src(paths.events[z])
       .pipe(uglify())
       .pipe(concat(z + '.js'))
-      .pipe(gulp.dest('dist/extras'));
+      .pipe(gulp.dest('dist/events'));
   });
 }
 
 gulp.task('default', ['raw', 'polyfilled']);
 gulp.task('extensions', Object.keys(paths.extensions));
-gulp.task('extras', Object.keys(paths.extras));
+gulp.task('events', Object.keys(paths.events));
+gulp.task('all', ['default', 'extensions', 'events']);
