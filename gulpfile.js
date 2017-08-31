@@ -5,12 +5,16 @@ var uglify = require('gulp-uglify-es').default;
 var paths = {
   core: 'src/core.js',
   polyfill: 'polyfills/custom-elements.min.js',
-  extensions: {
-    'src-attr': ['extensions/src-attr/main.js'],
-    'hyperHTML': ['extensions/hyperHTML/hyperHTML.min.js', 'extensions/hyperHTML/main.js'],
-  },
-  events: {
-    'tap': ['events/tap/pep.min.js', 'events/tap/main.js']
+  plugins: {
+    attributes: {
+      src: ['plugins/attributes/src/main.js']
+    },
+    events: {
+      tap: ['plugins/events/tap/pep.min.js', 'plugins/events/tap/main.js']
+    },
+    rendering: {
+      hyperHTML: ['plugins/rendering/hyperHTML/hyperHTML.min.js', 'plugins/rendering/hyperHTML/main.js']
+    }
   }
 };
 
@@ -28,25 +32,21 @@ gulp.task('polyfilled', function() {
     .pipe(gulp.dest('dist/'));
 });
 
-for (let z in paths.extensions) {
-  gulp.task(z, function() {
-    return gulp.src(paths.extensions[z])
-      .pipe(uglify())
-      .pipe(concat(z + '.js'))
-      .pipe(gulp.dest('dist/extensions'));
-  });
-}
-
-for (let z in paths.events) {
-  gulp.task(z, function() {
-    return gulp.src(paths.events[z])
-      .pipe(uglify())
-      .pipe(concat(z + '.js'))
-      .pipe(gulp.dest('dist/events'));
-  });
-}
+Object.keys(paths.plugins).forEach(type => {
+  var tasks = [];
+  var plugins = paths.plugins[type];
+  for (let z in plugins) {
+    tasks.push(type + ':' + z);
+    gulp.task(type + ':' + z, function() {
+      return gulp.src(plugins[z])
+                 .pipe(uglify())
+                 .pipe(concat(z + '.js'))
+                 .pipe(gulp.dest('dist/plugins/' + type));
+    });
+  }
+  gulp.task(type, tasks);
+});
 
 gulp.task('default', ['raw', 'polyfilled']);
-gulp.task('extensions', Object.keys(paths.extensions));
-gulp.task('events', Object.keys(paths.events));
-gulp.task('all', ['default', 'extensions', 'events']);
+gulp.task('plugins', Object.keys(paths.plugins));
+gulp.task('all', ['default', 'plugins']);
