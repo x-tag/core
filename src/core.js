@@ -465,7 +465,7 @@
             custom.startY = event.clientY;
           }
           else if (event.type == 'keypress') {
-              return event.which == 13 || event.which == 32;
+              return event.key == "Enter" || event.key == " ";
           }
           else if (event.button === 0 &&
                    Math.abs(custom.startX - event.clientX) < 10 &&
