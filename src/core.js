@@ -458,11 +458,14 @@
         }
       },
       tap: {
-        attach: ['pointerdown', 'pointerup'],
-        condition: function(event, custom){
+          attach: ['pointerdown', 'pointerup', 'keypress'],
+          condition: function (event, custom) {
           if (event.type == 'pointerdown') {
             custom.startX = event.clientX;
             custom.startY = event.clientY;
+          }
+          else if (event.type == 'keypress') {
+              return event.key == "Enter" || event.key == " ";
           }
           else if (event.button === 0 &&
                    Math.abs(custom.startX - event.clientX) < 10 &&
