@@ -1,15 +1,11 @@
 (function(){
 
   var docElement = document.documentElement;
-  if (!Element.prototype.matches) {
-       Element.prototype.matches = docElement.webkitMatchesSelector ||
-                                   docElement.mozMatchesSelector ||
-                                   docElement.msMatchesSelector ||
-                                   docElement.oMatchesSelector;
-  }
+  (Element.prototype.matches || (Element.prototype.matches = docElement.webkitMatchesSelector ||
+                                                             docElement.msMatchesSelector ||
+                                                             docElement.oMatchesSelector))
 
-  var regexParseProperty = /(\w+)|(?:(:*)(\w+)(?:\((.+?(?=\)))\))?)/g;
-  var regexPseudoCapture = /(\w+)|:(\w+)\((.+?(?=\)?))?|:(\w+)/g;
+  var regexParseExt = /(\w+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
   var regexCommaArgs = /,\s*/;
   var range = document.createRange();
 
@@ -25,7 +21,6 @@
     if (match) pseudo.fn = pseudo.fn.bind(match);
     else return null;
   }
-
 
   var xtag = {
     events: {},
@@ -130,12 +125,17 @@
     register (name, klass) {
       customElements.define(name, klass);
     },
+    addEvents (node, events){
+      let refs = {};
+      for (let z in events) refs[z] = xtag.addEvent(node, z, events[z]);
+      return refs;
+    },
     addEvent (node, key, fn, capture){
       var type;  
       var stack = fn;
       var ref = { data: {}, capture: capture };
       var pseudos = node.constructor.getOptions('pseudos');
-      key.replace(regexPseudoCapture, (match, name, pseudo1, args, pseudo2) => {
+      key.replace(regexParseExt, (match, name, pseudo1, args, pseudo2) => {
         if (name) type = name;
         else {
           var pseudo = pseudo1 || pseudo2,
@@ -163,6 +163,9 @@
         if (event.onAdd) event.onAdd(node, ref);
       }
       return ref;
+    },
+    removeEvents (node, refs) {
+      for (let z in refs) xtag.removeEvent(node, refs[z]);
     },
     removeEvent (node, ref){
       node.removeEventListener(ref.type, ref.listener, ref.capture);
@@ -253,11 +256,11 @@
           let extensionArgs = [];
           let descriptor = descriptors[z];
           let pseudos = target._pseudos || xtag.pseudos;
-          z.replace(regexParseProperty, function(){ matches.unshift(arguments);  });
+          z.replace(regexParseExt, function(){ matches.unshift(arguments);  });
           matches.forEach(a => function(match, prop, dots, name, args){
             property = prop || property;
             if (args) var _args = args.split(regexCommaArgs);
-            if (dots && dots == '::') {
+            if (dots == '::') {
               extensionArgs = _args || [];
               extension = extensions[name] || xtag.extensions[name];
               if (!processed.get(extension)) processed.set(extension, []);
