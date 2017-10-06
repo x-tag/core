@@ -1,11 +1,13 @@
 
 (function(){
 
-var count = 1;
+var count = 0;
 
 defineTestElement = function(klass){
-  xtag.register('test-' + count++, klass);
-  
+  var name = 'test-' + ++count;
+  document.body.appendChild(document.createElement(name));
+  xtag.register(name, klass);
+  return name;
 }
 
 })();

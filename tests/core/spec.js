@@ -40,7 +40,7 @@ describe("X-Tag extension API should", function() {
     node.bar();
     node.baz();
 
-    expect(count).toBe(5);
+    expect(count).toBe(6);
 
     delete xtag.extensions.foo;
   });
@@ -88,7 +88,7 @@ describe("X-Tag extension API should", function() {
     node.zul();
     node.boo();
     
-    expect(count).toBe(6);
+    expect(count).toBe(7);
   });
 
 });
@@ -219,15 +219,18 @@ describe("X-Tag's event extension should", function() {
       }
       'loaded::event'(){
         count++;
-        expect(count).toBe(2);
-        delete xtag.events.loaded;
-        done();
       }
     });
 
     defineTestElement(component);
 
     var node = new component();
+
+    node.addEventListener('loaded', function(){
+      expect(count).toBe(4);
+      done();
+      delete xtag.events.loaded;
+    })
   });
 
 });
