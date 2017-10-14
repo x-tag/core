@@ -92,33 +92,46 @@
       template: {
         mixin: (base) => class extends base {
           set 'template::attr' (name){
-            this.render(name);
+            var _name = name || 'default';
+            var template = this.templates[_name];
+            if (template) {
+              var node = range.createContextualFragment(template.call(this));
+              this._templateNode = this._templateNode ? this.replaceChild(node, this._templateNode) && node : this.appendChild(node);
+              this._templateRender();
+            }
+            else throw new ReferenceError('Template "' + _name + '" is undefined');
           }
           get templates (){
             return this.constructor.getOptions('templates');
           }
           render (name){
-            var _name = name || 'default';
-            var template = this.templates[_name];
-            if (template) {
-              this.innerHTML = '';
-              this.appendChild(range.createContextualFragment(template.call(this)));
-            }
-            else throw new ReferenceError('Template "' + _name + '" is undefined');
+            var promise = new Promise(resolve => this._templateRender = resolve)
+            this.template = name;
+            return promise;
           }
         },
         onParse (klass, property, args, descriptor){
           klass.getOptions('templates')[property || 'default'] = descriptor.value;
           return false;
         },
-        onConstruct (node, property, args){
-          if (JSON.parse(args[0] || false)) node.render(property);
+        onCreate (node, resolve, property, args){
+          if (!node._templateInit && JSON.parse(args[0] || false) && args[1] == 'create') {
+            node._templateInit = true;
+            node.render(property);
+          }
+          resolve();
+        },
+        onConnect (node, property, args){
+          if (!node._templateInit && JSON.parse(args[0] || false) && (!args[1] || args[1] == 'connect')) {
+            node._templateInit = true;
+            node.render(property);
+          }
         }
       }
     },
     create (name, klass){
       var c = klass || name;
-      processExtensions('onParse', c); 
+      onParse(c); 
       if (klass && name) customElements.define(name, c);
       return c;
     },
@@ -188,7 +201,22 @@
       constructor () {
         super();
         if (!this._data) this._data = {};
-        processExtensions('onConstruct', this);
+        onConstruct(this);
+        this._ready = [];
+        new Promise((resolve) => {
+          onCreate(this, resolve);
+        }).then((val) => {
+          this._ready.forEach(fn => fn.call(this));
+          this._ready = true;
+        })
+      }
+      connectedCallback () {
+        onConnect(this);
+      }
+      get isReady () { return this._ready === true; }
+      whenReady (fn){
+        if (this.isReady) fn.call(this);
+        else this._ready.push(fn);
       }
     };
 
@@ -215,7 +243,7 @@
           }
           if (mixin) {
             extended = mixin(current);
-            processExtensions('onParse', extended);
+            onParse(extended);
           }
         }
         return extended;
@@ -242,68 +270,77 @@
     };
   }
 
-  function processExtensions(event, target){
-    switch (event) {
-      case 'onParse': {
-        var processedProps = {};
-        var descriptors = getDescriptors(target);
-        var extensions = target.getOptions('extensions');
-        var processed = target._processedExtensions = new Map();   
-        for (let z in descriptors) {
-          let matches = [];
-          let property;
-          let extension;
-          let extensionArgs = [];
-          let descriptor = descriptors[z];
-          let pseudos = target._pseudos || xtag.pseudos;
-          z.replace(regexParseExt, function(){ matches.unshift(arguments);  });
-          matches.forEach(a => function(match, prop, dots, name, args){
-            property = prop || property;
-            if (args) var _args = args.split(regexCommaArgs);
-            if (dots == '::') {
-              extensionArgs = _args || [];
-              extension = extensions[name] || xtag.extensions[name];
-              if (!processed.get(extension)) processed.set(extension, []);
-            }
-            else if (!prop){
-              let pseudo = pseudos[name];
-              if (pseudo) {
-                for (let y in descriptor) {
-                  let fn = descriptor[y];
-                  if (typeof fn == 'function' && pseudo.onInvoke) {
-                    fn = descriptor[y] = pseudoWrap(pseudo, _args, fn);
-                    if (pseudo.onParse) pseudo.onParse(target, property, _args, fn);
-                  }
-                }
+  function onParse(target){
+    var processedProps = {};
+    var descriptors = getDescriptors(target);
+    var extensions = target.getOptions('extensions');
+    var processed = target._processedExtensions = new Map();   
+    for (let z in descriptors) {
+      let matches = [];
+      let property;
+      let extension;
+      let extensionArgs = [];
+      let descriptor = descriptors[z];
+      let pseudos = target._pseudos || xtag.pseudos;
+      z.replace(regexParseExt, function(){ matches.unshift(arguments);  });
+      matches.forEach(a => function(match, prop, dots, name, args){
+        property = prop || property;
+        if (args) var _args = args.split(regexCommaArgs);
+        if (dots == '::') {
+          extensionArgs = _args || [];
+          extension = extensions[name] || xtag.extensions[name];
+          if (!processed.get(extension)) processed.set(extension, []);
+        }
+        else if (!prop){
+          let pseudo = pseudos[name];
+          if (pseudo) {
+            for (let y in descriptor) {
+              let fn = descriptor[y];
+              if (typeof fn == 'function' && pseudo.onInvoke) {
+                fn = descriptor[y] = pseudoWrap(pseudo, _args, fn);
+                if (pseudo.onParse) pseudo.onParse(target, property, _args, fn);
               }
             }
-          }.apply(null, a));
-          let attachProperty;
-          if (extension) {
-            processed.get(extension).push([property, extensionArgs, descriptor]);
-            if (extension.onParse) attachProperty = extension.onParse(target, property, extensionArgs, descriptor, z);
-          }
-          if (!property) delete target.prototype[z];
-          else if (attachProperty !== false) {
-            let prop = processedProps[property] || (processedProps[property] = {});
-            for (let y in descriptor) prop[y] = descriptor[y];
           }
         }
-        for (let ext of processed.keys()) {
-          if (ext.onCompiled) ext.onCompiled(target, processedProps);
-        }
-        Object.defineProperties(target.prototype, processedProps);
-        break;
+      }.apply(null, a));
+      let attachProperty;
+      if (extension) {
+        processed.get(extension).push([property, extensionArgs, descriptor]);
+        if (extension.onParse) attachProperty = extension.onParse(target, property, extensionArgs, descriptor, z);
       }
-    
-      case 'onConstruct': {
-        var processed = target.constructor._processedExtensions;
-        for (let [ext, items] of processed) {
-          if (ext.onConstruct) items.forEach(item => ext.onConstruct(target, ...item))
-        }
-        break;
+      if (!property) delete target.prototype[z];
+      else if (attachProperty !== false) {
+        let prop = processedProps[property] || (processedProps[property] = {});
+        for (let y in descriptor) prop[y] = descriptor[y];
       }
+    }
+    for (let ext of processed.keys()) {
+      if (ext.onCompiled) ext.onCompiled(target, processedProps);
+    }
+    Object.defineProperties(target.prototype, processedProps);
+  }
 
+  function onConstruct (target){
+    var processed = target.constructor._processedExtensions;
+    for (let [ext, items] of processed) {
+      if (ext.onConstruct) items.forEach(item => ext.onConstruct(target, ...item))
+    }
+  }
+
+  function onCreate (target, resolve){
+    var processed = target.constructor._processedExtensions;
+    for (let [ext, items] of processed) {
+      if (ext.onCreate) Promise.all(items.map(item => {
+        return new Promise(resolve => ext.onCreate(target, resolve, ...item))
+      })).then(() => resolve())
+    }
+  }
+
+  function onConnect (target){
+    var processed = target.constructor._processedExtensions;
+    for (let [ext, items] of processed) {
+      if (ext.onConnect) items.forEach(item => ext.onConnect(target, ...item))
     }
   }
 
