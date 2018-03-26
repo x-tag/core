@@ -269,24 +269,27 @@ describe("X-Tag's template extension should", function() {
 
   it("auto-render templates marked with the option", function(done) {
     
-    var count = 4;
+    var count = 5;
 
     var component1 = xtag.create(class extends XTagElement {
-      '::template(true, create)'(){
+      '::template(true, ready)'(){
         return `<h1>title auto 1</h1><p>content auto 1</p>`;
       }
     });
 
     var component2 = xtag.create(class extends XTagElement {
-      'foo::template(true, create)'(){
+      'foo::template(true, ready)'(){
         return `<h1>title auto 2</h1><p>content auto 2</p>`;
+      }
+      'bar::template'(){
+        return `<h1>swap</h1><p>swapped</p>`;
       }
     });
 
     defineTestElement(component1);
 
     var node1 = new component1();
-    node1.whenReady(() => {
+    node1.rxn('ready', function(){
       expect(node1.firstElementChild.textContent).toBe('title auto 1');
       expect(node1.lastElementChild.textContent).toBe('content auto 1');
       --count;
@@ -296,14 +299,21 @@ describe("X-Tag's template extension should", function() {
     defineTestElement(component2);
 
     var node2 = new component2();
-    node2.whenReady(() => {
+    node2.rxn('ready', function(){
       expect(node2.firstElementChild.textContent).toBe('title auto 2');
       expect(node2.lastElementChild.textContent).toBe('content auto 2');
       --count;
       if (!count) done();
+      node2.render('bar').then(() => {
+        expect(node2.firstElementChild.textContent).toBe('swap');
+        expect(node2.lastElementChild.textContent).toBe('swapped');
+        --count;
+        if (!count) done();
+      })
     });
 
-    var component3 = xtag.create("x-test", class extends XTagElement {
+
+    xtag.create("x-test", class extends XTagElement {
       '::template(true)'(){
         return `<h1>title auto 2</h1><p>content auto 2</p>`;
       }
@@ -314,16 +324,15 @@ describe("X-Tag's template extension should", function() {
       if (!count) done();
     });
 
-    document.querySelector('x-test').whenReady(function() {
+    document.querySelector('x-test').rxn('ready', function(){
       --count;
       if (!count) done();
     });
 
   });
 
-  it("attach a named template and render when referenced", function() {
+  it("attach a named template and render when referenced", function(done) {
     
-    var count = 0;
     var component = xtag.create(class extends XTagElement {
       'foo::template'(){
         return `<h1>title2</h1><p>content2</p>`;
@@ -333,9 +342,12 @@ describe("X-Tag's template extension should", function() {
     defineTestElement(component);
 
     var node = new component();
-    node.render('foo');
-    expect(node.firstElementChild.textContent).toBe('title2');
-    expect(node.lastElementChild.textContent).toBe('content2');
+    node.render('foo').then(() => {
+      expect(node.firstElementChild.textContent).toBe('title2');
+      expect(node.lastElementChild.textContent).toBe('content2');
+      done();
+    });
+    
   });
 
   it("include the right values when a template is rendered", function() {

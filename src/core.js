@@ -30,6 +30,15 @@
       }
     },
     extensions: {
+      rxn: {
+        onParse (klass, prop, args, descriptor, key){
+          delete klass.prototype[key];
+          return false;
+        },
+        onConstruct (node, property, args, descriptor){
+          node.rxn(property, descriptor.value, !!args[1]);
+        }
+      },
       attr: {
         mixin: (base) => class extends base {
           attributeChangedCallback(attr, last, current){
@@ -90,47 +99,81 @@
         }
       },
       template: {
+        insert: function(node, template, resolve){
+          var frag = range.createContextualFragment(template.call(node));
+          Array.from(frag.children).forEach(child => child._templateNode = true);
+          Array.from(node.children).forEach(child => {
+            if (child._templateNode) node.removeChild(child)
+          });
+          node.appendChild(frag);  
+          if (resolve) resolve();
+        },
+        render: function(node, name, frame){
+          var promise;
+          var _name = name || 'default';
+          var template = node.templates[_name];
+          if (template) {
+            cancelAnimationFrame(node._templateFrame);
+            if (frame) {
+              if (!node._templatePromise || node._templatePromise.resolved) {
+                node._templatePromise = new Promise(resolve =>  {
+                  node._templateFrame = requestAnimationFrame(() => {
+                    this.insert(node, template, resolve);
+                  });
+
+                })
+              }
+              
+            }
+            else {
+              this.insert(node, template, resolve);
+            }
+            
+            node._templateRender();
+          }
+          else throw new ReferenceError('Template "' + _name + '" is undefined');
+        },
         mixin: (base) => class extends base {
           set 'template::attr' (name){
-            var _name = name || 'default';
-            var template = this.templates[_name];
-            if (template) {
-              var node = range.createContextualFragment(template.call(this));
-              this._templateNode = this._templateNode ? this.replaceChild(node, this._templateNode) && node : this.appendChild(node);
-              this._templateRender();
-            }
-            else throw new ReferenceError('Template "' + _name + '" is undefined');
+            this.render(name);
           }
           get templates (){
             return this.constructor.getOptions('templates');
           }
-          render (name){
-            var promise = new Promise(resolve => this._templateRender = resolve)
-            this.template = name;
-            return promise;
+          render (name, options = {}){
+            return new Promise((resolve, reject) => {
+              this.template = name;
+              var _name = name || 'default';
+              var template = this.templates[_name];
+              if (this.template != name) this.template = _name;
+              if (template) {
+                xtag.extensions.template.insert(this, template, resolve);
+              }
+              else {
+                throw new ReferenceError('Template "' + _name + '" is undefined');
+                reject(this);
+              }
+            }).then(() => {
+              processRxns(this, 'render');
+            });
           }
         },
         onParse (klass, property, args, descriptor){
           klass.getOptions('templates')[property || 'default'] = descriptor.value;
           return false;
         },
-        onCreate (node, resolve, property, args){
-          if (!node._templateInit && JSON.parse(args[0] || false) && args[1] == 'create') {
-            node._templateInit = true;
-            node.render(property);
+        onReady (node, resolve, property, args){
+          if (JSON.parse(args[0] || false)) {
+            if (args[1] == 'ready') node.render(property);
+            else node.rxn('firstpaint', () => node.render(property));
           }
           resolve();
-        },
-        onConnect (node, property, args){
-          if (!node._templateInit && JSON.parse(args[0] || false) && (!args[1] || args[1] == 'connect')) {
-            node._templateInit = true;
-            node.render(property);
-          }
         }
       }
     },
     create (name, klass){
       var c = klass || name;
+      c.options = Object.assign({}, c.options);
       onParse(c); 
       if (klass && name) customElements.define(name, c);
       return c;
@@ -195,38 +238,59 @@
     }
   }
 
+  var rxnID = 0;
+  function processRxns(node, type){
+    var rxn = node.rxns[type];
+    var queue = rxn.queue;
+    for (let z in queue) {
+      queue[z].fn.call(node);
+      if (rxn.singleton || !queue[z].recurring) delete queue[z];
+    }
+    rxn.fired = true;
+  }
+
   function createClass(options = {}){
     var klass;
     klass = class extends (options.native ? Object.getPrototypeOf(document.createElement(options.native)).constructor : HTMLElement) {
       constructor () {
         super();
-        if (!this._data) this._data = {};
+        if (!this.rxns) this.rxns = {
+          ready: { queue: {}, singleton: true },
+          firstpaint: { queue: {}, singleton: true },
+          render: { queue: {} }
+        };
         onConstruct(this);
-        this._ready = [];
-        new Promise((resolve) => {
-          onCreate(this, resolve);
-        }).then((val) => {
-          this._ready.forEach(fn => fn.call(this));
-          this._ready = true;
-        })
+        new Promise(resolve => onReady(this, resolve)).then(() => processRxns(this, 'ready'))
       }
       connectedCallback () {
         onConnect(this);
+        if (!this.rxns.firstpaint.frame) {
+          this.rxns.firstpaint.frame = requestAnimationFrame(() => processRxns(this, 'firstpaint'));
+        }
       }
-      get isReady () { return this._ready === true; }
-      whenReady (fn){
-        if (this.isReady) fn.call(this);
-        else this._ready.push(fn);
+      
+      rxn (type, fn, recurring){
+        var rxn = this.rxns[type];
+        if (rxn.singleton && rxn.fired) fn.call(this);
+        else {
+          rxn.queue[rxnID++] = { fn: fn, recurring: recurring };
+          return rxnID;
+        }
+      }
+      
+      cancelRxn (type, id){
+        delete this.rxns[type].queue[id];
       }
     };
 
-    klass.options = {};
-    klass.getOptions = function(name){
-      return this.options[name] || (this.options[name] = Object.assign({}, this.__proto__.options ? this.__proto__.options[name] : {}));
-    }
+    klass.options = {
+      extensions: {},
+      pseudos: {}
+    };
     
-    klass.getOptions('extensions');
-    klass.getOptions('pseudos');
+    klass.getOptions = function(name){
+      return this.options[name] || (this.options[name] = Object.assign({}, Object.getPrototypeOf(this).options ? Object.getPrototypeOf(this).options[name] : {}));
+    }
 
     klass.extensions = function extensions(...extensions){
       var exts = this.getOptions('extensions');
@@ -328,11 +392,11 @@
     }
   }
 
-  function onCreate (target, resolve){
+  function onReady (target, resolve){
     var processed = target.constructor._processedExtensions;
     for (let [ext, items] of processed) {
-      if (ext.onCreate) Promise.all(items.map(item => {
-        return new Promise(resolve => ext.onCreate(target, resolve, ...item))
+      if (ext.onReady) Promise.all(items.map(item => {
+        return new Promise(resolve => ext.onReady(target, resolve, ...item))
       })).then(() => resolve())
     }
   }
