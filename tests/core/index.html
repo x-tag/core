@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+	  <title>X-Tag: Jasmine Spec Runner</title>
+	  <meta charset="UTF-8">
+
+	  <link rel="stylesheet" type="text/css" href="../jasmine/jasmine.css">
+    <style>
+      body {
+        margin: 0;
+      }
+      .jasmine_html-reporter {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      x-test {
+        display: none;
+      }
+    </style>
+
+
+	  <script type="text/javascript" src="../jasmine/jasmine.js"></script>
+	  <script type="text/javascript" src="../jasmine/jasmine-html.js"></script>
+    <script type="text/javascript" src="../jasmine/console.js"></script>
+    <script type="text/javascript" src="../jasmine/boot.js"></script>
+
+    <script src="../../polyfills/custom-elements.min.js"></script>
+    <script src="../../src/core.js"></script>
+    <script src="../utils.js"></script>
+    
+    <script type="text/javascript" src="spec.js"></script>
+
+	</head>
+
+	<body>
+    <x-test></x-test>
+  </body>
+
+</html>
