@@ -1,14 +1,14 @@
 {
   "name": "x-tag",
   "description": "The X-Tag core library",
-  "version": "2.0.0-alpha",
+  "version": "2.0.1-alpha",
   "homepage": "http://www.x-tags.org",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git://github.com/x-tag/core.git"
   },
-  "main": "src/core.js",
+  "main": "dist/x-tag-polyfilled.js",
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.1",
