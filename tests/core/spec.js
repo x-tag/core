@@ -269,16 +269,16 @@ describe("X-Tag's template extension should", function() {
 
   it("auto-render templates marked with the option", function(done) {
     
-    var count = 5;
+    var count = 6;
 
     var component1 = xtag.create(class extends XTagElement {
-      '::template(true, ready)'(){
+      '::template(ready)'(){
         return `<h1>title auto 1</h1><p>content auto 1</p>`;
       }
     });
 
     var component2 = xtag.create(class extends XTagElement {
-      'foo::template(true, ready)'(){
+      'foo::template(ready)'(){
         return `<h1>title auto 2</h1><p>content auto 2</p>`;
       }
       'bar::template'(){
@@ -299,12 +299,16 @@ describe("X-Tag's template extension should", function() {
     defineTestElement(component2);
 
     var node2 = new component2();
-    node2.rxn('ready', function(){
+    document.body.appendChild(node2);
+    node2.rxn('firstpaint', function(){
       expect(node2.firstElementChild.textContent).toBe('title auto 2');
       expect(node2.lastElementChild.textContent).toBe('content auto 2');
       --count;
       if (!count) done();
-      node2.render('bar').then(() => {
+      requestAnimationFrame(() => {
+        --count;
+      });
+      node2.render('bar', { throttle: 'frame' }).then(() => {
         expect(node2.firstElementChild.textContent).toBe('swap');
         expect(node2.lastElementChild.textContent).toBe('swapped');
         --count;
@@ -314,7 +318,7 @@ describe("X-Tag's template extension should", function() {
 
 
     xtag.create("x-test", class extends XTagElement {
-      '::template(true)'(){
+      '::template(firstpaint)'(){
         return `<h1>title auto 2</h1><p>content auto 2</p>`;
       }
     });

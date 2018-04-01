@@ -99,39 +99,17 @@
         }
       },
       template: {
-        insert: function(node, template, resolve){
-          var frag = range.createContextualFragment(template.call(node));
-          Array.from(frag.children).forEach(child => child._templateNode = true);
-          Array.from(node.children).forEach(child => {
-            if (child._templateNode) node.removeChild(child)
-          });
-          node.appendChild(frag);  
-          if (resolve) resolve();
-        },
-        render: function(node, name, frame){
-          var promise;
-          var _name = name || 'default';
-          var template = node.templates[_name];
-          if (template) {
-            cancelAnimationFrame(node._templateFrame);
-            if (frame) {
-              if (!node._templatePromise || node._templatePromise.resolved) {
-                node._templatePromise = new Promise(resolve =>  {
-                  node._templateFrame = requestAnimationFrame(() => {
-                    this.insert(node, template, resolve);
-                  });
-
-                })
-              }
-              
-            }
-            else {
-              this.insert(node, template, resolve);
-            }
-            
-            node._templateRender();
+        throttle: {
+          frame: function (node, template, queued){
+            queued.cancel = cancelAnimationFrame.bind(window, requestAnimationFrame(() => {
+              node._render(template, queued);
+            }))
+          },
+          debounce: function (node, template, queued, options){
+            queued.cancel = clearTimeout.bind(window, setTimeout(() => {
+              node_.render(template, queued);
+            }, options.throttle))
           }
-          else throw new ReferenceError('Template "' + _name + '" is undefined');
         },
         mixin: (base) => class extends base {
           set 'template::attr' (name){
@@ -140,22 +118,36 @@
           get templates (){
             return this.constructor.getOptions('templates');
           }
+          _render (template, queued){
+            this.innerHTML = template.call(this);
+            this._XTagRender = null;
+            if (queued.resolve) queued.resolve(this);
+          }
           render (name, options = {}){
-            return new Promise((resolve, reject) => {
-              this.template = name;
-              var _name = name || 'default';
-              var template = this.templates[_name];
-              if (this.template != name) this.template = _name;
-              if (template) {
-                xtag.extensions.template.insert(this, template, resolve);
-              }
-              else {
-                throw new ReferenceError('Template "' + _name + '" is undefined');
-                reject(this);
-              }
-            }).then(() => {
-              processRxns(this, 'render');
-            });
+            var _name = name || 'default';
+            var template = this.templates[_name];
+            if (!template) {
+              throw new ReferenceError('Template "' + _name + '" undefined for ' + this.nodeName);
+            }
+            var queued = this._XTagRender;
+            if (queued) {
+              if (queued.name === _name) return queued.promise;
+              else if (queued.cancel) queued.cancel();
+            }
+            if (this.getAttribute('template') != _name) this.setAttribute('template', _name);
+            queued = this._XTagRender = { name: _name };
+            var ext = xtag.extensions.template.throttle;
+            var throttle = (options.throttle ? ext[options.throttle] || ext.debounce : false);
+            if (throttle) {
+              return queued.promise = new Promise(resolve => {
+                queued.resolve = resolve;
+                throttle(this, template, queued, options);
+              });
+            }
+            else {
+              this._render(template, queued);
+              return Promise.resolve(this);
+            }
           }
         },
         onParse (klass, property, args, descriptor){
@@ -163,8 +155,8 @@
           return false;
         },
         onReady (node, resolve, property, args){
-          if (JSON.parse(args[0] || false)) {
-            if (args[1] == 'ready') node.render(property);
+          if (args[0]) {
+            if (args[0] === 'ready') node.render(property);
             else node.rxn('firstpaint', () => node.render(property));
           }
           resolve();
