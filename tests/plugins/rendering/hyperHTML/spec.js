@@ -6,7 +6,7 @@ describe("The hyperHTML extension should", function() {
     var count = 0;
     var component = xtag.create(class extends XTagElement.extensions('hyper') {
       '::hyper(ready)'(render){
-        render`<h1>${this.foo}</h1><input value="${this.bar()}" />`;
+        render(this)`<h1>${this.foo}</h1><input value="${this.bar()}" />`;
       }
       get foo (){
         return 'foo ' + count++;
@@ -39,10 +39,10 @@ describe("The hyperHTML extension should", function() {
     var count = 0;
     var component = xtag.create(class extends XTagElement.extensions('hyper') {
       '::hyper(ready)'(render){
-        render`<h1>${this.foo}</h1><input value="${this.bar()}" />`;
+        render(this)`<h1>${this.foo}</h1><input value="${this.bar()}" />`;
       }
       'second::hyper'(render){
-        render`<h2>${this.foo}</h2><input value="${this.bar()}" />`;
+        render(this)`<h2>${this.foo}</h2><input value="${this.bar()}" />`;
       }
       get foo (){
         return 'foo ' + count++;
