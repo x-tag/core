@@ -183,7 +183,6 @@
       var type;  
       var stack = fn;
       var ref = { data: {}, capture: capture };
-      var hasOptions = node.constructor.getOptions;
       key.replace(regexParseExt, (match, name, pseudo1, args, pseudo2) => {
         if (name) type = name;
         else {
