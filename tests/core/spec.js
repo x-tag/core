@@ -318,7 +318,7 @@ describe("X-Tag's template extension should", function() {
 
 
     xtag.create("x-test", class extends XTagElement {
-      set 'in-source::attr' (val){
+      set 'inSource::attr' (val){
         --count;
       }
       '::template(firstpaint)'(){

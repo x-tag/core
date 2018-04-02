@@ -7,8 +7,10 @@
 
   var regexParseExt = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
   var regexCommaArgs = /,\s*/;
+  var regexCamel = /[A-Z]/g;
   var range = document.createRange();
-var countattr = 0;
+  var dashLower = c => "-" + c.toLowerCase();
+
   function delegateAction(node, pseudo, event) {
     var match,
         target = event.target,
@@ -61,7 +63,8 @@ var countattr = 0;
         },
         onParse (klass, prop, args, descriptor, key){
           if (descriptor.value) throw 'Attribute accessor "'+ prop +'" was declared as a value, but must be declared as get or set';
-          klass.getOptions('attributes')[prop] = descriptor;
+          var _prop = prop.replace(regexCamel, dashLower);
+          klass.getOptions('attributes')[_prop] = descriptor;
           var type = this.types[args[0]] || {};
           let descSet = descriptor.set;
           let typeSet = type.set || HTMLElement.prototype.setAttribute;
@@ -70,7 +73,7 @@ var countattr = 0;
               descriptor._skip = true;
               var output;
               if (descSet) output = descSet.call(this, val);
-              typeSet.call(this, prop, typeof output == 'undefined' ? val : output);
+              typeSet.call(this, _prop, typeof output == 'undefined' ? val : output);
               descriptor._skip = null;
             }
           }
@@ -78,7 +81,7 @@ var countattr = 0;
           let typeGet = type.get || HTMLElement.prototype.getAttribute;
           descriptor.get = function(){
             var output;
-            var val = typeGet.call(this, prop);
+            var val = typeGet.call(this, _prop);
             if (descGet) output = descGet.call(this, val);
             return typeof output == 'undefined' ? val : output;
           }
