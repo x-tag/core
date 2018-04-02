@@ -269,7 +269,7 @@ describe("X-Tag's template extension should", function() {
 
   it("auto-render templates marked with the option", function(done) {
     
-    var count = 6;
+    var count = 7;
 
     var component1 = xtag.create(class extends XTagElement {
       '::template(ready)'(){
@@ -318,6 +318,9 @@ describe("X-Tag's template extension should", function() {
 
 
     xtag.create("x-test", class extends XTagElement {
+      set 'in-source::attr' (val){
+        --count;
+      }
       '::template(firstpaint)'(){
         return `<h1>title auto 2</h1><p>content auto 2</p>`;
       }

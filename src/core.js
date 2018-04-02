@@ -5,10 +5,10 @@
                                                              docElement.msMatchesSelector ||
                                                              docElement.oMatchesSelector))
 
-  var regexParseExt = /(\w+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
+  var regexParseExt = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
   var regexCommaArgs = /,\s*/;
   var range = document.createRange();
-
+var countattr = 0;
   function delegateAction(node, pseudo, event) {
     var match,
         target = event.target,
@@ -44,7 +44,6 @@
           attributeChangedCallback(attr, last, current){
             var desc = this.constructor.getOptions('attributes')[attr];
             if (desc && desc.set && !desc._skip) {
-              desc._skip = true;
               desc.set.call(this, current);
               desc._skip = null;
             }
@@ -337,7 +336,7 @@
       let extension;
       let extensionArgs = [];
       let descriptor = descriptors[z];
-      let pseudos = target._pseudos || xtag.pseudos;
+      let pseudos = target._pseudos || xtag.pseudos;    
       z.replace(regexParseExt, function(){ matches.unshift(arguments);  });
       matches.forEach(a => function(match, prop, dots, name, args){
         property = prop || property;
