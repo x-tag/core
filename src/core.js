@@ -8,7 +8,6 @@
   var regexParseExt = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
   var regexCommaArgs = /,\s*/;
   var regexCamel = /[A-Z]/g;
-  var range = document.createRange();
   var dashLower = c => "-" + c.toLowerCase();
 
   function delegateAction(node, pseudo, event) {
@@ -184,12 +183,12 @@
       var type;  
       var stack = fn;
       var ref = { data: {}, capture: capture };
-      var pseudos = node.constructor.getOptions('pseudos');
+      var hasOptions = node.constructor.getOptions;
       key.replace(regexParseExt, (match, name, pseudo1, args, pseudo2) => {
         if (name) type = name;
         else {
           var pseudo = pseudo1 || pseudo2,
-              pseudo = pseudos[pseudo] || xtag.pseudos[pseudo];
+              pseudo = xtag.pseudos[pseudo];
           var _args = args ? args.split(regexCommaArgs) : [];
           stack = pseudoWrap(pseudo, _args, stack, ref);
           if (pseudo.onParse) pseudo.onParse(node, type, _args, stack, ref);
@@ -198,7 +197,7 @@
       node.addEventListener(type, stack, capture);
       ref.type = type;
       ref.listener = stack;
-      var event = node.constructor.getOptions('events')[type] || xtag.events[type];
+      var event = xtag.events[type];
       if (event) {
         var listener = function(e){
           new Promise((resolve, reject) => {
@@ -219,7 +218,7 @@
     },
     removeEvent (node, ref){
       node.removeEventListener(ref.type, ref.listener, ref.capture);
-      var event = node.constructor.getOptions('events')[ref.type] || xtag.events[ref.type];
+      var event = xtag.events[ref.type];
       if (event && event.onRemove) event.onRemove(node, ref);
       if (ref.attached) ref.attached.forEach(attached => { xtag.removeEvent(node, ref) })
     },
@@ -254,8 +253,12 @@
           render: { queue: {} }
         };
         onConstruct(this);
-        new Promise(resolve => onReady(this, resolve)).then(() => processRxns(this, 'ready'))
+        new Promise(resolve => onReady(this, resolve)).then(() => {
+          processRxns(this, 'ready')
+          if (this.readyCallback) this.readyCallback();
+        });
       }
+
       connectedCallback () {
         onConnect(this);
         if (!this.rxns.firstpaint.frame) {
@@ -391,7 +394,7 @@
     for (let [ext, items] of processed) {
       if (ext.onReady) Promise.all(items.map(item => {
         return new Promise(resolve => ext.onReady(target, resolve, ...item))
-      })).then(() => resolve())
+      })).then(resolve)
     }
   }
 

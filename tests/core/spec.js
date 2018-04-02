@@ -287,7 +287,7 @@ describe("X-Tag's template extension should", function() {
     });
 
     defineTestElement(component1);
-
+    
     var node1 = new component1();
     node1.rxn('ready', function(){
       expect(node1.firstElementChild.textContent).toBe('title auto 1');
