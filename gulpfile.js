@@ -20,15 +20,27 @@ var paths = {
 
 gulp.task('raw', function() {
   return gulp.src(paths.core)
-    .pipe(uglify())
     .pipe(concat('x-tag-raw.js'))
+    .pipe(gulp.dest('dist/'));
+});
+
+gulp.task('raw.min', function() {
+  return gulp.src(paths.core)
+    .pipe(uglify())
+    .pipe(concat('x-tag-raw.min.js'))
     .pipe(gulp.dest('dist/'));
 });
 
 gulp.task('polyfilled', function() {
   return gulp.src([paths.polyfill, paths.core])
-    .pipe(uglify())
     .pipe(concat('x-tag-polyfilled.js'))
+    .pipe(gulp.dest('dist/'));
+});
+
+gulp.task('polyfilled.min', function() {
+  return gulp.src([paths.polyfill, paths.core])
+    .pipe(uglify())
+    .pipe(concat('x-tag-polyfilled.min.js'))
     .pipe(gulp.dest('dist/'));
 });
 
@@ -47,6 +59,6 @@ Object.keys(paths.plugins).forEach(type => {
   gulp.task(type, tasks);
 });
 
-gulp.task('default', ['raw', 'polyfilled']);
+gulp.task('default', ['raw', 'polyfilled', 'raw.min', 'polyfilled.min']);
 gulp.task('plugins', Object.keys(paths.plugins));
 gulp.task('all', ['default', 'plugins']);

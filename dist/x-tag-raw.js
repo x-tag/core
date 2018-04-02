@@ -1,1 +1,428 @@
-!function(){var e=document.documentElement;Element.prototype.matches||(Element.prototype.matches=e.webkitMatchesSelector||e.msMatchesSelector||e.oMatchesSelector);var t=/([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g,n=/,\s*/,r=/[A-Z]/g,s=e=>"-"+e.toLowerCase();var o={events:{},pseudos:{delegate:{onInvoke:function(e,t,n){for(var r,s=n.target,o=n.currentTarget;!r&&s&&s!=o;)s.tagName&&s.matches(t.args)&&(r=s),s=s.parentNode;if(!r&&o.tagName&&o.matches(t.args)&&(r=o),!r)return null;t.fn=t.fn.bind(r)}}},extensions:{rxn:{onParse:(e,t,n,r,s)=>(delete e.prototype[s],!1),onConstruct(e,t,n,r){e.rxn(t,r.value,!!n[1])}},attr:{mixin:e=>(class extends e{attributeChangedCallback(e,t,n){var r=this.constructor.getOptions("attributes")[e];r&&r.set&&!r._skip&&(r.set.call(this,n),r._skip=null)}}),types:{boolean:{set:function(e,t){t||""===t?this.setAttribute(e,""):this.removeAttribute(e)},get:function(e){return this.hasAttribute(e)}}},onParse(e,t,n,o,i){if(o.value)throw'Attribute accessor "'+t+'" was declared as a value, but must be declared as get or set';var a=t.replace(r,s);e.getOptions("attributes")[a]=o;var l=this.types[n[0]]||{};let c=o.set,u=l.set||HTMLElement.prototype.setAttribute;o.set=function(e){var t;o._skip||(o._skip=!0,c&&(t=c.call(this,e)),u.call(this,a,void 0===t?e:t),o._skip=null)};let d=o.get,p=l.get||HTMLElement.prototype.getAttribute;o.get=function(){var e,t=p.call(this,a);return d&&(e=d.call(this,t)),void 0===e?t:e},delete e.prototype[i]},onCompiled(e){e.observedAttributes=Object.keys(e.getOptions("attributes")).concat(e.observedAttributes||[])}},event:{onParse:(e,t,n,r,s)=>(delete e.prototype[s],!1),onConstruct(e,t,n,r){o.addEvent(e,t,r.value)}},template:{throttle:{frame:function(e,t,n){n.cancel=cancelAnimationFrame.bind(window,requestAnimationFrame(()=>{e._render(t,n)}))},debounce:function(e,t,n,r){n.cancel=clearTimeout.bind(window,setTimeout(()=>{node_.render(t,n)},r.throttle))}},mixin:e=>(class extends e{set"template::attr"(e){this.render(e)}get templates(){return this.constructor.getOptions("templates")}_render(e,t){this.innerHTML=e.call(this),this._XTagRender=null,t.resolve&&t.resolve(this)}render(e,t={}){var n=e||"default",r=this.templates[n];if(!r)throw new ReferenceError('Template "'+n+'" undefined for '+this.nodeName);var s=this._XTagRender;if(s){if(s.name===n)return s.promise;s.cancel&&s.cancel()}this.getAttribute("template")!=n&&this.setAttribute("template",n),s=this._XTagRender={name:n};var i=o.extensions.template.throttle,a=!!t.throttle&&(i[t.throttle]||i.debounce);return a?s.promise=new Promise(e=>{s.resolve=e,a(this,r,s,t)}):(this._render(r,s),Promise.resolve(this))}}),onParse:(e,t,n,r)=>(e.getOptions("templates")[t||"default"]=r.value,!1),onReady(e,t,n,r){r[0]&&("ready"===r[0]?e.render(n):e.rxn("firstpaint",()=>e.render(n))),t()}}},create(e,t){var n=t||e;return n.options=Object.assign({},n.options),c(n),t&&e&&customElements.define(e,n),n},register(e,t){customElements.define(e,t)},addEvents(e,t){let n={};for(let r in t)n[r]=o.addEvent(e,r,t[r]);return n},addEvent(e,r,s,i){var a,c=s,u={data:{},capture:i};r.replace(t,(t,r,s,i,d)=>{if(r)a=r;else{var p=s||d,f=(p=o.pseudos[p],i?i.split(n):[]);c=l(p,f,c,u),p.onParse&&p.onParse(e,a,f,c,u)}}),e.addEventListener(a,c,i),u.type=a,u.listener=c;var d=o.events[a];if(d){var p=function(e){new Promise((t,n)=>{d.onFilter(this,e,u,t,n)}).then(()=>{o.fireEvent(e.target,a)})};u.attached=d.attach.map(t=>o.addEvent(e,t,p,!0)),d.onAdd&&d.onAdd(e,u)}return u},removeEvents(e,t){for(let n in t)o.removeEvent(e,t[n])},removeEvent(e,t){e.removeEventListener(t.type,t.listener,t.capture);var n=o.events[t.type];n&&n.onRemove&&n.onRemove(e,t),t.attached&&t.attached.forEach(n=>{o.removeEvent(e,t)})},fireEvent(e,t,n={}){let r=Object.assign({bubbles:!0,cancelable:!0},n);e.dispatchEvent(new CustomEvent(t,r))}},i=0;function a(e,t){var n=e.rxns[t],r=n.queue;for(let t in r)r[t].fn.call(e),!n.singleton&&r[t].recurring||delete r[t];n.fired=!0}function l(e,t,n,r){return function(){var s={fn:n,args:t,detail:r},o=e.onInvoke(this,s,...arguments);return null===o||!1===o?o:s.fn.apply(this,o instanceof Array?o:arguments)}}function c(e){var r={},s=function(e){var t={},n=e.prototype;return Object.getOwnPropertyNames(n).forEach(e=>{t[e]=Object.getOwnPropertyDescriptor(n,e)}),t}(e),i=e.getOptions("extensions"),a=e._processedExtensions=new Map;for(let c in s){let u,d,p,f=[],m=[],h=s[c],v=e._pseudos||o.pseudos;if(c.replace(t,function(){f.unshift(arguments)}),f.forEach(t=>(function(t,r,s,c,p){if(u=r||u,p)var f=p.split(n);if("::"==s)m=f||[],d=i[c]||o.extensions[c],a.get(d)||a.set(d,[]);else if(!r){let t=v[c];if(t)for(let n in h){let r=h[n];"function"==typeof r&&t.onInvoke&&(r=h[n]=l(t,f,r),t.onParse&&t.onParse(e,u,f,r))}}}).apply(null,t)),d&&(a.get(d).push([u,m,h]),d.onParse&&(p=d.onParse(e,u,m,h,c))),u){if(!1!==p){let e=r[u]||(r[u]={});for(let t in h)e[t]=h[t]}}else delete e.prototype[c]}for(let t of a.keys())t.onCompiled&&t.onCompiled(e,r);Object.defineProperties(e.prototype,r)}XTagElement=function e(t={}){var n;return(n=class extends(t.native?Object.getPrototypeOf(document.createElement(t.native)).constructor:HTMLElement){constructor(){super(),this.rxns||(this.rxns={ready:{queue:{},singleton:!0},firstpaint:{queue:{},singleton:!0},render:{queue:{}}}),function(e){var t=e.constructor._processedExtensions;for(let[n,r]of t)n.onConstruct&&r.forEach(t=>n.onConstruct(e,...t))}(this),new Promise(e=>(function(e,t){var n=e.constructor._processedExtensions;for(let[r,s]of n)r.onReady&&Promise.all(s.map(t=>new Promise(n=>r.onReady(e,n,...t)))).then(t)})(this,e)).then(()=>{a(this,"ready"),this.readyCallback&&this.readyCallback()})}connectedCallback(){!function(e){var t=e.constructor._processedExtensions;for(let[n,r]of t)n.onConnect&&r.forEach(t=>n.onConnect(e,...t))}(this),this.rxns.firstpaint.frame||(this.rxns.firstpaint.frame=requestAnimationFrame(()=>a(this,"firstpaint")))}rxn(e,t,n){var r=this.rxns[e];if(!r.singleton||!r.fired)return r.queue[i++]={fn:t,recurring:n},i;t.call(this)}cancelRxn(e,t){delete this.rxns[e].queue[t]}}).options={extensions:{},pseudos:{}},n.getOptions=function(e){return this.options[e]||(this.options[e]=Object.assign({},Object.getPrototypeOf(this).options?Object.getPrototypeOf(this).options[e]:{}))},n.extensions=function(...e){var t=this.getOptions("extensions");return e.reduce((e,n)=>{var r,s=e;return t[n.name]||("string"==typeof n?r=o.extensions[n].mixin:(r=n.mixin,t[n.name]=n),r&&c(s=r(e))),s},this)},n.as=function(t){return e({native:t})},n.extensions("attr","event","template")}(),"function"==typeof define&&define.amd?(define(o),define(XTagElement)):"undefined"!=typeof module&&module.exports?module.exports={xtag:o,XTagElement:XTagElement}:(window.xtag=o,window.XTagElement=XTagElement)}();
+(function(){
+
+  var docElement = document.documentElement;
+  (Element.prototype.matches || (Element.prototype.matches = docElement.webkitMatchesSelector ||
+                                                             docElement.msMatchesSelector ||
+                                                             docElement.oMatchesSelector))
+
+  var regexParseExt = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
+  var regexCommaArgs = /,\s*/;
+  var regexCamel = /[A-Z]/g;
+  var dashLower = c => "-" + c.toLowerCase();
+
+  function delegateAction(node, pseudo, event) {
+    var match,
+        target = event.target,
+        root = event.currentTarget;
+    while (!match && target && target != root) {
+      if (target.tagName && target.matches(pseudo.args)) match = target;
+      target = target.parentNode;
+    }
+    if (!match && root.tagName && root.matches(pseudo.args)) match = root;
+    if (match) pseudo.fn = pseudo.fn.bind(match);
+    else return null;
+  }
+
+  var xtag = {
+    events: {},
+    pseudos: {
+      delegate: {
+        onInvoke: delegateAction
+      }
+    },
+    extensions: {
+      rxn: {
+        onParse (klass, prop, args, descriptor, key){
+          delete klass.prototype[key];
+          return false;
+        },
+        onConstruct (node, property, args, descriptor){
+          node.rxn(property, descriptor.value, !!args[1]);
+        }
+      },
+      attr: {
+        mixin: (base) => class extends base {
+          attributeChangedCallback(attr, last, current){
+            var desc = this.constructor.getOptions('attributes')[attr];
+            if (desc && desc.set && !desc._skip) {
+              desc.set.call(this, current);
+              desc._skip = null;
+            }
+          }
+        },
+        types: {
+          boolean: {
+            set: function(prop, val){
+              val || val === '' ? this.setAttribute(prop, '') : this.removeAttribute(prop);
+            },
+            get: function(prop){
+              return this.hasAttribute(prop);
+            }
+          }
+        },
+        onParse (klass, prop, args, descriptor, key){
+          if (descriptor.value) throw 'Attribute accessor "'+ prop +'" was declared as a value, but must be declared as get or set';
+          var _prop = prop.replace(regexCamel, dashLower);
+          klass.getOptions('attributes')[_prop] = descriptor;
+          var type = this.types[args[0]] || {};
+          let descSet = descriptor.set;
+          let typeSet = type.set || HTMLElement.prototype.setAttribute;
+          descriptor.set = function(val){
+            if (!descriptor._skip){
+              descriptor._skip = true;
+              var output;
+              if (descSet) output = descSet.call(this, val);
+              typeSet.call(this, _prop, typeof output == 'undefined' ? val : output);
+              descriptor._skip = null;
+            }
+          }
+          let descGet = descriptor.get;
+          let typeGet = type.get || HTMLElement.prototype.getAttribute;
+          descriptor.get = function(){
+            var output;
+            var val = typeGet.call(this, _prop);
+            if (descGet) output = descGet.call(this, val);
+            return typeof output == 'undefined' ? val : output;
+          }
+          delete klass.prototype[key];
+        },
+        onCompiled (klass){
+          klass.observedAttributes = Object.keys(klass.getOptions('attributes')).concat(klass.observedAttributes || [])
+        }
+      },
+      event: {
+        onParse (klass, property, args, descriptor, key){
+          delete klass.prototype[key];
+          return false;
+        },
+        onConstruct (node, property, args, descriptor){
+          xtag.addEvent(node, property, descriptor.value);
+        }
+      },
+      template: {
+        throttle: {
+          frame: function (node, template, queued){
+            queued.cancel = cancelAnimationFrame.bind(window, requestAnimationFrame(() => {
+              node._render(template, queued);
+            }))
+          },
+          debounce: function (node, template, queued, options){
+            queued.cancel = clearTimeout.bind(window, setTimeout(() => {
+              node_.render(template, queued);
+            }, options.throttle))
+          }
+        },
+        mixin: (base) => class extends base {
+          set 'template::attr' (name){
+            this.render(name);
+          }
+          get templates (){
+            return this.constructor.getOptions('templates');
+          }
+          _render (template, queued){
+            this.innerHTML = template.call(this);
+            this._XTagRender = null;
+            if (queued.resolve) queued.resolve(this);
+          }
+          render (name, options = {}){
+            var _name = name || 'default';
+            var template = this.templates[_name];
+            if (!template) {
+              throw new ReferenceError('Template "' + _name + '" undefined for ' + this.nodeName);
+            }
+            var queued = this._XTagRender;
+            if (queued) {
+              if (queued.name === _name) return queued.promise;
+              else if (queued.cancel) queued.cancel();
+            }
+            if (this.getAttribute('template') != _name) this.setAttribute('template', _name);
+            queued = this._XTagRender = { name: _name };
+            var ext = xtag.extensions.template.throttle;
+            var throttle = (options.throttle ? ext[options.throttle] || ext.debounce : false);
+            if (throttle) {
+              return queued.promise = new Promise(resolve => {
+                queued.resolve = resolve;
+                throttle(this, template, queued, options);
+              });
+            }
+            else {
+              this._render(template, queued);
+              return Promise.resolve(this);
+            }
+          }
+        },
+        onParse (klass, property, args, descriptor){
+          klass.getOptions('templates')[property || 'default'] = descriptor.value;
+          return false;
+        },
+        onReady (node, resolve, property, args){
+          if (args[0]) {
+            if (args[0] === 'ready') node.render(property);
+            else node.rxn('firstpaint', () => node.render(property));
+          }
+          resolve();
+        }
+      }
+    },
+    create (name, klass){
+      var c = klass || name;
+      c.options = Object.assign({}, c.options);
+      onParse(c); 
+      if (klass && name) customElements.define(name, c);
+      return c;
+    },
+    register (name, klass) {
+      customElements.define(name, klass);
+    },
+    addEvents (node, events){
+      let refs = {};
+      for (let z in events) refs[z] = xtag.addEvent(node, z, events[z]);
+      return refs;
+    },
+    addEvent (node, key, fn, capture){
+      var type;  
+      var stack = fn;
+      var ref = { data: {}, capture: capture };
+      key.replace(regexParseExt, (match, name, pseudo1, args, pseudo2) => {
+        if (name) type = name;
+        else {
+          var pseudo = pseudo1 || pseudo2,
+              pseudo = xtag.pseudos[pseudo];
+          var _args = args ? args.split(regexCommaArgs) : [];
+          stack = pseudoWrap(pseudo, _args, stack, ref);
+          if (pseudo.onParse) pseudo.onParse(node, type, _args, stack, ref);
+        }
+      });
+      node.addEventListener(type, stack, capture);
+      ref.type = type;
+      ref.listener = stack;
+      var event = xtag.events[type];
+      if (event) {
+        var listener = function(e){
+          new Promise((resolve, reject) => {
+            event.onFilter(this, e, ref, resolve, reject);
+          }).then(() => {
+            xtag.fireEvent(e.target, type);
+          });
+        }
+        ref.attached = event.attach.map(key => {
+          return xtag.addEvent(node, key, listener, true);
+        });
+        if (event.onAdd) event.onAdd(node, ref);
+      }
+      return ref;
+    },
+    removeEvents (node, refs) {
+      for (let z in refs) xtag.removeEvent(node, refs[z]);
+    },
+    removeEvent (node, ref){
+      node.removeEventListener(ref.type, ref.listener, ref.capture);
+      var event = xtag.events[ref.type];
+      if (event && event.onRemove) event.onRemove(node, ref);
+      if (ref.attached) ref.attached.forEach(attached => { xtag.removeEvent(node, ref) })
+    },
+    fireEvent (node, name, obj = {}){
+      let options = Object.assign({
+        bubbles: true,
+        cancelable: true
+      }, obj);
+      node.dispatchEvent(new CustomEvent(name, options));
+    }
+  }
+
+  var rxnID = 0;
+  function processRxns(node, type){
+    var rxn = node.rxns[type];
+    var queue = rxn.queue;
+    for (let z in queue) {
+      queue[z].fn.call(node);
+      if (rxn.singleton || !queue[z].recurring) delete queue[z];
+    }
+    rxn.fired = true;
+  }
+
+  function createClass(options = {}){
+    var klass;
+    klass = class extends (options.native ? Object.getPrototypeOf(document.createElement(options.native)).constructor : HTMLElement) {
+      constructor () {
+        super();
+        if (!this.rxns) this.rxns = {
+          ready: { queue: {}, singleton: true },
+          firstpaint: { queue: {}, singleton: true },
+          render: { queue: {} }
+        };
+        onConstruct(this);
+        new Promise(resolve => onReady(this, resolve)).then(() => {
+          processRxns(this, 'ready')
+          if (this.readyCallback) this.readyCallback();
+        });
+      }
+
+      connectedCallback () {
+        onConnect(this);
+        if (!this.rxns.firstpaint.frame) {
+          this.rxns.firstpaint.frame = requestAnimationFrame(() => processRxns(this, 'firstpaint'));
+        }
+      }
+      
+      rxn (type, fn, recurring){
+        var rxn = this.rxns[type];
+        if (rxn.singleton && rxn.fired) fn.call(this);
+        else {
+          rxn.queue[rxnID++] = { fn: fn, recurring: recurring };
+          return rxnID;
+        }
+      }
+      
+      cancelRxn (type, id){
+        delete this.rxns[type].queue[id];
+      }
+    };
+
+    klass.options = {
+      extensions: {},
+      pseudos: {}
+    };
+    
+    klass.getOptions = function(name){
+      return this.options[name] || (this.options[name] = Object.assign({}, Object.getPrototypeOf(this).options ? Object.getPrototypeOf(this).options[name] : {}));
+    }
+
+    klass.extensions = function extensions(...extensions){
+      var exts = this.getOptions('extensions');
+      return extensions.reduce((current, extension) => {
+        var mixin;
+        var extended = current;
+        if (!exts[extension.name]) {
+          if (typeof extension == 'string') {
+            mixin = xtag.extensions[extension].mixin;
+          }
+          else {
+            mixin = extension.mixin;
+            exts[extension.name] = extension;
+          }
+          if (mixin) {
+            extended = mixin(current);
+            onParse(extended);
+          }
+        }
+        return extended;
+      }, this);
+    }
+
+    klass.as = function(tag){
+      return createClass({
+        native: tag
+      });
+    }
+
+    return klass.extensions('attr', 'event', 'template');
+  }
+
+  XTagElement = createClass();
+
+  function pseudoWrap(pseudo, args, fn, detail){
+    return function(){
+      var _pseudo = { fn: fn, args: args, detail: detail };
+      var output = pseudo.onInvoke(this, _pseudo, ...arguments);
+      if (output === null || output === false) return output;
+      return _pseudo.fn.apply(this, output instanceof Array ? output : arguments);
+    };
+  }
+
+  function onParse(target){
+    var processedProps = {};
+    var descriptors = getDescriptors(target);
+    var extensions = target.getOptions('extensions');
+    var processed = target._processedExtensions = new Map();   
+    for (let z in descriptors) {
+      let matches = [];
+      let property;
+      let extension;
+      let extensionArgs = [];
+      let descriptor = descriptors[z];
+      let pseudos = target._pseudos || xtag.pseudos;    
+      z.replace(regexParseExt, function(){ matches.unshift(arguments);  });
+      matches.forEach(a => function(match, prop, dots, name, args){
+        property = prop || property;
+        if (args) var _args = args.split(regexCommaArgs);
+        if (dots == '::') {
+          extensionArgs = _args || [];
+          extension = extensions[name] || xtag.extensions[name];
+          if (!processed.get(extension)) processed.set(extension, []);
+        }
+        else if (!prop){
+          let pseudo = pseudos[name];
+          if (pseudo) {
+            for (let y in descriptor) {
+              let fn = descriptor[y];
+              if (typeof fn == 'function' && pseudo.onInvoke) {
+                fn = descriptor[y] = pseudoWrap(pseudo, _args, fn);
+                if (pseudo.onParse) pseudo.onParse(target, property, _args, fn);
+              }
+            }
+          }
+        }
+      }.apply(null, a));
+      let attachProperty;
+      if (extension) {
+        processed.get(extension).push([property, extensionArgs, descriptor]);
+        if (extension.onParse) attachProperty = extension.onParse(target, property, extensionArgs, descriptor, z);
+      }
+      if (!property) delete target.prototype[z];
+      else if (attachProperty !== false) {
+        let prop = processedProps[property] || (processedProps[property] = {});
+        for (let y in descriptor) prop[y] = descriptor[y];
+      }
+    }
+    for (let ext of processed.keys()) {
+      if (ext.onCompiled) ext.onCompiled(target, processedProps);
+    }
+    Object.defineProperties(target.prototype, processedProps);
+  }
+
+  function onConstruct (target){
+    var processed = target.constructor._processedExtensions;
+    for (let [ext, items] of processed) {
+      if (ext.onConstruct) items.forEach(item => ext.onConstruct(target, ...item))
+    }
+  }
+
+  function onReady (target, resolve){
+    var processed = target.constructor._processedExtensions;
+    for (let [ext, items] of processed) {
+      if (ext.onReady) Promise.all(items.map(item => {
+        return new Promise(resolve => ext.onReady(target, resolve, ...item))
+      })).then(resolve)
+    }
+  }
+
+  function onConnect (target){
+    var processed = target.constructor._processedExtensions;
+    for (let [ext, items] of processed) {
+      if (ext.onConnect) items.forEach(item => ext.onConnect(target, ...item))
+    }
+  }
+
+  function getDescriptors(target){
+    var descriptors = {};
+    var proto = target.prototype;
+    Object.getOwnPropertyNames(proto).forEach(key => {
+      descriptors[key] = Object.getOwnPropertyDescriptor(proto, key);
+    });
+    return descriptors;
+  }
+
+  if (typeof define === 'function' && define.amd) {
+    define(xtag);
+    define(XTagElement);
+  }
+  else if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { xtag: xtag, XTagElement: XTagElement };
+  }
+  else {
+    window.xtag = xtag;
+    window.XTagElement = XTagElement;
+  }
+
+})();
