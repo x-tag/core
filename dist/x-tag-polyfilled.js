@@ -36,6 +36,7 @@
                                                              docElement.oMatchesSelector))
 
   var regexParseExt = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
+  var regexParseEvent = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
   var regexCommaArgs = /,\s*/;
   var regexCamel = /[A-Z]/g;
   var dashLower = c => "-" + c.toLowerCase();
@@ -213,11 +214,10 @@
       var type;  
       var stack = fn;
       var ref = { data: {}, capture: capture };
-      key.replace(regexParseExt, (match, name, pseudo1, args, pseudo2) => {
+      key.replace(regexParseExt, (match, name, dots, pseudo, args) => {
         if (name) type = name;
-        else {
-          var pseudo = pseudo1 || pseudo2,
-              pseudo = xtag.pseudos[pseudo];
+        else if (dots == ':'){
+          var pseudo = xtag.pseudos[pseudo];
           var _args = args ? args.split(regexCommaArgs) : [];
           stack = pseudoWrap(pseudo, _args, stack, ref);
           if (pseudo.onParse) pseudo.onParse(node, type, _args, stack, ref);

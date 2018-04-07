@@ -210,6 +210,12 @@ describe("X-Tag's event extension should", function() {
       }
     }
 
+    xtag.pseudos.foo = {
+      onInvoke: function(){
+        count++;
+      }
+    }
+
     var component = xtag.create(class extends XTagElement {
       constructor(){
         super();
@@ -217,7 +223,7 @@ describe("X-Tag's event extension should", function() {
         img.src = 'assets/bitcoin.png';
         this.appendChild(img);
       }
-      'loaded::event'(){
+      'loaded::event:foo'(){
         count++;
       }
     });
@@ -230,7 +236,7 @@ describe("X-Tag's event extension should", function() {
     node.addEventListener('loaded', function(){
       outer = true;
       if (inner) {
-       expect(count).toBe(4);
+       expect(count).toBe(6);
        done();
        delete xtag.events.loaded;
       }
@@ -239,7 +245,7 @@ describe("X-Tag's event extension should", function() {
     inDOM.addEventListener('loaded', function(){
       inner = true;
       if (outer) {
-        expect(count).toBe(4);
+        expect(count).toBe(6);
         done();
         delete xtag.events.loaded;
       }
@@ -406,6 +412,56 @@ describe("X-Tag pseudos should", function() {
     xtag.fireEvent(node, 'three');
 
     expect(count).toBe(6);
+
+  });
+
+});
+
+describe("X-Tag events should", function() {
+
+  it("be compatible with all types of elements", function() {
+
+    var count = 0;
+
+    var component = xtag.create(class extends XTagElement {
+      'click::event'(){ count++; }
+    });
+
+    defineTestElement(component);
+
+    var node = new component();
+    node.click();
+    var div = document.createElement('div');
+    xtag.addEvent(div, 'click', function(){
+      count++;
+    });
+    div.click();
+
+    expect(count).toBe(2);
+
+  });
+
+  it("allow for use of pseudos on all types of elements", function() {
+
+    var count = 0;
+
+    var component = xtag.create(class extends XTagElement {
+      'click::event:delegate(div)'(){ count++; }
+    });
+
+    defineTestElement(component);
+
+    var custom = new component();
+    var customChild = custom.appendChild(document.createElement('div'));
+    customChild.click();
+    var native = document.createElement('div');
+    var nativeChild = custom.appendChild(document.createElement('div'));
+    xtag.addEvent(native, 'click:delegate(div)', function(){
+      count++;
+    });
+    nativeChild.click();
+
+    expect(count).toBe(2);
 
   });
 
