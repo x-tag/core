@@ -15,7 +15,6 @@
     "gulp-uglify-es": "^0.1.11"
   },
   "dependencies": {
-    "@webcomponents/custom-elements": "^1.0.9",
-    "npm": "^5.8.0"
+    "@webcomponents/custom-elements": "^1.0.9"
   }
 }
