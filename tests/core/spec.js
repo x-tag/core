@@ -252,6 +252,47 @@ describe("X-Tag's event extension should", function() {
     });
   });
 
+  it("allow custom events to attache events of the same name", function(done) {
+
+    var count = 0;
+
+    xtag.events.click = {
+      attach: ['mousedown']
+    };
+
+    var component = xtag.create(class extends XTagElement {
+      'click::event'(e){
+        count++;
+        if (count == 3) {
+          expect(count).toBe(3);
+          done();
+        }
+      }
+    });
+
+    defineTestElement(component);
+
+    var node = new component();
+
+    node.addEventListener('click', function(e){
+      count++;
+      if (count == 3) {
+        expect(count).toBe(3);
+        done();
+      }
+    });
+
+    xtag.addEvent(node, 'click', function(e){
+      count++;
+      if (count == 3) {
+        expect(count).toBe(3);
+        done();
+      }
+    });
+
+    node.click();
+  });
+
 });
 
 describe("X-Tag's template extension should", function() {

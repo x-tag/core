@@ -36,7 +36,6 @@
                                                              docElement.oMatchesSelector))
 
   var regexParseExt = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
-  var regexParseEvent = /([\w\-]+)|(::|:)(\w+)(?:\((.+?(?=\)))\))?/g;
   var regexCommaArgs = /,\s*/;
   var regexCamel = /[A-Z]/g;
   var dashLower = c => "-" + c.toLowerCase();
@@ -210,10 +209,11 @@
       for (let z in events) refs[z] = xtag.addEvent(node, z, events[z]);
       return refs;
     },
-    addEvent (node, key, fn, capture){
-      var type;  
+    addEvent (node, key, fn, options){
+      var type;
       var stack = fn;
-      var ref = { data: {}, capture: capture };
+      var ref = options || {};
+      ref.data = {};
       key.replace(regexParseExt, (match, name, dots, pseudo, args) => {
         if (name) type = name;
         else if (dots == ':'){
@@ -223,20 +223,20 @@
           if (pseudo.onParse) pseudo.onParse(node, type, _args, stack, ref);
         }
       });
-      node.addEventListener(type, stack, capture);
+      node.addEventListener(type, stack, ref);
       ref.type = type;
       ref.listener = stack;
       var event = xtag.events[type];
       if (event) {
         var listener = function(e){
           new Promise((resolve, reject) => {
-            event.onFilter(this, e, ref, resolve, reject);
+            event.onFilter ? event.onFilter(this, e, ref, resolve, reject) : resolve();
           }).then(() => {
-            xtag.fireEvent(e.target, type);
+            xtag.fireEvent(e.target || this, type);
           });
         }
         ref.attached = event.attach.map(key => {
-          return xtag.addEvent(node, key, listener, true);
+          return xtag.addEvent(node, key, listener, {capture: true});
         });
         if (event.onAdd) event.onAdd(node, ref);
       }
