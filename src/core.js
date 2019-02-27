@@ -202,10 +202,10 @@
           new Promise(resolve => {
             event.onFilter ? event.onFilter(this, e, ref, resolve) : resolve();
           }).then(() => {
-            var target = e.target || this;
-            if (target._xtagLastEvent != e) {
-              target._xtagLastEvent = e;
-              xtag.fireEvent(target, type);
+            let fired = '_' + type + 'EventFired';
+            if (!e[fired]) {
+              e[fired] = true;
+              xtag.fireEvent(e.target || this, type);
             }
           })
         }
