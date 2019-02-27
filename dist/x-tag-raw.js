@@ -199,11 +199,15 @@
       var event = xtag.events[type];
       if (event) {
         var listener = function(e){
-          new Promise((resolve, reject) => {
-            event.onFilter ? event.onFilter(this, e, ref, resolve, reject) : resolve();
+          new Promise(resolve => {
+            event.onFilter ? event.onFilter(this, e, ref, resolve) : resolve();
           }).then(() => {
-            xtag.fireEvent(e.target || this, type);
-          });
+            var target = e.target || this;
+            if (target._xtagLastEvent != e) {
+              target._xtagLastEvent = e;
+              xtag.fireEvent(target, type);
+            }
+          })
         }
         ref.attached = event.attach.map(key => {
           return xtag.addEvent(node, key, listener, {capture: true});
