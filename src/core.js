@@ -187,10 +187,10 @@
       key.replace(regexParseExt, (match, name, dots, pseudo, args) => {
         if (name) type = name;
         else if (dots == ':'){
-          var pseudo = xtag.pseudos[pseudo];
+          var _pseudo = pseudo ? xtag.pseudos[pseudo] : null;
           var _args = args ? args.split(regexCommaArgs) : [];
-          stack = pseudoWrap(pseudo, _args, stack, ref);
-          if (pseudo.onParse) pseudo.onParse(node, type, _args, stack, ref);
+          stack = pseudoWrap(_pseudo, _args, stack, ref);
+          if (_pseudo !== null && _pseudo.onParse) _pseudo.onParse(node, type, _args, stack, ref);
         }
       });
       node.addEventListener(type, stack, ref);
