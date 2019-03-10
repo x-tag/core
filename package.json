@@ -1,7 +1,7 @@
 {
   "name": "x-tag",
   "description": "The X-Tag core library",
-  "version": "2.0.1-beta",
+  "version": "2.0.3-beta",
   "homepage": "http://www.x-tags.org",
   "license": "MIT",
   "repository": {
