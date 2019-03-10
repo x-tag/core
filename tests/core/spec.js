@@ -436,6 +436,9 @@ describe("X-Tag pseudos should", function() {
     xtag.pseudos.foo = {
       onInvoke(){
         count++;
+      },
+      onParse() {
+        count++;
       }
     }
 
